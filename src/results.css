@@ -9,7 +9,6 @@
 .stat>span{display:flex;align-items:center;gap:var(--s2);font-size:var(--text-base);color:var(--muted);white-space:nowrap}
 .stat>span svg{width:var(--s4)}
 .stat>strong{font-family:var(--mono);font-size:var(--text-title);line-height:1.1;color:var(--paper)}
-.result-home{justify-self:center}
 .records-screen{width:100%;max-width:640px;margin:auto;display:grid;gap:var(--s5);padding:var(--s3) 0}
 .record-tabs{display:grid;grid-template-columns:1fr 1fr;border:var(--line) solid var(--border)}
 .record-tabs button{min-height:var(--control);border:0;background:var(--bg);color:var(--muted)}
