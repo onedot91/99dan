@@ -1,0 +1,27 @@
+.student-screen{width:100%;max-width:640px;margin:auto;display:grid;gap:var(--s8);padding:var(--s4) 0}
+.student-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s3)}
+.student-grid button{min-height:72px;display:flex;align-items:baseline;justify-content:center;gap:var(--s1);padding:var(--s3);background:var(--panel);border:var(--line) solid var(--border);border-radius:var(--r-small);box-shadow:0 var(--ledge) 0 var(--shadow);font-size:var(--text-title);font-family:var(--mono);font-weight:900}
+.student-grid button span{font-size:var(--text-base)}
+.student-grid button:hover{background:var(--mint);border-color:var(--mint);color:var(--ink)}
+.number-dialog{width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);padding:var(--s6);color:var(--paper)}
+.number-dialog::backdrop{background:rgb(7 14 25 / .82)}
+.number-confirm-content{display:grid;justify-items:center;gap:var(--s4);text-align:center}
+.number-preview{font-family:var(--mono);font-size:var(--text-score);font-weight:900;color:var(--yellow)}
+.number-confirm-content p{font-size:var(--text-base);color:var(--muted)}
+.number-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);width:100%;margin-top:var(--s2)}
+.number-confirm-actions button{padding:var(--s3) var(--s2);white-space:nowrap}
+.number-confirm-content .storage-error{color:var(--coral)}
+.student-number{font-size:var(--text-base);color:var(--mint);white-space:nowrap}
+@media(max-width:700px){
+ .header .brand-name{display:none}
+ .student-screen{max-width:480px;gap:var(--s5)}
+ .student-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s2)}
+ .student-grid button{min-height:56px;padding:var(--s2) var(--s1);font-size:var(--text-xl)}
+ .number-dialog{padding:var(--s5)}
+}
+@media(max-height:450px) and (min-width:701px){
+ .student-screen{max-width:760px;gap:var(--s3)}
+ .student-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:var(--s2)}
+ .student-grid button{min-height:56px;padding:var(--s2)}
+ .number-confirm-content{gap:var(--s2)}
+}

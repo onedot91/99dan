@@ -1,0 +1,31 @@
+.screen-content{animation:page-enter var(--enter) var(--ease)}
+.correct .question-content{animation:correct-pop 300ms var(--ease)}
+.wrong .question-content{animation:wrong-nudge 220ms var(--ease)}
+.combo-milestone .combo{animation:combo-pop 380ms var(--ease)}
+.result-hero .pixel-art{animation:trophy-arrive 500ms var(--ease)}
+.pixel-sparks{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
+.pixel-sparks i{position:absolute;left:50%;top:50%;width:var(--s2);height:var(--s2);background:var(--mint-shade);animation:spark 420ms ease-out both;--x:80px;--y:-64px}
+.pixel-sparks i:nth-child(2){--x:-80px;--y:-64px;background:var(--gold-shade)}
+.pixel-sparks i:nth-child(3){--x:104px;--y:16px}
+.pixel-sparks i:nth-child(4){--x:-104px;--y:16px;background:var(--gold-shade)}
+.pixel-sparks i:nth-child(5){--x:48px;--y:72px}
+.pixel-sparks i:nth-child(6){--x:-48px;--y:72px;background:var(--gold-shade)}
+.combo-milestone .question-area{outline:var(--ledge) solid var(--yellow);outline-offset:calc(-1 * var(--ledge))}
+.combo-milestone .pixel-sparks i{width:var(--s3);height:var(--s3);animation-duration:440ms}
+@keyframes page-enter{from{opacity:0;transform:translateY(var(--s2))}to{opacity:1;transform:translateY(0)}}
+@keyframes correct-pop{0%{transform:scale(.92) translateY(3px)}35%{transform:scale(1.07) translateY(-2px)}65%{transform:scale(.99)}100%{transform:scale(1)}}
+@keyframes wrong-nudge{25%{transform:translateX(calc(-1 * var(--s1)))}75%{transform:translateX(var(--s1))}}
+@keyframes combo-pop{35%{transform:scale(1.22)}65%{transform:scale(.97)}}
+@keyframes trophy-arrive{from{opacity:0;transform:translateY(var(--s4)) scale(.9)}to{opacity:1;transform:none}}
+@keyframes spark{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--x),var(--y)) scale(.4)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.pixel-sparks{display:none}}
+.correct .question-content{animation:hit-recoil 340ms var(--ease)}
+.correct .answer-display strong{animation:answer-hit 320ms var(--ease)}
+.correct .question-area{outline:var(--ledge) solid var(--mint);outline-offset:calc(-1 * var(--ledge))}
+.combo-milestone .question-area{outline-color:var(--yellow)}
+.combo-milestone .question-content{animation:power-hit 420ms var(--ease)}
+.pixel-sparks i:nth-child(7){--x:124px;--y:-24px;background:var(--gold-shade)}
+.pixel-sparks i:nth-child(8){--x:-124px;--y:-24px}
+@keyframes hit-recoil{0%{transform:scale(.9) translateY(4px)}28%{transform:scale(1.1) translateY(-3px)}56%{transform:scale(.98) translateY(1px)}100%{transform:none}}
+@keyframes answer-hit{0%{transform:translateY(5px)}30%{transform:translateY(-5px)}65%{transform:translateY(1px)}100%{transform:none}}
+@keyframes power-hit{0%{transform:scale(.86)}25%{transform:scale(1.12)}50%{transform:scale(.97)}75%{transform:scale(1.02)}100%{transform:none}}
