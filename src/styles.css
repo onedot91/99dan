@@ -1,10 +1,10 @@
 :root{
   font-family:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  color:var(--paper);background:var(--bg);font-size:13pt;font-weight:600;font-synthesis:none;
+  color:var(--paper);background:var(--bg);font-size:15pt;font-weight:600;font-synthesis:none;
   --bg:#172334;--panel:#24354a;--panel-raised:#2d425a;--border:#41546b;--paper:#fff5dc;--ink:#243047;
   --muted:#a9bbce;--mint:#91e3b4;--yellow:#ffd168;--coral:#ffb19c;--mint-shade:#44795d;--gold-shade:#9c7432;--shadow:#0d1522;--paper-shade:#bfb59e;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;--s10:40px;--s12:48px;--s16:64px;
-  --text-base:13pt;--text-lg:20px;--text-xl:24px;--text-title:32px;--text-score:48px;--text-hero:80px;--text-equation:104px;
+  --text-base:15pt;--text-lg:20px;--text-xl:24px;--text-title:32px;--text-score:48px;--text-hero:80px;--text-equation:104px;
   --line:2px;--ledge:4px;--r-small:4px;--r-panel:8px;--control:48px;
   --frame:1120px;--header:68px;--page-pad:24px;--panel-pad:32px;
   --ease:cubic-bezier(.2,.8,.2,1);--fast:100ms;--enter:180ms;
@@ -29,11 +29,13 @@ svg{flex-shrink:0}
   background-image:radial-gradient(var(--border) 1px,transparent 1px);
   background-size:var(--s4) var(--s4);
 }
-.header{width:100%;max-width:var(--frame);margin:auto;height:var(--header);display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
+.header{width:100%;max-width:var(--frame);margin:auto;height:var(--header);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--s2)}
 .brand{display:flex;align-items:center;gap:var(--s3);font-weight:900;font-size:var(--text-lg);white-space:nowrap}
+.brand-button{grid-column:1;justify-self:start}
+.header-timer{grid-column:2;justify-self:center;display:flex;align-items:center;gap:var(--s2);color:var(--yellow);font-family:var(--mono);font-size:var(--text-title);font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}
 .brand-button{border:0;background:transparent;padding:0;min-height:var(--control)}
 .brand-mark{width:var(--s10);height:var(--s10);display:grid;place-items:center;background:var(--mint);color:var(--ink);box-shadow:var(--ledge) var(--ledge) 0 var(--shadow)}
-.header-actions{display:flex;gap:var(--s2)}
+.header-actions{grid-column:3;justify-self:end;display:flex;gap:var(--s2)}
 .quiet-button{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--control);padding:var(--s2) var(--s3);border:var(--line) solid var(--border);border-radius:var(--r-small);background:var(--bg);font-size:var(--text-base)}
 .quiet-button:hover:not(:disabled){background:var(--panel-raised)}
 .sound-button{color:var(--muted);font-family:var(--mono)}
@@ -68,7 +70,9 @@ svg{flex-shrink:0}
 .practice-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
 .mode-button{width:100%;min-height:104px;display:flex;align-items:center;gap:var(--s5);padding:var(--s6);border:var(--line) solid var(--border);border-radius:var(--r-small);background:var(--panel);box-shadow:0 var(--ledge) 0 var(--shadow);text-align:left}
 .mode-button strong{flex:1;font-size:var(--text-xl);white-space:nowrap}
-.mode-button:hover{background:var(--panel-raised);transform:translateY(calc(-1 * var(--line)))}
+.mode-copy{flex:1;display:grid;gap:var(--s1)}
+.mode-copy strong{white-space:nowrap}
+.mode-button:hover:not(:disabled){background:var(--panel-raised);transform:translateY(calc(-1 * var(--line)))}
 .mode-icon{display:grid;place-items:center;width:var(--control);height:var(--control);border:var(--line) solid currentColor}
 .screen-heading{display:grid;justify-items:center;gap:var(--s3);text-align:center}
 .pager{display:flex;align-items:center;justify-content:center;gap:var(--s4)}
@@ -96,6 +100,10 @@ svg{flex-shrink:0}
   .mode-button{min-height:76px;padding:var(--s3) var(--s4);gap:var(--s4)}
   .mode-button strong{font-size:var(--text-lg)}
   .mode-icon{width:var(--s10);height:var(--s10)}
+}
+@media(max-width:420px){
+  .playing .header-timer{gap:0;font-size:var(--text-xl)}
+  .playing .header-timer svg,.playing .sound-button span{display:none}
 }
 @media(max-width:360px){
   :root{--page-pad:12px}

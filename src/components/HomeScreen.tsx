@@ -14,7 +14,7 @@ export function HomeScreen({game:g}:{readonly game:RushGame}){
         <button className="rush-start" onClick={()=>g.start('rush')}><span className="mode-icon"><Icon name="bolt" size={30}/></span><strong>{g.duration}분 도전 시작</strong><Icon name="arrow"/></button>
       </div>
       <div className="practice-modes">
-        <button className="mode-button" onClick={()=>g.setScreen('weak')}><span className="mode-icon"><Icon name="target" size={28}/></span><strong>약점 연습</strong><Icon name="arrow"/></button>
+        <button className="mode-button" disabled={!g.weakUnlocked} onClick={()=>g.setScreen('weak')}><span className="mode-icon"><Icon name="target" size={28}/></span><span className="mode-copy"><strong>약점 연습</strong></span><Icon name="arrow"/></button>
         <button className="mode-button" onClick={()=>g.setScreen('tables')}><span className="mode-icon"><Icon name="book" size={28}/></span><strong>단별 연습</strong><Icon name="arrow"/></button>
       </div>
       <button className="hall-button quiet-button" onClick={()=>g.setScreen('hall')}><Icon name="star"/>명예의 전당</button>

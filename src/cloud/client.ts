@@ -42,9 +42,27 @@ async function authenticated(studentNumber:number,action:string,payload:object={
 export async function loadProfile(studentNumber:number):Promise<SharedProfile>{
   return profile(await authenticated(studentNumber,'profile'),studentNumber);
 }
+export async function supportsQuestionTypes(studentNumber:number):Promise<boolean>{
+  try{const data=object(await authenticated(studentNumber,'capabilities'));return data.questionTypes===true;}
+  catch{return false;}
+}
 export async function beginRun(studentNumber:number,run:Run):Promise<void>{await authenticated(studentNumber,'begin',{id:run.id,mode:run.mode,duration:run.duration});}
 export async function finishRun(studentNumber:number,run:Run):Promise<void>{await authenticated(studentNumber,'finish',{id:run.id,endedEarly:run.endedEarly,events:run.events});}
 export async function loadLeaders(studentNumber:number,duration:Duration):Promise<readonly Standing[]>{
   const data=await authenticated(studentNumber,'leaders',{duration});if(!Array.isArray(data))throw new Error('INVALID_LEADERS');
   return data.slice(0,3).map(value=>{const row=object(value);if(typeof row.studentNumber!=='number'||!Number.isInteger(row.studentNumber)||row.studentNumber<1||row.studentNumber>23||typeof row.score!=='number'||typeof row.correct!=='number')throw new Error('INVALID_LEADER');return {studentNumber:row.studentNumber,score:row.score,correct:row.correct,avatar:avatarPath(row.avatar)};});
+}
+export async function teacherLogin(code:string):Promise<string>{
+  const data=object(await request('teacherLogin',{code}));
+  if(typeof data.token!=='string')throw new Error('INVALID_SESSION');
+  return data.token;
+}
+export async function loadTeacherRecords(token:string):Promise<readonly SharedProfile[]>{
+  const data=await request('teacherRecords',{},token);
+  if(!Array.isArray(data)||data.length!==23)throw new Error('INVALID_TEACHER_RECORDS');
+  return data.map((value,index)=>profile(value,index+1));
+}
+export async function resetStudentRecords(token:string,studentNumber:number):Promise<void>{
+  if(!Number.isInteger(studentNumber)||studentNumber<1||studentNumber>23)throw new Error('INVALID_STUDENT');
+  await request('teacherReset',{studentNumber},token);
 }

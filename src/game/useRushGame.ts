@@ -2,13 +2,19 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { TABLES } from '../types/game';
 import type { Duration, Mode, Records, Run, Screen, SessionResult } from '../types/game';
 import { chooseFact, isWeak, updateRecord, weakFacts } from './learning';
-export function useRushGame(){
+import { expectedAnswer, nextQuestion } from './questions';
+export const WRONG_PENALTY=30;
+export const WEAK_UNLOCK_THRESHOLD=5;
+export const correctPointsFor=(ms:number,combo:number)=>
+  Math.max(100,200-Math.min(100,Math.floor(ms/100)))+Math.min(Math.max(combo-1,0),5)*10;
+export function useRushGame(initialVariantsEnabled=false){
   const [duration,setDuration]=useState<Duration>(1);
   const [screen,setScreen]=useState<Screen>('home');
-  const [tables,setTables]=useState<readonly number[]>(TABLES);
+  const [tables,setTables]=useState<readonly number[]>([]);
   const [records,setRecords]=useState<Records>({});
   const [sessions,setSessions]=useState<readonly SessionResult[]>([]);
   const [run,setRun]=useState<Run|null>(null);
+  const [variantsEnabled,setVariantsEnabled]=useState(initialVariantsEnabled);
   const history=useRef<Records>({});
   const ordinal=useRef(0);
   const started=useRef(0);
@@ -28,36 +34,43 @@ export function useRushGame(){
     if(!active||finished.current)return;
     finished.current=true;locked.current=true;
     const result={...active,endedEarly:early};setRun(result);currentRun.current=result;
-    setSessions(s=>[...s,{id:active.id,duration:active.duration,mode:active.mode,score:active.score,correct:active.correct,answered:active.answered,bestCombo:active.bestCombo,fastest:active.fastest,accuracy:active.answered?Math.round(active.correct/active.answered*100):0,endedEarly:early}]);
+    setSessions(s=>[...s,{id:active.id,duration:active.duration,mode:active.mode,score:active.score,correct:active.correct,answered:active.answered,bestCombo:active.bestCombo,fastest:active.fastest,accuracy:active.answered?Math.round(active.correct/active.answered*100):0,endedEarly:early,scoringVersion:5}]);
     setScreen('result');
   };
   const start=(mode:Mode)=>{
     const focus=weakFacts(history.current).map(f=>f.id);
-    if(mode==='weak'&&!focus.length){setScreen('weak');return;}
+    const wrongCount=Object.values(history.current).reduce((sum,record)=>sum+record.wrong,0);
+    if(mode==='weak'&&wrongCount<WEAK_UNLOCK_THRESHOLD){setScreen('weak');return;}
     const chosen=mode==='practice'?tables:TABLES;
     if(!chosen.length)return;
     const fact=chooseFact({records:history.current,ordinal:ordinal.current,tables:chosen,focusIds:focus,mode,currentId:null,seenIds:[]});
-    const fresh:Run={id:crypto.randomUUID(),duration,events:[],mode,tables:chosen,focusIds:focus,fact,phase:'question',entry:'',score:0,correct:0,answered:0,combo:0,bestCombo:0,fastest:null,remaining:duration*60000,feedback:'',factIds:[],limit:mode==='weak'?Math.max(12,focus.length*3):mode==='practice'?chosen.length*8:64,deadline:mode==='rush'?performance.now()+duration*60000:null,endedEarly:false};
+    const fresh:Run={id:crypto.randomUUID(),duration,events:[],mode,tables:chosen,focusIds:focus,fact,question:nextQuestion(fact,0,variantsEnabled),phase:'question',entry:'',score:0,penalty:0,correct:0,answered:0,combo:0,bestCombo:0,fastest:null,remaining:duration*60000,feedback:'',factIds:[],limit:mode==='weak'?Math.max(12,focus.length*3):mode==='practice'?chosen.length*8:64,deadline:mode==='rush'?performance.now()+duration*60000:null,endedEarly:false};
     finished.current=false;locked.current=false;currentRun.current=fresh;setRun(fresh);setScreen('play');
   };
-  const submit=()=>{
+  const submit=(selectedAnswer?:string)=>{
     const active=currentRun.current;
-    if(!active||active.phase!=='question'||!active.entry||locked.current||finished.current)return;
+    const entry=selectedAnswer??active?.entry;
+    if(!active||active.phase!=='question'||!entry||locked.current||finished.current)return;
     if(active.deadline!==null&&performance.now()>=active.deadline){end();return;}
     locked.current=true;
     const ms=Math.max(1,Math.round(performance.now()-started.current));
-    const correct=Number(active.entry)===active.fact.a*active.fact.b;
+    const correct=Number(entry)===expectedAnswer(active.fact,active.question);
     const nextHistory={...history.current,[active.fact.id]:updateRecord(history.current[active.fact.id],{correct,ms},ordinal.current)};
     history.current=nextHistory;setRecords(nextHistory);ordinal.current+=1;
     const combo=correct?active.combo+1:0;
-    const bonus=correct?(ms<=2000?10:0)+(combo%5===0?25:0):0;
-    const feedback=correct?`+${100+bonus}`:'다시';
-    const updated:Run={...active,phase:correct?'correct':'wrong',entry:active.entry,events:[...active.events,{a:active.fact.a,b:active.fact.b,answer:Number(active.entry),ms:Math.round(ms)}],answered:active.answered+1,correct:active.correct+Number(correct),score:active.score+(correct?100+bonus:0),combo,bestCombo:Math.max(active.bestCombo,combo),fastest:correct?Math.min(active.fastest??Infinity,ms):active.fastest,feedback,factIds:correct?[...active.factIds,active.fact.id]:active.factIds};
+    const points=correct?correctPointsFor(ms,combo):-Math.min(WRONG_PENALTY,active.score);
+    const feedback=correct?`+${points}점`:points===0?'0점 · 다시 풀기':`${points}점 · 다시 풀기`;
+    const updated:Run={...active,phase:correct?'correct':'wrong',entry,events:[...active.events,{a:active.fact.a,b:active.fact.b,kind:active.question.kind,...(active.question.other?{c:active.question.other.a,d:active.question.other.b}:{}),answer:Number(entry),ms:Math.round(ms)}],answered:active.answered+1,correct:active.correct+Number(correct),score:Math.max(0,active.score+points),penalty:correct?0:-points,combo,bestCombo:Math.max(active.bestCombo,combo),fastest:correct?Math.min(active.fastest??Infinity,ms):active.fastest,feedback,factIds:correct?[...active.factIds,active.fact.id]:active.factIds};
     currentRun.current=updated;setRun(updated);
   };
   const input=(key:string)=>{
     const active=currentRun.current;
     if(!active||active.phase!=='question'||locked.current||finished.current)return;
+    if(active.question.kind==='compare'){
+      if(!['<','=','>'].includes(key))return;
+      submit(String({'<':1,'=':2,'>':3}[key as '<'|'='|'>']));
+      return;
+    }
     if(key==='Enter'){submit();return;}
     const entry=key==='Backspace'?active.entry.slice(0,-1):key==='Delete'?'':/^\d$/.test(key)&&active.entry.length<2?(active.entry==='0'?key:active.entry+key):active.entry;
     const updated={...active,entry};currentRun.current=updated;setRun(updated);
@@ -69,18 +82,18 @@ export function useRushGame(){
       if(!active||finished.current)return;
       if(active.deadline!==null&&performance.now()>=active.deadline){end();return;}
       if(active.phase==='wrong'){
-        const retry={...active,phase:'question',entry:'',feedback:''} satisfies Run;
+        const retry={...active,phase:'question',entry:'',penalty:0,feedback:''} satisfies Run;
         currentRun.current=retry;setRun(retry);return;
       }
       const mastered=active.mode==='weak'&&active.focusIds.every(id=>{const r=history.current[id];return r?!isWeak(r):false;});
       if(active.mode!=='rush'&&(active.correct>=active.limit||mastered)){end();return;}
       if(active.deadline!==null&&performance.now()>=active.deadline){end();return;}
       const fact=chooseFact({records:history.current,ordinal:ordinal.current,tables:active.tables,focusIds:active.focusIds,mode:active.mode,currentId:active.fact.id,seenIds:active.factIds});
-      const updated={...active,fact,phase:'question',entry:'',feedback:''} satisfies Run;
+      const updated={...active,fact,question:nextQuestion(fact,active.correct,variantsEnabled),phase:'question',entry:'',feedback:''} satisfies Run;
       currentRun.current=updated;setRun(updated);
     },run.phase==='correct'?450:350);
     return ()=>window.clearTimeout(timer);
-  },[run?.phase,run?.answered,screen]);
+  },[run?.phase,run?.answered,screen,variantsEnabled]);
   useEffect(()=>{
     if(screen!=='play'||run?.deadline===null||run?.deadline===undefined)return;
     const deadline=run.deadline;
@@ -97,7 +110,7 @@ export function useRushGame(){
       if(event.ctrlKey||event.metaKey||event.altKey||event.repeat)return;
       if(event.key==='Escape'){event.preventDefault();end(true);return;}
       if(event.target instanceof HTMLButtonElement&&(event.key==='Enter'||event.key===' '))return;
-      if(/^\d$/.test(event.key)||['Enter','Backspace','Delete'].includes(event.key)){event.preventDefault();input(event.key);}
+      if(/^\d$/.test(event.key)||['Enter','Backspace','Delete','<','=','>'].includes(event.key)){event.preventDefault();input(event.key);}
     };
     window.addEventListener('keydown',onKey);return ()=>window.removeEventListener('keydown',onKey);
   },[screen]);
@@ -107,6 +120,8 @@ export function useRushGame(){
   },[]);
   const toggleTable=(n:number)=>setTables(previous=>previous.includes(n)?previous.filter(t=>t!==n):[...previous,n].sort((a,b)=>a-b));
   const totalCorrect=Object.values(records).reduce((sum,r)=>sum+r.correct,0);
-  return {hydrate,screen,setScreen,duration,setDuration,tables,toggleTable,records,sessions,run,start,input,end,totalCorrect,weak:weakFacts(records)};
+  const totalWrong=Object.values(records).reduce((sum,r)=>sum+r.wrong,0);
+  const weak=weakFacts(records);
+  return {hydrate,setVariantsEnabled,screen,setScreen,duration,setDuration,tables,toggleTable,records,sessions,run,start,input,end,totalCorrect,totalWrong,weak,weakUnlocked:totalWrong>=WEAK_UNLOCK_THRESHOLD};
 }
 export type RushGame=ReturnType<typeof useRushGame>;

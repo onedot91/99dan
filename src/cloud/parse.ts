@@ -2,6 +2,7 @@ import type { Duration, Mode, Records, SessionResult } from '../types/game';
 import type { SharedProfile } from './types';
 export function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('INVALID_RESPONSE');return Object.fromEntries(Object.entries(value));}
 function number(value:unknown):number{if(typeof value!=='number'||!Number.isFinite(value)||value<0)throw new Error('INVALID_NUMBER');return value;}
+function score(value:unknown):number{if(typeof value!=='number'||!Number.isFinite(value))throw new Error('INVALID_SCORE');return value;}
 function text(value:unknown):string{if(typeof value!=='string')throw new Error('INVALID_TEXT');return value;}
 function bool(value:unknown):boolean{if(typeof value!=='boolean')throw new Error('INVALID_BOOLEAN');return value;}
 function duration(value:unknown):Duration{if(value!==1&&value!==2&&value!==3)throw new Error('INVALID_DURATION');return value;}
@@ -15,6 +16,6 @@ export function profile(value:unknown,studentNumber:number):SharedProfile{
     const r=object(value);
     return [id,{attempts:number(r.attempts),correct:number(r.correct),wrong:number(r.wrong),totalMs:number(r.totalMs),streak:number(r.streak),fastStreak:number(r.fastStreak),recent:array(r.recent).map(value=>{const a=object(value);return {correct:bool(a.correct),ms:number(a.ms)};}),reviewAt:r.reviewAt===null?null:number(r.reviewAt),interval:number(r.interval),lastSeen:number(r.lastSeen)}];
   }));
-  const sessions:readonly SessionResult[]=array(data.sessions).map(value=>{const s=object(value);return {id:text(s.id),duration:duration(s.duration),mode:mode(s.mode),score:number(s.score),correct:number(s.correct),answered:number(s.answered),bestCombo:number(s.bestCombo),fastest:s.fastest===null?null:number(s.fastest),accuracy:number(s.accuracy),endedEarly:bool(s.endedEarly)};});
-  return {studentNumber,avatar:avatarPath(data.avatar),records,sessions,best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:number(b.score),correct:number(b.correct)};})};
+  const sessions:readonly SessionResult[]=array(data.sessions).map(value=>{const s=object(value);return {id:text(s.id),duration:duration(s.duration),mode:mode(s.mode),score:score(s.score),correct:number(s.correct),answered:number(s.answered),bestCombo:number(s.bestCombo),fastest:s.fastest===null?null:number(s.fastest),accuracy:number(s.accuracy),endedEarly:bool(s.endedEarly),scoringVersion:s.scoringVersion===5?5:s.scoringVersion===4?4:s.scoringVersion===3?3:s.scoringVersion===2?2:1};});
+  return {studentNumber,avatar:avatarPath(data.avatar),records,sessions,best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:score(b.score),correct:number(b.correct)};})};
 }

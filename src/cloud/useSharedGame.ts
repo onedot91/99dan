@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RushGame } from '../game/useRushGame';
-import { beginRun, cloudConfigured, finishRun, loadProfile } from './client';
+import { beginRun, cloudConfigured, finishRun, loadProfile, supportsQuestionTypes } from './client';
 import type { SharedProfile, SyncState } from './types';
 import type { Run } from '../types/game';
 export function useSharedGame(studentNumber:number,game:RushGame){
@@ -14,7 +14,7 @@ export function useSharedGame(studentNumber:number,game:RushGame){
   const reload=useCallback(async()=>{
     if(!cloudConfigured)return;
     setState('loading');
-    try{const next=await loadProfile(studentNumber);setProfile(next);hydrate(next);setState('ready');}catch{setState('error');}
+    try{const [next,variants]=await Promise.all([loadProfile(studentNumber),supportsQuestionTypes(studentNumber)]);game.setVariantsEnabled(variants);setProfile(next);hydrate(next);setState('ready');}catch{setState('error');}
   },[studentNumber,hydrate]);
   useEffect(()=>{void reload();},[reload]);
   useEffect(()=>{

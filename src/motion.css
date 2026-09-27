@@ -1,6 +1,9 @@
 .screen-content{animation:page-enter var(--enter) var(--ease)}
 .correct .question-content{animation:correct-pop 300ms var(--ease)}
 .wrong .question-content{animation:wrong-nudge 220ms var(--ease)}
+.wrong .question-area{outline:var(--ledge) solid var(--coral);outline-offset:calc(-1 * var(--ledge))}
+.wrong .score-display strong{animation:score-drop 320ms var(--ease)}
+.wrong .score-loss{animation:loss-arrive 320ms var(--ease)}
 .combo-milestone .combo{animation:combo-pop 380ms var(--ease)}
 .result-hero .pixel-art{animation:trophy-arrive 500ms var(--ease)}
 .pixel-sparks{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
@@ -15,6 +18,8 @@
 @keyframes page-enter{from{opacity:0;transform:translateY(var(--s2))}to{opacity:1;transform:translateY(0)}}
 @keyframes correct-pop{0%{transform:scale(.92) translateY(3px)}35%{transform:scale(1.07) translateY(-2px)}65%{transform:scale(.99)}100%{transform:scale(1)}}
 @keyframes wrong-nudge{25%{transform:translateX(calc(-1 * var(--s1)))}75%{transform:translateX(var(--s1))}}
+@keyframes score-drop{0%{transform:translateY(calc(-1 * var(--s2)));opacity:.4}60%{transform:translateY(var(--s1));opacity:1}100%{transform:none}}
+@keyframes loss-arrive{0%{transform:translateY(calc(-1 * var(--s3)));opacity:0}70%{transform:translateY(var(--s1));opacity:1}100%{transform:none}}
 @keyframes combo-pop{35%{transform:scale(1.22)}65%{transform:scale(.97)}}
 @keyframes trophy-arrive{from{opacity:0;transform:translateY(var(--s4)) scale(.9)}to{opacity:1;transform:none}}
 @keyframes spark{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--x),var(--y)) scale(.4)}}
