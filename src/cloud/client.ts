@@ -66,3 +66,6 @@ export async function resetStudentRecords(token:string,studentNumber:number):Pro
   if(!Number.isInteger(studentNumber)||studentNumber<1||studentNumber>23)throw new Error('INVALID_STUDENT');
   await request('teacherReset',{studentNumber},token);
 }
+export async function resetAllStudentRecords(token:string):Promise<void>{
+  await request('teacherResetAll',{},token);
+}

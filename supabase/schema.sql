@@ -162,7 +162,14 @@ begin
  delete from public.gugudan_weekly_leaders where student_number=p_student;
  update public.gugudan_players set records='{}',sessions='[]',best='{}',ordinal=0 where student_number=p_student;
 end; $$;
-revoke all on function public.gugudan_profile(integer),public.gugudan_leaders(integer),public.gugudan_begin(integer,uuid,text,integer),public.gugudan_finish(integer,uuid,boolean,jsonb),public.gugudan_teacher_records(),public.gugudan_teacher_reset(integer) from public,anon,authenticated;
-grant execute on function public.gugudan_profile(integer),public.gugudan_leaders(integer),public.gugudan_begin(integer,uuid,text,integer),public.gugudan_finish(integer,uuid,boolean,jsonb),public.gugudan_teacher_records(),public.gugudan_teacher_reset(integer) to service_role;
+create function public.gugudan_teacher_reset_all() returns void
+language plpgsql security invoker set search_path='' as $$
+begin
+ delete from public.gugudan_runs where student_number between 1 and 23;
+ delete from public.gugudan_weekly_leaders where student_number between 1 and 23;
+ update public.gugudan_players set records='{}',sessions='[]',best='{}',ordinal=0 where student_number between 1 and 23;
+end; $$;
+revoke all on function public.gugudan_profile(integer),public.gugudan_leaders(integer),public.gugudan_begin(integer,uuid,text,integer),public.gugudan_finish(integer,uuid,boolean,jsonb),public.gugudan_teacher_records(),public.gugudan_teacher_reset(integer),public.gugudan_teacher_reset_all() from public,anon,authenticated;
+grant execute on function public.gugudan_profile(integer),public.gugudan_leaders(integer),public.gugudan_begin(integer,uuid,text,integer),public.gugudan_finish(integer,uuid,boolean,jsonb),public.gugudan_teacher_records(),public.gugudan_teacher_reset(integer),public.gugudan_teacher_reset_all() to service_role;
 revoke all on function public.gugudan_capture_weekly_leader() from public,anon,authenticated;
 commit;

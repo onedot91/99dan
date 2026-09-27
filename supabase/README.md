@@ -20,7 +20,9 @@
 
 현재 키 범위는 기존 School_Timer의 단일 1~23번 학급입니다. 다른 학급/학년을 추가하기 전 학급·연도 식별자를 함께 키에 포함해야 합니다.
 
-기존 DB에는 `migrations/20260927000000_question_types_teacher.sql`을 검토한 뒤 적용하고, 새 DB에는 최신 `schema.sql`을 한 번 적용합니다. 그 다음 `gugudan-api` Edge Function을 새 코드로 배포하고 서버 비밀값 `GUGUDAN_TEACHER_CODE`를 교사 번호로 설정해야 합니다. 이 값은 `VITE_` 변수나 Git 파일에 넣지 않습니다. 교사 API는 30분 유효한 서명 토큰을 사용하고, 학생별 기록 조회와 초기화만 허용합니다. 초기화는 해당 학생의 게임 세션·문제 기록·최고 점수를 지우며 School_Timer 프로필은 건드리지 않습니다. 최근 세션 목록은 기존 정책대로 최대 20회만 보관합니다.
+기존 DB에는 `migrations/20260927000000_question_types_teacher.sql`을 검토한 뒤 적용하고, 새 DB에는 최신 `schema.sql`을 한 번 적용합니다. 그 다음 `gugudan-api` Edge Function을 새 코드로 배포하고 서버 비밀값 `GUGUDAN_TEACHER_CODE`를 교사 번호로 설정해야 합니다. 이 값은 `VITE_` 변수나 Git 파일에 넣지 않습니다. 교사 API는 30분 유효한 서명 토큰을 사용하고, 학생별 기록 조회와 초기화만 허용합니다. 개별 초기화는 해당 학생의 게임 기록과 순위를 지우며, 전체 초기화는 1~23번의 게임 기록·도전·최고 점수·명예의 전당 기록을 한 번에 지웁니다. School_Timer 프로필은 건드리지 않습니다. 전체 초기화는 앱에서 확인 문구를 입력해야 실행됩니다. 최근 세션 목록은 기존 정책대로 최대 20회만 보관합니다.
+
+기존 DB에 전체 초기화 기능을 추가하려면 `migrations/20260927173954_teacher_reset_all.sql`과 `migrations/20260927174840_teacher_reset_all_scope.sql`을 적용한 뒤 `gugudan-api` Edge Function을 재배포합니다.
 
 기존 점수 규칙에서 시간 감점 방식으로 바꾸는 마이그레이션은 `migrations/20260927154259_accuracy_scoring_time_decay.sql`과 `migrations/20260927154438_accuracy_scoring_time_decay_v2.sql`입니다. 현재 정답 점수는 200점에서 시작해 100ms마다 1점씩 줄고 최소 100점입니다. 두 번째 연속 정답부터 10점씩 더해져 최대 50점이며, 오답은 최대 30점 감점이고 점수는 0점 아래로 내려가지 않습니다. 서버 점수 규칙은 `migrations/20260927160644_nonnegative_scoring_penalty_30.sql`에서 함께 갱신합니다. 기존 세션과 점수 데이터는 보존되고, 최고 점수 화면과 명예의 전당은 현재 규칙 버전의 기록만 표시합니다.
 

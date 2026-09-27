@@ -65,9 +65,10 @@ Deno.serve(async request=>{
       }
       attempts.delete(address);return json({token:await issueTeacher()});
     }
-    if(data.action==='teacherRecords'||data.action==='teacherReset'){
+    if(data.action==='teacherRecords'||data.action==='teacherReset'||data.action==='teacherResetAll'){
       if(!await teacherIdentity(request.headers.get('X-Gugudan-Session')))return json({error:'SESSION_REQUIRED'},401);
       if(data.action==='teacherRecords')return json(await rpc('gugudan_teacher_records',{}));
+      if(data.action==='teacherResetAll'){await rpc('gugudan_teacher_reset_all',{});return json({ok:true});}
       if(!validNumber(data.studentNumber))return json({error:'INVALID_STUDENT'},400);
       await rpc('gugudan_teacher_reset',{p_student:data.studentNumber});return json({ok:true});
     }
