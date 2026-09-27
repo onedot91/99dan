@@ -5,7 +5,7 @@ import { PixelArt } from './PixelArt';
 export function HomeScreen({game:g}:{readonly game:RushGame}){
   return <main className="home">
     <section className="home-stage">
-      <h1>구구단 <br/><span>게임</span></h1>
+      <h1>곱셈 <br/><span>게임</span></h1>
       <div className="hero-scene"><PixelArt/><div className="pixel-ground"/></div>
     </section>
     <nav className="mode-menu" aria-label="게임 선택">

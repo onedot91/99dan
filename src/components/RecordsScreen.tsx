@@ -8,7 +8,7 @@ import { Icon } from './Icon';
 
 export function RecordsScreen({game:g,best:sharedBest}:{readonly game:RushGame;readonly best:readonly Best[]|undefined}){
   const [duration,setDuration]=useState<Duration>(1);
-  const localBest=g.sessions.filter(s=>s.mode==='rush'&&!s.endedEarly&&s.duration===duration&&s.scoringVersion===5).reduce<Best|undefined>((record,session)=>!record||session.score>record.score?{duration,score:session.score,correct:session.correct}:record,undefined);
+  const localBest=g.sessions.filter(s=>s.mode==='rush'&&s.duration===duration&&s.scoringVersion===5).reduce<Best|undefined>((record,session)=>!record||session.score>record.score?{duration,score:session.score,correct:session.correct}:record,undefined);
   const sharedRecord=sharedBest?.find(record=>record.duration===duration);
   const best=sharedRecord&&localBest?(sharedRecord.score>=localBest.score?sharedRecord:localBest):sharedRecord??localBest;
 

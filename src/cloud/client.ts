@@ -50,7 +50,7 @@ export async function beginRun(studentNumber:number,run:Run):Promise<void>{await
 export async function finishRun(studentNumber:number,run:Run):Promise<void>{await authenticated(studentNumber,'finish',{id:run.id,endedEarly:run.endedEarly,events:run.events});}
 export async function loadLeaders(studentNumber:number,duration:Duration):Promise<readonly Standing[]>{
   const data=await authenticated(studentNumber,'leaders',{duration});if(!Array.isArray(data))throw new Error('INVALID_LEADERS');
-  return data.slice(0,3).map(value=>{const row=object(value);if(typeof row.studentNumber!=='number'||!Number.isInteger(row.studentNumber)||row.studentNumber<1||row.studentNumber>23||typeof row.score!=='number'||typeof row.correct!=='number')throw new Error('INVALID_LEADER');return {studentNumber:row.studentNumber,score:row.score,correct:row.correct,avatar:avatarPath(row.avatar)};});
+  return data.slice(0,5).map(value=>{const row=object(value);if(typeof row.studentNumber!=='number'||!Number.isInteger(row.studentNumber)||row.studentNumber<1||row.studentNumber>23||typeof row.score!=='number'||typeof row.correct!=='number')throw new Error('INVALID_LEADER');return {studentNumber:row.studentNumber,score:row.score,correct:row.correct,avatar:avatarPath(row.avatar)};});
 }
 export async function teacherLogin(code:string):Promise<string>{
   const data=object(await request('teacherLogin',{code}));

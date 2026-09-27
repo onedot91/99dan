@@ -29,7 +29,7 @@ export function StudentNumberScreen({onConfirm,onTeacher}:{readonly onConfirm:(n
     finally{setChecking(false);}
   };
   return <div className="app">
-    <header className="header"><div className="brand"><span className="brand-mark"><Icon name="bolt"/></span><span>구구단 게임</span></div></header>
+    <header className="header"><div className="brand"><span className="brand-mark"><Icon name="bolt"/></span><span>곱셈 게임</span></div></header>
     <div className="screen-content"><main className="student-screen">
       <div className="screen-heading"><h1>번호 선택</h1></div>
       <div className="student-grid" aria-label="학생 번호">{Array.from({length:23},(_,i)=>i+1).map(number=><button key={number} aria-label={`${number}번`} onClick={()=>{setError(false);setPending(number);}}>{number}<span>번</span></button>)}</div>

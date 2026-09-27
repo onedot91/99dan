@@ -31,6 +31,5 @@ export function PlayScreen({game:g}:{readonly game:RushGame}){
       {r.phase==='correct'&&<div className="pixel-sparks" key={r.answered} aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/></div>}
     </section>
     {r.question.kind!=='compare'&&<div className="keypad-area"><NumberPad onInput={g.input} disabled={r.phase!=='question'} canSubmit={r.entry.length>0}/></div>}
-    <div className="play-bottom"><span className="score-display">점수 <strong>{r.score.toLocaleString()}</strong>{r.phase==='wrong'&&r.penalty>0&&<em className="score-loss" key={r.answered} aria-hidden="true">-{r.penalty}</em>}</span><span><Icon name="star"/>{r.correct}개 정답</span></div>
   </main>;
 }

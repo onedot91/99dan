@@ -5,8 +5,8 @@ import { cloudConfigured, loadLeaders } from '../cloud/client';
 import type { Standing } from '../cloud/types';
 import { PixelArt } from './PixelArt';
 import { Icon } from './Icon';
-export function HallScreen({ready,studentNumber}:{readonly ready:boolean;readonly studentNumber:number}){
-  const [duration,setDuration]=useState<Duration>(1);
+export function HallScreen({ready,studentNumber,initialDuration}:{readonly ready:boolean;readonly studentNumber:number;readonly initialDuration:Duration}){
+  const [duration,setDuration]=useState<Duration>(initialDuration);
   const [rows,setRows]=useState<readonly Standing[]>([]);
   const [state,setState]=useState<'loading'|'ready'|'error'>('loading');
   const [retry,setRetry]=useState(0);

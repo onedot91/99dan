@@ -4,8 +4,25 @@
 .wrong .question-area{outline:var(--ledge) solid var(--coral);outline-offset:calc(-1 * var(--ledge))}
 .wrong .score-display strong{animation:score-drop 320ms var(--ease)}
 .wrong .score-loss{animation:loss-arrive 320ms var(--ease)}
+.header-score.wrong:not(.score-floor) strong{animation:score-drop 320ms var(--ease)}
+.header-score.wrong .score-loss{animation:loss-arrive 320ms var(--ease)}
 .combo-milestone .combo{animation:combo-pop 380ms var(--ease)}
-.result-hero .pixel-art{animation:trophy-arrive 500ms var(--ease)}
+.trophy-celebration{animation:trophy-arrive 500ms var(--ease) both}
+.trophy-celebration .trophy-body{transform-box:fill-box;transform-origin:50% 85%;animation:trophy-cheer 3200ms ease-in-out 500ms infinite}
+.trophy-particles i{animation:trophy-confetti 3200ms ease-out 500ms infinite}
+.trophy-particles i:nth-child(1){--tx:-86px;--ty:-40px}
+.trophy-particles i:nth-child(2){--tx:-58px;--ty:-70px}
+.trophy-particles i:nth-child(3){--tx:5px;--ty:-78px}
+.trophy-particles i:nth-child(4){--tx:76px;--ty:-58px}
+.trophy-particles i:nth-child(5){--tx:-92px;--ty:22px}
+.trophy-particles i:nth-child(6){--tx:86px;--ty:20px}
+.hero-scene .pixel-art{animation:hero-walk 7200ms linear infinite}
+.hero-scene .hero-character{animation:hero-step 480ms ease-in-out infinite}
+.hero-scene .hero-foot-left{animation:hero-foot-left 480ms ease-in-out infinite}
+.hero-scene .hero-foot-right{animation:hero-foot-right 480ms ease-in-out infinite}
+.hero-scene .hero-eyes{transform-box:fill-box;transform-origin:center;animation:hero-blink 5200ms steps(1,end) infinite}
+.hero-scene .hero-sparkle-left{animation:hero-twinkle 2400ms ease-in-out infinite}
+.hero-scene .hero-sparkle-right{animation:hero-twinkle 2400ms ease-in-out 1200ms infinite}
 .pixel-sparks{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
 .pixel-sparks i{position:absolute;left:50%;top:50%;width:var(--s2);height:var(--s2);background:var(--mint-shade);animation:spark 420ms ease-out both;--x:80px;--y:-64px}
 .pixel-sparks i:nth-child(2){--x:-80px;--y:-64px;background:var(--gold-shade)}
@@ -22,8 +39,16 @@
 @keyframes loss-arrive{0%{transform:translateY(calc(-1 * var(--s3)));opacity:0}70%{transform:translateY(var(--s1));opacity:1}100%{transform:none}}
 @keyframes combo-pop{35%{transform:scale(1.22)}65%{transform:scale(.97)}}
 @keyframes trophy-arrive{from{opacity:0;transform:translateY(var(--s4)) scale(.9)}to{opacity:1;transform:none}}
+@keyframes trophy-cheer{0%,55%,100%{transform:none}9%{transform:translateY(-4px) rotate(-8deg)}18%{transform:translateY(-8px) rotate(8deg)}27%{transform:translateY(-3px) rotate(-6deg)}36%{transform:translateY(-6px) rotate(5deg)}45%{transform:translateY(0) rotate(-2deg)}}
+@keyframes trophy-confetti{0%,8%{opacity:0;transform:translate(0,0) scale(.2)}17%{opacity:1}36%{opacity:1;transform:translate(var(--tx),var(--ty)) scale(1) rotate(45deg)}50%,100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.5) rotate(90deg)}}
+@keyframes hero-walk{0%,2%{transform:translateX(0) scaleX(1)}47%{transform:translateX(calc(100cqw - 100%)) scaleX(1)}50%{transform:translateX(calc(100cqw - 100%)) scaleX(-1)}97%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(0) scaleX(1)}}
+@keyframes hero-step{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes hero-foot-left{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes hero-foot-right{0%,100%{transform:translateY(-4px)}50%{transform:translateY(0)}}
+@keyframes hero-blink{0%,93%,97%,100%{transform:scaleY(1)}94%,96%{transform:scaleY(.12)}}
+@keyframes hero-twinkle{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes spark{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--x),var(--y)) scale(.4)}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.pixel-sparks{display:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.pixel-sparks{display:none}.hero-scene .pixel-art{left:50%;transform:translateX(-50%)}}
 .correct .question-content{animation:hit-recoil 340ms var(--ease)}
 .correct .answer-display strong{animation:answer-hit 320ms var(--ease)}
 .correct .question-area{outline:var(--ledge) solid var(--mint);outline-offset:calc(-1 * var(--ledge))}

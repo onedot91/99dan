@@ -2,7 +2,7 @@
 
 기존 `storage_resources`의 `/studentLife/failureProfileAssignments/<번호>`를 읽어 동물 프로필을 공유합니다. 기존 프로필·경제·타이머 데이터에는 쓰지 않습니다. 그림은 School_Timer의 공개 정적 에셋을 같은 경로로 복사해 제공합니다.
 
-`schema.sql`은 새 `gugudan_players`, `gugudan_runs`, `gugudan_weekly_leaders`와 전용 RPC만 추가합니다. 개인 기록은 번호별로 공유하고 계속 보관합니다. 명예의 전당은 도전 시간별 최근 7일 내 기록 중 상위 5명을 반환합니다. 동점은 먼저 달성한 기록, 다음으로 번호 순입니다. 중도 종료와 연습 기록은 순위에 포함되지 않습니다. 제출 ID로 중복 저장을 방지하고 SQL 트랜잭션 안에서 채점·누적·최고점 갱신을 처리합니다.
+`schema.sql`은 새 `gugudan_players`, `gugudan_runs`, `gugudan_weekly_leaders`와 전용 RPC만 추가합니다. 개인 기록은 번호별로 공유하고 계속 보관합니다. 명예의 전당은 도전 시간별 최근 7일 내 기록 중 상위 5명을 반환합니다. 동점은 먼저 달성한 기록, 다음으로 번호 순입니다. 중도 종료한 도전도 개인 최고 기록과 순위에 포함되며 연습 기록은 순위에 포함되지 않습니다. 제출 ID로 중복 저장을 방지하고 SQL 트랜잭션 안에서 채점·누적·최고점 갱신을 처리합니다.
 
 기존 데이터베이스의 명예의 전당 인원수는 `migrations/20260927155153_leaderboard_top_five.sql`로 상위 5명까지 확장합니다.
 

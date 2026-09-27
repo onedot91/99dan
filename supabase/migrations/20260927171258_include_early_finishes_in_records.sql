@@ -1,64 +1,6 @@
--- Additive setup only. Existing School_Timer tables and policies remain unchanged.
 begin;
-create table public.gugudan_players (
-  student_number smallint primary key check(student_number between 1 and 23),
-  records jsonb not null default '{}', sessions jsonb not null default '[]',
-  best jsonb not null default '{}', ordinal integer not null default 0
-);
-create table public.gugudan_runs (
-  id uuid primary key, student_number smallint not null references public.gugudan_players,
-  mode text not null check(mode in ('rush','practice','weak')),
-  duration smallint not null check(duration in (1,2,3)),
-  started_at timestamptz not null default clock_timestamp(), finished_at timestamptz,
-  payload_hash text
-);
-create table public.gugudan_weekly_leaders (
-  student_number smallint not null references public.gugudan_players(student_number) on delete cascade,
-  duration smallint not null check(duration in (1,2,3)),
-  score integer not null,
-  correct integer not null,
-  scoring_version smallint not null default 5 check(scoring_version=5),
-  achieved_at timestamptz not null,
-  primary key(student_number,duration)
-);
-create index gugudan_runs_student_started on public.gugudan_runs(student_number,started_at desc);
-alter table public.gugudan_players enable row level security;
-alter table public.gugudan_runs enable row level security;
-alter table public.gugudan_weekly_leaders enable row level security;
-revoke all on public.gugudan_players,public.gugudan_runs,public.gugudan_weekly_leaders from public,anon,authenticated;
-grant select,insert,update on public.gugudan_players,public.gugudan_runs to service_role;
-grant select,insert,update,delete on public.gugudan_weekly_leaders to service_role;
 
-create function public.gugudan_profile(p_student integer) returns jsonb
-language sql stable security invoker set search_path='' as $$
- select jsonb_build_object('studentNumber',p_student,
-   'avatar',(select value->>'data' from public.storage_resources where resource_key='/studentLife/failureProfileAssignments/'||p_student and not deleted),
-   'records',coalesce(p.records,'{}'), 'sessions',coalesce(p.sessions,'[]'),
-   'best',coalesce((select jsonb_agg(value order by key) from jsonb_each(p.best) where value->>'scoringVersion'='5'),'[]'))
- from (select p_student as n) input left join public.gugudan_players p on p.student_number=input.n
- where p_student between 1 and 23;
-$$;
-create function public.gugudan_leaders(p_duration integer) returns jsonb
-language sql stable security invoker set search_path='' as $$
- select coalesce(jsonb_agg(row),'[]') from (
-   select w.student_number as "studentNumber",w.score,w.correct,
-     (select value->>'data' from public.storage_resources where resource_key='/studentLife/failureProfileAssignments/'||p.student_number and not deleted) as avatar
-   from public.gugudan_weekly_leaders w join public.gugudan_players p using(student_number)
-   where w.duration=p_duration and w.scoring_version=5 and w.achieved_at>now()-interval '7 days' and p_duration in (1,2,3)
-   order by w.score desc,w.achieved_at,w.student_number limit 5
- ) row;
-$$;
-create function public.gugudan_begin(p_student integer,p_id uuid,p_mode text,p_duration integer) returns void
-language plpgsql security invoker set search_path='' as $$
-declare existing public.gugudan_runs;
-begin
- if p_student not between 1 and 23 or p_mode not in ('rush','practice','weak') or p_duration not in (1,2,3) then raise exception 'INVALID_RUN'; end if;
- insert into public.gugudan_players(student_number) values(p_student) on conflict do nothing;
- insert into public.gugudan_runs(id,student_number,mode,duration) values(p_id,p_student,p_mode,p_duration) on conflict do nothing;
- select * into existing from public.gugudan_runs where id=p_id;
- if existing.student_number<>p_student or existing.mode<>p_mode or existing.duration<>p_duration then raise exception 'RUN_CONFLICT'; end if;
-end; $$;
-create function public.gugudan_finish(p_student integer,p_id uuid,p_ended_early boolean,p_events jsonb) returns void
+create or replace function public.gugudan_finish(p_student integer,p_id uuid,p_ended_early boolean,p_events jsonb) returns void
 language plpgsql security invoker set search_path='' as $$
 declare r public.gugudan_runs; p public.gugudan_players; e jsonb; old jsonb; recent jsonb;
  a integer; b integer; c integer; d integer; answer integer; ms integer; kind text; fact text; question_key text; previous_fact text; previous_correct boolean:=true;
@@ -122,7 +64,8 @@ begin
  update public.gugudan_players set records=p.records,sessions=p.sessions,best=p.best,ordinal=p.ordinal where student_number=p_student;
  update public.gugudan_runs set finished_at=clock_timestamp(),payload_hash=event_hash where id=p_id;
 end; $$;
-create function public.gugudan_capture_weekly_leader() returns trigger
+
+create or replace function public.gugudan_capture_weekly_leader() returns trigger
 language plpgsql security invoker set search_path='' as $$
 declare latest jsonb; v_duration smallint; score integer; correct_count integer;
 begin
@@ -140,29 +83,71 @@ begin
       or excluded.score>public.gugudan_weekly_leaders.score;
  return new;
 end; $$;
-create trigger gugudan_players_capture_weekly_leader
-after update of sessions on public.gugudan_players
-for each row when(old.sessions is distinct from new.sessions)
-execute function public.gugudan_capture_weekly_leader();
 
-create function public.gugudan_teacher_records() returns jsonb
-language sql stable security invoker set search_path='' as $$
- select coalesce(jsonb_agg(jsonb_build_object(
-   'studentNumber',n,
-   'records',coalesce(p.records,'{}'),
-   'sessions',coalesce(p.sessions,'[]'),
-   'best',coalesce((select jsonb_agg(value order by key) from jsonb_each(p.best) where value->>'scoringVersion'='5'),'[]')) order by n),'[]')
- from generate_series(1,23) n left join public.gugudan_players p on p.student_number=n;
-$$;
-create function public.gugudan_teacher_reset(p_student integer) returns void
-language plpgsql security invoker set search_path='' as $$
-begin
- if p_student is null or p_student not between 1 and 23 then raise exception 'INVALID_STUDENT'; end if;
- delete from public.gugudan_runs where student_number=p_student;
- delete from public.gugudan_weekly_leaders where student_number=p_student;
- update public.gugudan_players set records='{}',sessions='[]',best='{}',ordinal=0 where student_number=p_student;
-end; $$;
-revoke all on function public.gugudan_profile(integer),public.gugudan_leaders(integer),public.gugudan_begin(integer,uuid,text,integer),public.gugudan_finish(integer,uuid,boolean,jsonb),public.gugudan_teacher_records(),public.gugudan_teacher_reset(integer) from public,anon,authenticated;
-grant execute on function public.gugudan_profile(integer),public.gugudan_leaders(integer),public.gugudan_begin(integer,uuid,text,integer),public.gugudan_finish(integer,uuid,boolean,jsonb),public.gugudan_teacher_records(),public.gugudan_teacher_reset(integer) to service_role;
-revoke all on function public.gugudan_capture_weekly_leader() from public,anon,authenticated;
+with ranked as (
+  select p.student_number,
+    (session.value->>'duration')::smallint as duration,
+    session.value as result,
+    r.finished_at,
+    row_number() over (
+      partition by p.student_number,(session.value->>'duration')::smallint
+      order by (session.value->>'score')::integer desc,r.finished_at
+    ) as rank
+  from public.gugudan_players p
+  cross join lateral jsonb_array_elements(p.sessions) session(value)
+  join public.gugudan_runs r on r.id=(session.value->>'id')::uuid and r.student_number=p.student_number
+  where session.value->>'mode'='rush'
+    and session.value->>'endedEarly'='true'
+    and session.value->>'scoringVersion'='5'
+    and r.finished_at is not null
+), better as (
+  select r.student_number,r.duration,r.result,r.finished_at
+  from ranked r join public.gugudan_players p on p.student_number=r.student_number
+  where r.rank=1
+    and (p.best->r.duration::text->>'scoringVersion' is distinct from '5'
+      or (r.result->>'score')::integer>(p.best->r.duration::text->>'score')::integer)
+), patches as (
+  select student_number,
+    jsonb_object_agg(duration::text,jsonb_build_object(
+      'duration',duration,
+      'score',(result->>'score')::integer,
+      'correct',(result->>'correct')::integer,
+      'achievedAt',finished_at,
+      'scoringVersion',5
+    )) as best
+  from better group by student_number
+)
+update public.gugudan_players p
+set best=p.best||patches.best
+from patches
+where p.student_number=patches.student_number;
+
+with ranked as (
+  select p.student_number,
+    (session.value->>'duration')::smallint as duration,
+    (session.value->>'score')::integer as score,
+    (session.value->>'correct')::integer as correct,
+    r.finished_at,
+    row_number() over (
+      partition by p.student_number,(session.value->>'duration')::smallint
+      order by (session.value->>'score')::integer desc,r.finished_at
+    ) as rank
+  from public.gugudan_players p
+  cross join lateral jsonb_array_elements(p.sessions) session(value)
+  join public.gugudan_runs r on r.id=(session.value->>'id')::uuid and r.student_number=p.student_number
+  where session.value->>'mode'='rush'
+    and session.value->>'endedEarly'='true'
+    and session.value->>'scoringVersion'='5'
+    and r.finished_at>now()-interval '7 days'
+)
+insert into public.gugudan_weekly_leaders(student_number,duration,score,correct,scoring_version,achieved_at)
+select student_number,duration,score,correct,5,finished_at from ranked where rank=1
+on conflict(student_number,duration) do update
+  set score=excluded.score,
+      correct=excluded.correct,
+      scoring_version=excluded.scoring_version,
+      achieved_at=excluded.achieved_at
+  where public.gugudan_weekly_leaders.achieved_at<=now()-interval '7 days'
+     or excluded.score>public.gugudan_weekly_leaders.score;
+
 commit;
