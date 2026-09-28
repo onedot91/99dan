@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Run, Screen } from '../types/game';
-import { GameAudio } from './audio';
-export function useGameAudio(run:Run|null,screen:Screen){
+import { COMBO_LADDER, GameAudio } from './audio';
+import type { Cue } from './audio';
+export function useGameAudio(run:Run|null,screen:Screen,resultCue:Cue='finish'){
   const engine=useRef<GameAudio|null>(null);
   const [enabled,setEnabled]=useState(false);
   const [available,setAvailable]=useState(true);
@@ -23,10 +24,11 @@ export function useGameAudio(run:Run|null,screen:Screen){
     if(previous.current===key)return;
     previous.current=key;
     if(!enabled)return;
-    if(screen==='result')engine.current?.play('finish');
-    else if(screen==='play'&&run?.phase==='correct')engine.current?.play(run.combo%5===0?'combo':'correct');
+    if(screen==='result')engine.current?.play(resultCue);
+    else if(screen==='play'&&run?.phase==='correct'&&run.combo%5===0)engine.current?.play('combo',Math.min(run.combo/5-1,3)*2);
+    else if(screen==='play'&&run?.phase==='correct')engine.current?.play('correct',COMBO_LADDER[(run.combo-1)%5]??0);
     else if(screen==='play'&&run?.phase==='wrong')engine.current?.play('wrong');
-  },[screen,run?.answered,run?.phase,run?.combo,enabled]);
+  },[screen,run?.answered,run?.phase,run?.combo,enabled,resultCue]);
   useEffect(()=>{
     const hide=()=>{if(document.hidden){engine.current?.mute();setEnabled(false);}};
     document.addEventListener('visibilitychange',hide);
@@ -36,5 +38,5 @@ export function useGameAudio(run:Run|null,screen:Screen){
     const active=engine.current;engine.current=null;
     if(active)void active.dispose();
   },[]);
-  return {enabled,available,pending,toggle,tap:()=>engine.current?.play('tap')};
+  return {enabled,available,pending,toggle,tap:()=>engine.current?.play('tap'),cue:(cue:Cue)=>engine.current?.play(cue)};
 }

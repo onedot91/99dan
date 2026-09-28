@@ -41,9 +41,25 @@ export function chooseFact(draw:Draw):Fact{
   for(const fact of pool){sample-=priority(draw.records[fact.id]);if(sample<=0)return fact;}
   return pool[0]??{id:'2×7',a:2,b:7};
 }
-export function levelFor(correct:number){
-  if(correct>=100)return {number:4,label:'구구단 마스터',next:100};
-  if(correct>=50)return {number:3,label:'도전자',next:100};
-  if(correct>=20)return {number:2,label:'연습생',next:50};
-  return {number:1,label:'새싹',next:20};
+export type Mastery='new'|'practicing'|'weak'|'mastered';
+export function masteryOf(record:FactRecord|undefined):Mastery{
+  if(!record)return 'new';
+  if(record.streak>=3)return 'mastered';
+  return isWeak(record)?'weak':'practicing';
+}
+export function masteredIds(records:Records):ReadonlySet<string>{
+  return new Set(FACTS.filter(f=>masteryOf(records[f.id])==='mastered').map(f=>f.id));
+}
+// Every level costs the same 15 lifetime correct answers (never a growing gap), and each
+// level grants one friend pick. Keep in sync with supabase/migrations/20260928000000_friends.sql.
+export const LEVEL_STEP=15;
+// Titles only name ranges of levels; they never change how fast levels come.
+export const TITLES=[[1,'초보 모험가'],[3,'숫자 탐험가'],[6,'곱셈 전사'],[10,'룬의 기사'],[15,'숫자 마법사'],[20,'곱셈 영웅'],[30,'별의 수호자'],[40,'전설의 대마법사'],[50,'곱셈 제왕']] as const;
+export type Level={readonly number:number;readonly label:string;readonly floor:number;readonly next:number|null};
+export function titleFor(level:number):string{
+  return TITLES.reduce<string>((found,[from,label])=>level>=from?label:found,TITLES[0][1]);
+}
+export function levelFor(correct:number):Level{
+  const number=Math.floor(Math.max(0,correct)/LEVEL_STEP)+1;
+  return {number,label:titleFor(number),floor:(number-1)*LEVEL_STEP,next:number*LEVEL_STEP};
 }

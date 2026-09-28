@@ -74,7 +74,12 @@ Deno.serve(async request=>{
     }
     const student=await identity(request.headers.get('X-Gugudan-Session'));
     if(student===null)return json({error:'SESSION_REQUIRED'},401);
-    if(data.action==='capabilities')return json({questionTypes:true});
+    if(data.action==='capabilities')return json({questionTypes:true,friends:true});
+    if(data.action==='saveFriends'){
+      const friends=data.friends,partner=data.partner;
+      if(!Array.isArray(friends)||friends.length>400||!friends.every(id=>typeof id==='string'&&/^[a-z]+(\.[a-z]+){0,3}$/.test(id))||(partner!==null&&typeof partner!=='string'))return json({error:'INVALID_FRIENDS'},400);
+      await rpc('gugudan_save_friends',{p_student:student,p_friends:friends,p_partner:partner});return json({ok:true});
+    }
     if(data.action==='profile')return json(await rpc('gugudan_profile',{p_student:student}));
     if(data.action==='leaders')return validDuration(data.duration)?json(await rpc('gugudan_leaders',{p_duration:data.duration})):json({error:'INVALID_DURATION'},400);
     if(data.action==='begin'&&validId(data.id)&&validDuration(data.duration)&&['rush','practice','weak'].includes(String(data.mode))){await rpc('gugudan_begin',{p_student:student,p_id:data.id,p_mode:data.mode,p_duration:data.duration});return json({ok:true});}

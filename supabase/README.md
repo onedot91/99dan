@@ -29,3 +29,9 @@
 설계 근거: https://supabase.com/docs/guides/api/securing-your-api 및 https://supabase.com/docs/guides/getting-started/api-keys
 
 클라이언트는 세션 만료401에서 같은 번호로 갱신하고1회 재시도합니다. 완료 기록은 탭 내 대기 큐로 다음 게임 중에도 재전송할 수 있습니다. 저장 실패가 표시된 상태에서 탭을 닫거나 새로고침하면 아직 서버에 도착하지 않은 대기 기록은 복구되지 않습니다.
+
+## 펫 나무 (2026-09-28, 미적용)
+
+`migrations/20260928000000_friends.sql`은 `gugudan_players`에 `friends`(jsonb 배열)와 `partner` 열을 추가합니다. 프로필·교사 조회에 펫 정보를 포함하고, 저장 RPC `gugudan_save_friends`를 추가합니다. 서버는 저장할 때 형식, 중복, 진화 순서(부모 보유), 개수를 확인합니다. 개수는 `1 + 누적 정답/15`를 넘을 수 없습니다. 교사 초기화(개별·전체)는 펫도 함께 지웁니다.
+
+적용 순서: 마이그레이션 적용 → `gugudan-api` Edge Function 재배포(`capabilities`에 `friends:true`, `saveFriends` 액션). 적용 전에는 앱이 펫을 브라우저 localStorage(`gugudan-rush.friends.<번호>`)에만 저장합니다. 적용 뒤 서버에 펫이 없으면, 레벨 한도 안에 있는 브라우저 기록을 한 번 서버로 올립니다.

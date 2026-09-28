@@ -2,16 +2,30 @@ import type { RushGame } from '../game/useRushGame';
 import { modeLabel } from '../types/game';
 import { NumberPad } from './NumberPad';
 import { Icon } from './Icon';
+import { FLAME, Sprite } from './Sprite';
+const MAX_BONUS_STEPS=5;
 export function PlayScreen({game:g}:{readonly game:RushGame}){
   const r=g.run;if(!r)return null;
   const seconds=Math.ceil(r.remaining/1000);
   const progress=r.mode==='rush'?r.remaining/(r.duration*60000):r.correct/r.limit;
   const combo=r.phase==='correct'&&r.combo>0&&r.combo%5===0;
-  const answer=<strong className={`question-blank${r.entry?'':' answer-placeholder'}`} aria-label={`입력한 답 ${r.entry||'없음'}`}>{r.entry||'?'}</strong>;
+  // Pips mirror the real scoring: the next correct answer earns +10 per pip.
+  const bonusSteps=Math.min(r.combo,MAX_BONUS_STEPS);
+  const tier=r.combo>=10?'blaze':r.combo>=5?'hot':'';
+  // Hit effects burst from the answer itself: shockwave rings plus sparks that arc and fall.
+  const hitFx=r.phase==='correct'?<span className="hit-fx" key={`fx:${r.answered}`} aria-hidden="true"><i className="shock"/><i className="shock late"/>{Array.from({length:12},(_,i)=><b key={i}/>)}</span>:null;
+  // Each typed digit is its own node so it can pop in as it lands.
+  const answer=<strong className={`question-blank${r.entry?'':' answer-placeholder'}`} aria-label={`입력한 답 ${r.entry||'없음'}`}>{r.entry?[...r.entry].map((d,i)=><span key={`${i}:${d}`} className="digit">{d}</span>):'?'}{hitFx}</strong>;
+  const justFilled=r.phase==='correct'&&r.combo<=MAX_BONUS_STEPS?bonusSteps-1:-1;
   const a=r.fact.a,b=r.fact.b;
-  return <main className={`play-screen ${r.phase}${combo?' combo-milestone':''}${r.phase==='wrong'&&r.penalty===0?' score-floor':''}${r.question.kind==='compare'?' comparison-play':''}`}>
+  return <main className={`play-screen ${r.phase}${tier?` tier-${tier}`:''}${combo?' combo-milestone':''}${r.phase==='wrong'&&r.penalty===0?' score-floor':''}${r.question.kind==='compare'?' comparison-play':''}`}>
     <div className="play-top">
       <span className="play-mode"><Icon name="flag"/>{modeLabel(r.mode,r.duration)}</span>
+      <div className={`combo-meter ${tier}`} aria-label={`연속 정답 ${r.combo}개, 다음 보너스 ${bonusSteps*10}점`}>
+        {tier&&<Sprite map={FLAME} className="combo-flame"/>}
+        <span className="combo-count" key={r.combo}><small>콤보</small>{r.combo}</span>
+        <span className="combo-pips" aria-hidden="true">{Array.from({length:MAX_BONUS_STEPS},(_,i)=><i key={i} className={`${i<bonusSteps?'on':''}${i===justFilled?' just':''}`}/>)}</span>
+      </div>
       {r.mode!=='rush'&&<span className="time"><Icon name="book"/>{Math.min(r.correct+Number(r.phase==='question'),r.limit)} / {r.limit}</span>}
       <div className="time-track" role="progressbar" aria-label={r.mode==='rush'?'남은 시간':'연습 진행'} aria-valuenow={r.mode==='rush'?seconds:r.correct} aria-valuemin={0} aria-valuemax={r.mode==='rush'?r.duration*60:r.limit}><span style={{transform:`scaleX(${progress})`}}/></div>
     </div>
@@ -21,14 +35,14 @@ export function PlayScreen({game:g}:{readonly game:RushGame}){
           <h1 className="comparison-heading">두 식의 결과를 비교하세요</h1>
           <div className="comparison-layout">
             <div className="comparison-fact" aria-label={`왼쪽 식 ${a} 곱하기 ${b}`}>{a} × {b}</div>
-            <div className="compare-pad" role="group" aria-label="두 식 사이에 들어갈 기호 선택">{(['<','=','>'] as const).map((key,index)=><button key={key} disabled={r.phase!=='question'} aria-label={key==='<'?'왼쪽이 작다':key==='='?'두 식이 같다':'왼쪽이 크다'} className={r.phase!=='question'&&r.entry===String(index+1)?'selected':''} onClick={()=>g.input(key)}>{key}</button>)}</div>
+            <div className="compare-pad" role="group" aria-label="두 식 사이에 들어갈 기호 선택">{(['<','=','>'] as const).map((key,index)=><button key={key} disabled={r.phase!=='question'} aria-label={key==='<'?'왼쪽이 작다':key==='='?'두 식이 같다':'왼쪽이 크다'} className={r.phase!=='question'&&r.entry===String(index+1)?'selected':''} onClick={()=>g.input(key)}>{key}{r.entry===String(index+1)&&hitFx}</button>)}</div>
             <div className="comparison-fact" aria-label={`오른쪽 식 ${r.question.other?.a} 곱하기 ${r.question.other?.b}`}>{r.question.other?.a} × {r.question.other?.b}</div>
           </div>
         </>
           :<h1 className="equation" aria-label={r.question.kind==='product'?`${a} 곱하기 ${b}`:`${a} 곱하기 ${b}, 빈칸 채우기`}>{r.question.kind==='missing-a'?answer:a}<span>×</span>{r.question.kind==='missing-b'?answer:b}<span>=</span>{r.question.kind==='product'?answer:a*b}</h1>}
       </div>
-      <div className="answer-feedback" role="status" aria-live="polite">{r.phase==='question'?'':r.feedback}</div>
-      {r.phase==='correct'&&<div className="pixel-sparks" key={r.answered} aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/></div>}
+      <div className="answer-feedback" role="status" aria-live="polite" key={`feedback:${r.answered}`}>{r.phase==='question'?'':r.feedback}</div>
+      {combo&&<div className="combo-banner" key={`banner:${r.answered}`} aria-hidden="true"><strong>{r.combo}</strong> 콤보!</div>}
     </section>
     {r.question.kind!=='compare'&&<div className="keypad-area"><NumberPad onInput={g.input} disabled={r.phase!=='question'} canSubmit={r.entry.length>0}/></div>}
   </main>;

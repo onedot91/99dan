@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { RushGame } from '../game/useRushGame';
 import { TABLES } from '../types/game';
 import { Icon } from './Icon';
-import { PixelArt } from './PixelArt';
 import { Pager } from './Pager';
 export function SetupScreen({game:g}:{readonly game:RushGame}){
   const [page,setPage]=useState(0);
@@ -18,7 +17,7 @@ export function SetupScreen({game:g}:{readonly game:RushGame}){
   }
   return <main className="setup-screen weak-screen">
     <div className="screen-heading"><h1>약점 연습</h1></div>
-    {g.weakUnlocked?<><div className="fact-list">{g.weak.slice(currentPage*6,currentPage*6+6).map(f=><span key={f.id}>{f.a} × {f.b}</span>)}</div><Pager page={currentPage} count={pageCount} onPage={setPage}/></>:<div className="empty-state weak-locked"><PixelArt/><p>틀린 문제 {Math.min(g.totalWrong,5)} / 5개</p><p>5개를 틀리면 약점 연습이 열려요.</p></div>}
+    {g.weakUnlocked?<><div className="fact-list">{g.weak.slice(currentPage*6,currentPage*6+6).map(f=><span key={f.id}>{f.a} × {f.b}</span>)}</div><Pager page={currentPage} count={pageCount} onPage={setPage}/></>:<div className="empty-state weak-locked"><p>틀린 문제 {Math.min(g.totalWrong,5)} / 5개</p><p>5개를 틀리면 약점 연습이 열려요.</p></div>}
     <button className="primary-button" disabled={!g.weakUnlocked} onClick={()=>g.start('weak')}>{g.weakUnlocked?'연습 시작':'틀린 문제 5개를 모으면 시작할 수 있어요'}{g.weakUnlocked&&<Icon name="arrow"/>}</button>
   </main>;
 }

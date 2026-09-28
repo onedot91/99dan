@@ -1,61 +1,118 @@
-.screen-content{animation:page-enter var(--enter) var(--ease)}
-.correct .question-content{animation:correct-pop 300ms var(--ease)}
-.wrong .question-content{animation:wrong-nudge 220ms var(--ease)}
-.wrong .question-area{outline:var(--ledge) solid var(--coral);outline-offset:calc(-1 * var(--ledge))}
-.wrong .score-display strong{animation:score-drop 320ms var(--ease)}
-.wrong .score-loss{animation:loss-arrive 320ms var(--ease)}
-.header-score.wrong:not(.score-floor) strong{animation:score-drop 320ms var(--ease)}
-.header-score.wrong .score-loss{animation:loss-arrive 320ms var(--ease)}
-.combo-milestone .combo{animation:combo-pop 380ms var(--ease)}
-.trophy-celebration{animation:trophy-arrive 500ms var(--ease) both}
-.trophy-celebration .trophy-body{transform-box:fill-box;transform-origin:50% 85%;animation:trophy-cheer 3200ms ease-in-out 500ms infinite}
-.trophy-particles i{animation:trophy-confetti 3200ms ease-out 500ms infinite}
+/* Retro motion: stepped timing reads as sprite frames. Only opacity/transform animate. */
+.screen-content{animation:page-enter var(--enter) steps(3,end)}
+/* Home */
+.start-cursor{animation:cursor-blink 1000ms steps(1,end) infinite}
+/* Play: every correct answer gets a local hit, never a full-screen effect. */
+.correct .question-content{animation:hit-recoil 340ms steps(6,end)}
+.correct .question-area{outline:var(--px) solid var(--mint);outline-offset:calc(-3 * var(--px))}
+.correct .answer-feedback{animation:points-float 450ms steps(6,end) both}
+.wrong .question-content{animation:wrong-nudge 220ms steps(4,end)}
+.wrong .question-area{outline:var(--px) solid var(--coral);outline-offset:calc(-3 * var(--px))}
+.wrong .answer-feedback{animation:loss-arrive 320ms steps(4,end)}
+.wrong .score-display strong,.header-score.wrong:not(.score-floor) strong{animation:score-drop 320ms steps(4,end)}
+.wrong .score-loss,.header-score.wrong .score-loss{animation:loss-arrive 320ms steps(4,end)}
+.combo-count{animation:count-bump 240ms steps(3,end)}
+.combo-flame{animation:flame-arrive 300ms steps(3,end)}
+.combo-milestone .question-area{outline-color:var(--yellow)}
+.combo-milestone .question-content{animation:power-hit 420ms steps(7,end)}
+/* Hit effects live inside the answer box / chosen symbol so they burst from what was answered. */
+.question-blank,.compare-pad button{position:relative}
+.hit-fx{position:absolute;inset:0;pointer-events:none;z-index:4}
+.hit-fx .shock{position:absolute;inset:-6px;border:var(--px) solid var(--paper-hi);animation:shockwave 320ms steps(5,end) both}
+.hit-fx .shock.late{border-color:var(--mint);animation-delay:70ms}
+.tier-hot .hit-fx .shock.late{border-color:var(--yellow)}
+.tier-blaze .hit-fx .shock.late{border-color:var(--orange)}
+.hit-fx b{position:absolute;left:50%;top:50%;width:10px;height:10px;background:var(--mint);box-shadow:0 0 0 2px var(--outline);animation:spark-arc 440ms steps(7,end) both}
+.hit-fx b:nth-child(3n+1){background:var(--yellow)}
+.hit-fx b:nth-child(3n+2){background:var(--paper-hi);width:6px;height:6px}
+.tier-hot .hit-fx b:nth-child(3n){background:var(--orange)}
+.tier-blaze .hit-fx b:nth-child(3n){background:var(--red)}
+.hit-fx b:nth-child(1){--x:84px;--y:-70px}.hit-fx b:nth-child(2){--x:-84px;--y:-70px}
+.hit-fx b:nth-child(3){--x:120px;--y:-20px}.hit-fx b:nth-child(4){--x:-120px;--y:-20px}
+.hit-fx b:nth-child(5){--x:40px;--y:-104px}.hit-fx b:nth-child(6){--x:-40px;--y:-104px}
+.hit-fx b:nth-child(7){--x:140px;--y:30px}.hit-fx b:nth-child(8){--x:-140px;--y:30px}
+.hit-fx b:nth-child(9){--x:64px;--y:60px}.hit-fx b:nth-child(10){--x:-64px;--y:60px}
+.hit-fx b:nth-child(11){--x:104px;--y:-96px}.hit-fx b:nth-child(12){--x:-104px;--y:-96px}
+.combo-milestone .hit-fx b{width:14px;height:14px;animation-duration:440ms}
+.combo-milestone .hit-fx .shock{inset:-10px}
+/* The answer box flashes white for a frame, then settles into its result colour. */
+.correct .question-blank::after,.correct .compare-pad button.selected::after{content:"";position:absolute;inset:0;background:var(--paper-hi);animation:flash-out 180ms steps(2,end) both}
+.digit{display:inline-block;animation:digit-in 130ms steps(3,end)}
+.question .question-content{animation:q-in 110ms steps(2,end)}
+.wrong .question-blank,.wrong .compare-pad button.selected{animation:blank-shake 260ms steps(6,end)}
+.combo-pips i.just{animation:pip-pop 300ms steps(4,end)}
+.header-score.gained strong{animation:score-bump 260ms steps(4,end)}
+.score-gain{display:inline-grid;place-items:center;padding:var(--s1) var(--s2);background:var(--yellow);color:var(--ink);box-shadow:var(--ring);font-family:var(--mono);font-size:var(--text-lg);font-style:normal;animation:gain-pop 440ms steps(6,end) both}
+/* Every fifth answer: the question panel alone jolts and pulses gold once. */
+.combo-milestone .question-area{animation:panel-jolt 280ms steps(6,end)}
+.combo-milestone .question-area::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--yellow);animation:gold-pulse 360ms steps(4,end) both}
+.tier-hot .answer-feedback{font-size:calc(var(--text-title) * 1.15)}
+.tier-blaze .answer-feedback{font-size:calc(var(--text-title) * 1.3);color:var(--orange)}
+.combo-banner{position:absolute;top:var(--s6);left:50%;z-index:3;display:flex;align-items:baseline;gap:var(--s2);padding:var(--s2) var(--s5);background:var(--yellow);color:var(--ink);font-size:var(--text-xl);white-space:nowrap;box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring),var(--drop);transform:translateX(-50%);pointer-events:none;animation:banner-slam 440ms steps(6,end) both}
+.combo-banner strong{font-size:var(--text-title)}
+/* Results */
+.trophy-celebration{animation:trophy-arrive 500ms steps(5,end) both}
+.trophy-celebration .trophy-body{transform-box:fill-box;transform-origin:50% 85%;animation:trophy-cheer 3200ms steps(16,end) 500ms infinite}
+.trophy-particles i{animation:trophy-confetti 3200ms steps(12,end) 500ms infinite}
 .trophy-particles i:nth-child(1){--tx:-86px;--ty:-40px}
 .trophy-particles i:nth-child(2){--tx:-58px;--ty:-70px}
 .trophy-particles i:nth-child(3){--tx:5px;--ty:-78px}
 .trophy-particles i:nth-child(4){--tx:76px;--ty:-58px}
 .trophy-particles i:nth-child(5){--tx:-92px;--ty:22px}
 .trophy-particles i:nth-child(6){--tx:86px;--ty:20px}
-.hero-scene .pixel-art{animation:hero-walk 7200ms linear infinite}
-.hero-scene .hero-character{animation:hero-step 480ms ease-in-out infinite}
-.hero-scene .hero-foot-left{animation:hero-foot-left 480ms ease-in-out infinite}
-.hero-scene .hero-foot-right{animation:hero-foot-right 480ms ease-in-out infinite}
-.hero-scene .hero-eyes{transform-box:fill-box;transform-origin:center;animation:hero-blink 5200ms steps(1,end) infinite}
-.hero-scene .hero-sparkle-left{animation:hero-twinkle 2400ms ease-in-out infinite}
-.hero-scene .hero-sparkle-right{animation:hero-twinkle 2400ms ease-in-out 1200ms infinite}
-.pixel-sparks{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
-.pixel-sparks i{position:absolute;left:50%;top:50%;width:var(--s2);height:var(--s2);background:var(--mint-shade);animation:spark 420ms ease-out both;--x:80px;--y:-64px}
-.pixel-sparks i:nth-child(2){--x:-80px;--y:-64px;background:var(--gold-shade)}
-.pixel-sparks i:nth-child(3){--x:104px;--y:16px}
-.pixel-sparks i:nth-child(4){--x:-104px;--y:16px;background:var(--gold-shade)}
-.pixel-sparks i:nth-child(5){--x:48px;--y:72px}
-.pixel-sparks i:nth-child(6){--x:-48px;--y:72px;background:var(--gold-shade)}
-.combo-milestone .question-area{outline:var(--ledge) solid var(--yellow);outline-offset:calc(-1 * var(--ledge))}
-.combo-milestone .pixel-sparks i{width:var(--s3);height:var(--s3);animation-duration:440ms}
+.trophy-particles i:nth-child(7){--tx:-40px;--ty:-92px}
+.trophy-particles i:nth-child(8){--tx:44px;--ty:-88px}
+.trophy-particles i:nth-child(9){--tx:-104px;--ty:-12px}
+.trophy-particles i:nth-child(10){--tx:104px;--ty:-16px}
+.stats-grid .stat{animation:chip-pop 260ms steps(3,end) both}
+.stats-grid .stat:nth-child(1){animation-delay:120ms}.stats-grid .stat:nth-child(2){animation-delay:220ms}
+.result-score strong{display:inline-block;animation:score-slam 300ms steps(4,end) 920ms}
+@keyframes score-slam{0%{transform:scale(1)}35%{transform:scale(1.25) rotate(-2deg)}70%{transform:scale(.96)}100%{transform:none}}
+.record-ribbon{animation:stamp-in 420ms steps(5,end) 350ms both}
+.result-goal{animation:page-enter 300ms steps(3,end) 900ms both}
+.exp-fill-animated{animation:exp-fill 900ms steps(12,end) 500ms both}
+.exp-card{animation:page-enter 240ms steps(3,end) 200ms both}
+.level-up .level-up-text{animation:stamp-in 360ms steps(5,end) 1300ms both}
+.level-up .level-number{animation:count-bump 300ms steps(3,end) 1300ms}
+.mastered-card{animation:page-enter 240ms steps(3,end) 400ms both}
+.mastered-card li{animation:chip-pop 240ms steps(3,end) both}
+.mastered-card li:nth-child(1){animation-delay:600ms}.mastered-card li:nth-child(2){animation-delay:680ms}.mastered-card li:nth-child(3){animation-delay:760ms}
+.mastered-card li:nth-child(4){animation-delay:840ms}.mastered-card li:nth-child(5){animation-delay:920ms}.mastered-card li:nth-child(6){animation-delay:1000ms}.mastered-card li:nth-child(7){animation-delay:1080ms}
 @keyframes page-enter{from{opacity:0;transform:translateY(var(--s2))}to{opacity:1;transform:translateY(0)}}
-@keyframes correct-pop{0%{transform:scale(.92) translateY(3px)}35%{transform:scale(1.07) translateY(-2px)}65%{transform:scale(.99)}100%{transform:scale(1)}}
-@keyframes wrong-nudge{25%{transform:translateX(calc(-1 * var(--s1)))}75%{transform:translateX(var(--s1))}}
+@keyframes hit-recoil{0%{transform:scale(.9) translateY(4px)}28%{transform:scale(1.1) translateY(-4px)}56%{transform:scale(.98) translateY(0)}100%{transform:none}}
+@keyframes power-hit{0%{transform:scale(.86)}25%{transform:scale(1.14)}50%{transform:scale(.96)}75%{transform:scale(1.03)}100%{transform:none}}
+@keyframes wrong-nudge{25%{transform:translateX(calc(-2 * var(--px)))}75%{transform:translateX(calc(2 * var(--px)))}}
+@keyframes points-float{0%{opacity:0;transform:translateY(12px) scale(.6)}20%{opacity:1;transform:translateY(0) scale(1.25)}40%{transform:translateY(-4px) scale(1)}100%{opacity:1;transform:translateY(-16px)}}
 @keyframes score-drop{0%{transform:translateY(calc(-1 * var(--s2)));opacity:.4}60%{transform:translateY(var(--s1));opacity:1}100%{transform:none}}
 @keyframes loss-arrive{0%{transform:translateY(calc(-1 * var(--s3)));opacity:0}70%{transform:translateY(var(--s1));opacity:1}100%{transform:none}}
-@keyframes combo-pop{35%{transform:scale(1.22)}65%{transform:scale(.97)}}
+@keyframes count-bump{0%{transform:scale(1)}40%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes flame-arrive{0%{transform:scale(0) translateY(8px)}60%{transform:scale(1.3)}100%{transform:none}}
+@keyframes spark{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(.5)}}
+@keyframes spark-arc{0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}55%{opacity:1;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--x) * 1.15),calc(-50% + var(--y) + 40px)) scale(.6)}}
+@keyframes shockwave{0%{opacity:1;transform:scale(.6)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes flash-out{from{opacity:1}to{opacity:0}}
+@keyframes digit-in{0%{transform:scale(1.7) translateY(-10%)}60%{transform:scale(.9)}100%{transform:none}}
+@keyframes q-in{0%{transform:scale(.94) translateY(-6px)}100%{transform:none}}
+@keyframes blank-shake{0%,100%{transform:none}17%{transform:translateX(-6px) rotate(-3deg)}33%{transform:translateX(6px) rotate(3deg)}50%{transform:translateX(-4px)}67%{transform:translateX(4px)}83%{transform:translateX(-2px)}}
+@keyframes pip-pop{0%{transform:scale(2);filter:brightness(2)}60%{transform:scale(.8)}100%{transform:none}}
+@keyframes score-bump{0%{transform:scale(1)}35%{transform:scale(1.35) translateY(-3px)}100%{transform:none}}
+@keyframes gain-pop{0%{opacity:0;transform:translateY(10px) scale(.5)}25%{opacity:1;transform:translateY(-4px) scale(1.2)}45%{transform:none}85%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
+@keyframes panel-jolt{0%,100%{transform:none}17%{transform:translate(-6px,3px) rotate(-.6deg)}33%{transform:translate(6px,-3px) rotate(.6deg)}50%{transform:translate(-4px,2px)}67%{transform:translate(3px,-1px)}83%{transform:translate(-1px,0)}}
+@keyframes gold-pulse{0%{opacity:.35}100%{opacity:0}}
+@keyframes banner-slam{0%{opacity:0;transform:translateX(-50%) scale(2.2)}30%{opacity:1;transform:translateX(-50%) scale(.9)}45%{transform:translateX(-50%) scale(1.05)}85%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-8px) scale(1)}}
 @keyframes trophy-arrive{from{opacity:0;transform:translateY(var(--s4)) scale(.9)}to{opacity:1;transform:none}}
-@keyframes trophy-cheer{0%,55%,100%{transform:none}9%{transform:translateY(-4px) rotate(-8deg)}18%{transform:translateY(-8px) rotate(8deg)}27%{transform:translateY(-3px) rotate(-6deg)}36%{transform:translateY(-6px) rotate(5deg)}45%{transform:translateY(0) rotate(-2deg)}}
+/* Units are trophy sprite pixels (the SVG is 20 units wide), so keep moves under one pixel. */
+@keyframes trophy-cheer{0%,55%,100%{transform:none}9%{transform:translateY(-.5px) rotate(-6deg)}18%{transform:translateY(-1px) rotate(6deg)}27%{transform:translateY(-.4px) rotate(-4deg)}36%{transform:translateY(-.8px) rotate(3deg)}45%{transform:rotate(-1deg)}}
 @keyframes trophy-confetti{0%,8%{opacity:0;transform:translate(0,0) scale(.2)}17%{opacity:1}36%{opacity:1;transform:translate(var(--tx),var(--ty)) scale(1) rotate(45deg)}50%,100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.5) rotate(90deg)}}
+@keyframes stamp-in{0%{opacity:0;transform:scale(2.4) rotate(-6deg)}60%{opacity:1;transform:scale(.92) rotate(-3deg)}100%{opacity:1;transform:scale(1) rotate(-3deg)}}
+@keyframes exp-fill{from{transform:scaleX(var(--from))}to{transform:scaleX(var(--to))}}
+@keyframes chip-pop{0%{opacity:0;transform:scale(.4)}70%{opacity:1;transform:scale(1.2)}100%{opacity:1;transform:none}}
 @keyframes hero-walk{0%,2%{transform:translateX(0) scaleX(1)}47%{transform:translateX(calc(100cqw - 100%)) scaleX(1)}50%{transform:translateX(calc(100cqw - 100%)) scaleX(-1)}97%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(0) scaleX(1)}}
-@keyframes hero-step{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-@keyframes hero-foot-left{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes hero-foot-right{0%,100%{transform:translateY(-4px)}50%{transform:translateY(0)}}
-@keyframes hero-blink{0%,93%,97%,100%{transform:scaleY(1)}94%,96%{transform:scaleY(.12)}}
-@keyframes hero-twinkle{0%,100%{opacity:1}50%{opacity:.35}}
-@keyframes spark{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--x),var(--y)) scale(.4)}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.pixel-sparks{display:none}.hero-scene .pixel-art{left:50%;transform:translateX(-50%)}}
-.correct .question-content{animation:hit-recoil 340ms var(--ease)}
-.correct .answer-display strong{animation:answer-hit 320ms var(--ease)}
-.correct .question-area{outline:var(--ledge) solid var(--mint);outline-offset:calc(-1 * var(--ledge))}
-.combo-milestone .question-area{outline-color:var(--yellow)}
-.combo-milestone .question-content{animation:power-hit 420ms var(--ease)}
-.pixel-sparks i:nth-child(7){--x:124px;--y:-24px;background:var(--gold-shade)}
-.pixel-sparks i:nth-child(8){--x:-124px;--y:-24px}
-@keyframes hit-recoil{0%{transform:scale(.9) translateY(4px)}28%{transform:scale(1.1) translateY(-3px)}56%{transform:scale(.98) translateY(1px)}100%{transform:none}}
-@keyframes answer-hit{0%{transform:translateY(5px)}30%{transform:translateY(-5px)}65%{transform:translateY(1px)}100%{transform:none}}
-@keyframes power-hit{0%{transform:scale(.86)}25%{transform:scale(1.12)}50%{transform:scale(.97)}75%{transform:scale(1.02)}100%{transform:none}}
+@keyframes hero-step{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
+@keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .hit-fx,.combo-banner,.trophy-particles,.score-gain{display:none}
+  .hero-scene .hero-friend{left:50%;transform:translateX(-50%)}
+  .record-ribbon,.level-up-text{transform:rotate(-3deg)}
+}

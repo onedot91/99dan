@@ -19,6 +19,10 @@ import { TeacherScreen } from './components/TeacherScreen';
 import './teacher.css';
 import { loadStudentNumber } from './game/studentNumber';
 import { cloudConfigured } from './cloud/client';
+import { useRunRewards } from './game/useRunRewards';
+import { useFriends } from './game/useFriends';
+import { FriendsScreen } from './components/FriendsScreen';
+import './friends.css';
 export function App(){
   const [studentNumber,setStudentNumber]=useState(loadStudentNumber);
   const [teacherToken,setTeacherToken]=useState<string|null>(null);
@@ -27,7 +31,9 @@ export function App(){
 function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;readonly onReselect:()=>void}){
   const g=useRushGame(!cloudConfigured);
   const cloud=useSharedGame(studentNumber,g);
-  const audio=useGameAudio(g.run,g.screen);
+  const rewards=useRunRewards(g,cloud.profile?.best);
+  const friends=useFriends(studentNumber,g.totalCorrect,cloud);
+  const audio=useGameAudio(g.run,g.screen,rewards?.newRecord?'record':rewards?.levelUp?'levelup':'finish');
   const content=useRef<HTMLDivElement>(null);
   const numberChangeClickCount=useRef(0);
   useEffect(()=>{content.current?.focus({preventScroll:true});},[g.screen]);
@@ -44,7 +50,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
     <header className="header">
       <button className="brand brand-button" aria-label={g.screen==='play'?'연습을 마치고 기록 보기':'번호 변경하려면 20번 누르기'} onClick={handleBrandClick}><span className="brand-mark">{cloud.profile?.avatar?<img src={cloud.profile.avatar} alt="" width="40" height="40"/>:<Icon name="bolt" size={24}/>}</span><span className="student-number">{studentNumber}번</span></button>
       {g.screen==='play'&&g.run&&<div className="header-status">
-        <span className={`header-score score-display${g.run.phase==='wrong'?' wrong':''}${g.run.phase==='wrong'&&g.run.penalty===0?' score-floor':''}`}>점수 <strong>{g.run.score.toLocaleString()}</strong>{g.run.phase==='wrong'&&g.run.penalty>0&&<em className="score-loss" key={g.run.answered} aria-hidden="true">-{g.run.penalty}</em>}</span>
+        <span className={`header-score score-display${g.run.phase==='wrong'?' wrong':''}${g.run.phase==='correct'?' gained':''}${g.run.phase==='wrong'&&g.run.penalty===0?' score-floor':''}`}>점수 <strong key={g.run.score}>{g.run.score.toLocaleString()}</strong>{g.run.phase==='correct'&&<em className="score-gain" key={g.run.answered} aria-hidden="true">{/^\+\d+/.exec(g.run.feedback)?.[0]}</em>}{g.run.phase==='wrong'&&g.run.penalty>0&&<em className="score-loss" key={g.run.answered} aria-hidden="true">-{g.run.penalty}</em>}</span>
         {headerTimer&&<div className="header-timer" role="timer" aria-label="남은 시간" aria-live="off"><Icon name="clock"/><span>{headerTimer}</span></div>}
       </div>}
       <div className="header-actions">
@@ -53,11 +59,12 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       </div>
     </header>
     <div className="screen-content" ref={content} tabIndex={-1} key={g.screen}>
-      {g.screen==='home'&&(cloud.blocking?<main className="connection-screen">{cloud.state==='loading'?<p role="status">불러오는 중</p>:<button className="primary-button" onClick={()=>void cloud.reload()}>연결 재시도</button>}</main>:<HomeScreen game={g}/>)}
+      {g.screen==='home'&&(cloud.blocking?<main className="connection-screen">{cloud.state==='loading'?<p role="status">불러오는 중</p>:<button className="primary-button" onClick={()=>void cloud.reload()}>연결 재시도</button>}</main>:<HomeScreen game={g} friends={friends}/>)}
       {g.screen==='hall'&&<HallScreen ready={cloud.ready} studentNumber={studentNumber} initialDuration={g.run?.duration??g.duration}/>}
       {g.screen==='play'&&<PlayScreen game={g}/>}
       {(g.screen==='tables'||g.screen==='weak')&&<SetupScreen game={g}/>}
-      {g.screen==='result'&&<ResultScreen game={g} syncState={cloud.state} retrySave={cloud.retrySave}/>}
+      {g.screen==='result'&&<ResultScreen game={g} rewards={rewards} friends={friends} syncState={cloud.state} retrySave={cloud.retrySave}/>}
+      {g.screen==='friends'&&<FriendsScreen friends={friends} onCelebrate={()=>audio.cue('friend')}/>}
       {g.screen==='records'&&<RecordsScreen game={g} best={cloud.profile?.best}/>}
     </div>
   </div>;

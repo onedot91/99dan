@@ -1,12 +1,18 @@
 .hall-screen{width:100%;max-width:680px;margin:auto;display:grid;gap:var(--s6);padding:var(--s3) 0}
 .hall-screen .pixel-art{height:84px;width:120px}
 .podium{display:grid;gap:var(--s3);list-style:none;padding:0;margin:0}
-.podium li{display:flex;align-items:center;gap:var(--s4);min-height:84px;padding:var(--s3) var(--s5);border:var(--line) solid var(--border);background:var(--panel);border-radius:var(--r-small)}
-.podium li.first{border-color:var(--yellow)}
-.podium .rank{font-family:var(--mono);font-size:var(--text-title);color:var(--yellow);min-width:1ch}
-.podium li>span{flex:1;font-size:var(--text-lg)}
+.podium{gap:var(--s4)}
+.podium li{display:flex;align-items:center;gap:var(--s4);min-height:84px;padding:var(--s3) var(--s5);background:var(--panel);box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop)}
+.podium li.first{background:var(--panel-raised);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),inset 0 0 0 var(--px) var(--yellow),var(--ring),var(--drop)}
+/* Own row: a mint bar on the left edge, no outline that spills onto neighbours. */
+.podium li.me{background-image:linear-gradient(90deg,var(--mint) 0 var(--s2),rgb(94 224 138 / .12) var(--s2))}
+.podium .rank{display:grid;justify-items:center;align-content:center;gap:2px;font-family:var(--mono);font-size:var(--text-title);line-height:1;color:var(--muted);min-width:44px;text-shadow:var(--text-outline)}
+.podium .first .rank{color:var(--yellow)}.podium .second .rank{color:var(--silver)}.podium .third .rank{color:var(--bronze)}
+.rank-crown{width:22px;height:16px}
+.me-tag{display:inline-block;margin-left:var(--s3);padding:2px var(--s2);vertical-align:middle;background:var(--mint);color:var(--ink);font-style:normal;font-size:13pt;line-height:1.2;box-shadow:inset 0 -2px 0 var(--mint-shade)}
+.podium li>span{flex:1;display:flex;align-items:center;font-size:var(--text-lg);white-space:nowrap}
 .podium b{font-family:var(--mono);font-size:var(--text-xl)}
-.podium img{object-fit:contain}
+.podium img{flex:none;object-fit:cover;image-rendering:auto;box-shadow:0 0 0 var(--px) var(--outline)}
 .brand-mark img{width:100%;height:100%;object-fit:contain}
 .sync-status{text-align:center;font-size:var(--text-base);color:var(--muted)}
 .connection-screen{display:grid;place-items:center}.connection-screen button{max-width:320px}

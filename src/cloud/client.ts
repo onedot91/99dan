@@ -1,5 +1,5 @@
 import type { Duration, Run } from '../types/game';
-import type { SharedProfile, Standing } from './types';
+import type { FriendState, SharedProfile, Standing } from './types';
 import { object, profile, avatarPath } from './parse';
 const env=import.meta.env;
 const endpoint=env.VITE_GUGUDAN_API_URL;
@@ -42,9 +42,13 @@ async function authenticated(studentNumber:number,action:string,payload:object={
 export async function loadProfile(studentNumber:number):Promise<SharedProfile>{
   return profile(await authenticated(studentNumber,'profile'),studentNumber);
 }
-export async function supportsQuestionTypes(studentNumber:number):Promise<boolean>{
-  try{const data=object(await authenticated(studentNumber,'capabilities'));return data.questionTypes===true;}
-  catch{return false;}
+export type Capabilities={readonly questionTypes:boolean;readonly friends:boolean};
+export async function loadCapabilities(studentNumber:number):Promise<Capabilities>{
+  try{const data=object(await authenticated(studentNumber,'capabilities'));return {questionTypes:data.questionTypes===true,friends:data.friends===true};}
+  catch{return {questionTypes:false,friends:false};}
+}
+export async function saveFriends(studentNumber:number,state:FriendState):Promise<void>{
+  await authenticated(studentNumber,'saveFriends',{friends:state.owned,partner:state.partner});
 }
 export async function beginRun(studentNumber:number,run:Run):Promise<void>{await authenticated(studentNumber,'begin',{id:run.id,mode:run.mode,duration:run.duration});}
 export async function finishRun(studentNumber:number,run:Run):Promise<void>{await authenticated(studentNumber,'finish',{id:run.id,endedEarly:run.endedEarly,events:run.events});}

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RushGame } from '../game/useRushGame';
-import { beginRun, cloudConfigured, finishRun, loadProfile, supportsQuestionTypes } from './client';
+import { beginRun, cloudConfigured, finishRun, loadCapabilities, loadProfile } from './client';
 import type { SharedProfile, SyncState } from './types';
 import type { Run } from '../types/game';
 export function useSharedGame(studentNumber:number,game:RushGame){
   const [state,setState]=useState<SyncState>(cloudConfigured?'loading':'unconfigured');
   const [profile,setProfile]=useState<SharedProfile|null>(null);
+  const [friendsSync,setFriendsSync]=useState(false);
   const pending=useRef(new Map<string,Promise<void>>());
   const saved=useRef(new Set<string>());
   const outbox=useRef(new Map<string,Run>());
@@ -14,7 +15,7 @@ export function useSharedGame(studentNumber:number,game:RushGame){
   const reload=useCallback(async()=>{
     if(!cloudConfigured)return;
     setState('loading');
-    try{const [next,variants]=await Promise.all([loadProfile(studentNumber),supportsQuestionTypes(studentNumber)]);game.setVariantsEnabled(variants);setProfile(next);hydrate(next);setState('ready');}catch{setState('error');}
+    try{const [next,capabilities]=await Promise.all([loadProfile(studentNumber),loadCapabilities(studentNumber)]);game.setVariantsEnabled(capabilities.questionTypes);setFriendsSync(capabilities.friends&&next.friends!==null);setProfile(next);hydrate(next);setState('ready');}catch{setState('error');}
   },[studentNumber,hydrate]);
   useEffect(()=>{void reload();},[reload]);
   useEffect(()=>{
@@ -43,5 +44,5 @@ export function useSharedGame(studentNumber:number,game:RushGame){
     }catch{setState('error');}finally{busy.current=false;}
   };
   useEffect(()=>{if(game.screen==='result')void save();},[game.screen,game.run?.id]);
-  return {state,profile,reload,retrySave:save,ready:profile!==null,blocking:cloudConfigured&&!profile};
+  return {state,profile,friendsSync,reload,retrySave:save,ready:profile!==null,blocking:cloudConfigured&&!profile};
 }
