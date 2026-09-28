@@ -26,6 +26,15 @@ import './friends.css';
 export function App(){
   const [studentNumber,setStudentNumber]=useState(loadStudentNumber);
   const [teacherToken,setTeacherToken]=useState<string|null>(null);
+  useEffect(()=>{
+    const handleKeyDown=(event:KeyboardEvent)=>{
+      if(studentNumber===null||teacherToken!==null||event.key!=='Enter'||!event.altKey||!event.metaKey||event.ctrlKey||event.shiftKey)return;
+      event.preventDefault();
+      setStudentNumber(null);
+    };
+    window.addEventListener('keydown',handleKeyDown);
+    return ()=>window.removeEventListener('keydown',handleKeyDown);
+  },[studentNumber,teacherToken]);
   return teacherToken?<TeacherScreen token={teacherToken} onExit={()=>{setTeacherToken(null);setStudentNumber(null);}}/>:studentNumber===null?<StudentNumberScreen onConfirm={setStudentNumber} onTeacher={setTeacherToken}/>:<GameApp studentNumber={studentNumber} onReselect={()=>setStudentNumber(null)}/>;
 }
 function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;readonly onReselect:()=>void}){
