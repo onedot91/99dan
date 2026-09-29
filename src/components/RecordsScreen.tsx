@@ -21,16 +21,16 @@ export function RecordsScreen({game:g,best:sharedBest}:{readonly game:RushGame;r
       <button aria-pressed={view==='board'} onClick={()=>setView('board')}>구구단 도감</button>
     </div>
     <section className="records-summary">
-    <div className="screen-heading"><h1>나의 플레이 기록</h1></div>
+    <div className="screen-heading wide-only"><h1>나의 플레이 기록</h1></div>
     <LevelCard level={levelFor(g.totalCorrect)} exp={g.totalCorrect}/>
     <div className="duration-tabs" role="group" aria-label="도전 종목">
-      {DURATIONS.map(n=><button key={n} aria-pressed={duration===n} onClick={()=>setDuration(n)}>{n}분 도전</button>)}
+      {DURATIONS.map(n=><button key={n} aria-pressed={duration===n} onClick={()=>setDuration(n)}>{n}분<span className="wide-only"> 도전</span></button>)}
     </div>
     <div className="stats-grid">
-      <Stat icon="star" label={`${duration}분 최고 점수`} value={best===undefined?'—':best.score.toLocaleString()}/>
-      <Stat icon="target" label="맞힌 문제" value={`${best?.correct??0}개`}/>
+      <Stat icon="star" label="최고 점수" value={best===undefined?'—':best.score.toLocaleString()}/>
+      <Stat icon="target" label="정답 수" value={`${best?.correct??0}개`}/>
     </div>
-    <button className="primary-button" onClick={()=>g.weakUnlocked?g.setScreen('weak'):g.setScreen('tables')}>계속 연습하기<Icon name="arrow"/></button>
+    <button className="primary-button" onClick={()=>g.weakUnlocked?g.setScreen('weak'):g.setScreen('tables')}>연습하기<Icon name="arrow"/></button>
     </section>
     <section className="records-board" aria-labelledby="mastery-title"><h2 id="mastery-title">구구단 도감</h2><MasteryBoard records={g.records}/></section>
   </main>;

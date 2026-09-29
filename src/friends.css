@@ -19,6 +19,8 @@
 .pet-bubble{position:absolute;left:50%;bottom:calc(88% * var(--grow,1));translate:-50% 0;z-index:2;padding:2px var(--s2);border:0;background:var(--paper);color:var(--ink);font:inherit;font-size:var(--text-base);line-height:1.3;white-space:nowrap;box-shadow:var(--ring),0 calc(2 * var(--px)) 0 rgb(11 10 31 / .5);transform-origin:50% 100%;animation:bubble-pop 280ms steps(4,end) both}
 .pet-bubble::after{content:"";position:absolute;left:50%;top:100%;width:12px;height:var(--px);margin-left:-6px;background:var(--paper);box-shadow:calc(-1 * var(--px)) 0 0 var(--outline),var(--px) 0 0 var(--outline)}
 .pet-bubble::before{content:"";position:absolute;left:50%;top:calc(100% + var(--px));width:var(--px);height:var(--px);margin-left:-2px;background:var(--outline);box-shadow:-4px 0 0 var(--outline),4px 0 0 var(--outline),0 var(--px) 0 var(--outline)}
+/* The whole pet opens the picker too; the bubble stays the keyboard/screen-reader target. */
+.hero-friend.mood-excited{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .pet-bubble-button{cursor:pointer;animation:bubble-pop 280ms steps(4,end) both,bubble-nudge 900ms steps(6,end) 280ms infinite}
 .pet-bubble-button:hover{background:var(--paper-hi)}
 .mood-sleep .pet-bubble{background:none;color:var(--muted);box-shadow:none;font-size:var(--text-lg);left:70%;animation:bubble-float 1600ms steps(8,end) infinite}

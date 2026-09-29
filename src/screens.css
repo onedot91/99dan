@@ -34,7 +34,8 @@
 .best-flag em{position:absolute;bottom:calc(100% + var(--s1));left:50%;padding:2px var(--s2);background:var(--yellow);color:var(--ink);font-style:normal;font-size:var(--text-base);white-space:nowrap;box-shadow:var(--ring);transform:translateX(-50%);animation:flag-toast 1800ms steps(9,end) both}
 @keyframes flag-plant{0%{opacity:0;transform:translate(-4px,-24px)}60%{opacity:1;transform:translate(-4px,4px)}100%{opacity:1;transform:translateX(-4px)}}
 @keyframes flag-toast{0%{opacity:0;transform:translate(-50%,8px) scale(.6)}15%{opacity:1;transform:translate(-50%,0) scale(1.1)}25%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}
-.time-pet.leftward .friend-sprite{scale:-1 1}
+/* Pet art faces left; mirror it only when it walks right (practice mode). */
+.time-pet:not(.leftward) .friend-sprite{scale:-1 1}
 .time,.combo{display:flex;align-items:center;gap:var(--s2);white-space:nowrap}
 .time{font-family:var(--mono);font-size:var(--text-xl);color:var(--yellow);text-shadow:var(--text-outline)}
 .time-track{position:relative;flex:1 0 100%;height:var(--s4);background:var(--outline);box-shadow:var(--ring);overflow:hidden}
@@ -71,7 +72,8 @@
 .keypad-area{min-height:0;display:flex}
 .number-pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(48px,1fr));gap:var(--s4) var(--s4);width:100%;min-height:0;padding:var(--px) var(--px) calc(3 * var(--px))}
 .number-pad button{min-height:48px;display:grid;place-items:center;background:var(--panel-raised);border:0;box-shadow:inset var(--px) var(--px) 0 var(--panel-hi),inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop);font-family:var(--mono);font-size:var(--text-title);user-select:none}
-.number-pad button:hover:not(:disabled){background:var(--panel-hi)}
+/* Touch browsers keep :hover after a tap, which would pre-highlight the next question's key. */
+@media(hover:hover){.number-pad button:hover:not(:disabled){background:var(--panel-hi)}}
 .number-pad button:active:not(:disabled){box-shadow:inset var(--px) var(--px) 0 var(--panel-lo),var(--ring)}
 .number-pad .submit-key{background:var(--mint);color:var(--ink);box-shadow:inset var(--px) var(--px) 0 var(--mint-hi),inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--mint-shade),var(--ring),var(--drop)}
 .number-pad .submit-key:hover:not(:disabled){background:var(--mint-hi)}
@@ -80,8 +82,9 @@
 .number-pad button:disabled,.compare-pad button:disabled{opacity:1;color:var(--muted);background:var(--panel)}
 .number-pad .submit-key:disabled{background:var(--mint-shade);color:var(--ink)}
 .compare-pad{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:var(--s4);width:88px}
+.compare-slot{display:none}
 .compare-pad button{min-height:56px;background:var(--panel-raised);color:var(--paper);border:0;box-shadow:inset var(--px) var(--px) 0 var(--panel-hi),inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop);font-family:var(--mono);font-size:var(--text-score)}
-.compare-pad button:hover:not(:disabled){background:var(--mint);color:var(--ink)}
+@media(hover:hover){.compare-pad button:hover:not(:disabled){background:var(--mint);color:var(--ink)}}
 .correct .compare-pad button.selected{background:var(--mint);color:var(--ink);box-shadow:inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--mint-shade),var(--ring)}
 .wrong .compare-pad button.selected{background:var(--coral);color:var(--ink);box-shadow:inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--coral-shade),var(--ring)}
 .compare-pad button:disabled{box-shadow:inset 0 var(--px) 0 var(--panel-hi),var(--ring)}
@@ -99,9 +102,15 @@
   .question-area.arcade-panel{padding:var(--s3);gap:var(--s2)}
   .play-screen.comparison-play{grid-template-rows:auto minmax(0,1fr) auto}
   .comparison-heading{font-size:var(--text-lg);margin-bottom:var(--s4)}
-  .comparison-layout{grid-template-columns:minmax(0,1fr);gap:var(--s4);justify-items:center}
-  .comparison-fact{width:100%;min-height:88px;font-size:clamp(36px,9vw,52px)}
-  .compare-pad{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto;width:min(100%,320px)}
+  /* Phones: "a×b ? c×d" stays on one line and the sign keys sit below it. The row gap must
+     clear both outlines plus the keys' drop shadow. */
+  .comparison-layout{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"left slot right" "pad pad pad";gap:var(--s6) var(--s2);align-items:center}
+  .comparison-fact{width:100%;min-height:88px;padding:var(--s2);font-size:clamp(24px,7.5vw,44px)}
+  .comparison-fact.left{grid-area:left}.comparison-fact.right{grid-area:right}
+  .compare-slot{grid-area:slot;display:grid;place-items:center;width:clamp(40px,11vw,56px);height:clamp(48px,13vw,64px);background:var(--ink);color:var(--yellow);font-family:var(--mono);font-size:clamp(28px,8vw,40px);box-shadow:var(--ring)}
+  .correct .compare-slot{background:var(--mint);color:var(--ink)}
+  .wrong .compare-slot{background:var(--coral);color:var(--ink);animation:blank-shake 260ms steps(6,end)}
+  .compare-pad{grid-area:pad;justify-self:center;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto;width:min(100%,320px)}
   .compare-pad button{min-height:56px}
   .answer-display{font-size:var(--text-title);min-height:0;margin:0;gap:var(--s2)}
   .answer-display strong{padding:var(--s1) var(--s2)}
@@ -121,7 +130,7 @@
   .time-runner{bottom:calc(var(--s3) - var(--s1))}
   .combo-milestone .answer-feedback{color:var(--ink)}
   .comparison-heading{margin-bottom:var(--s2)}
-  .comparison-layout{gap:var(--s2)}
+  .comparison-layout{gap:var(--s6) var(--s2)}
   .comparison-fact{min-height:64px}
   .compare-pad button{min-height:48px}
 }

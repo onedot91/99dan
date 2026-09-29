@@ -29,7 +29,7 @@ export function HomeScreen({game:g,friends,studentNumber}:{readonly game:RushGam
   return <main className="home">
     <section className="home-stage">
       <h1><span className="title-line">곱셈</span> <span className="title-line title-accent">게임</span></h1>
-      <div className="hero-scene">{friends.partner?<div className={`hero-friend tier-${friendById(friends.partner)?.tier??4} family-${friendById(friends.partner)?.family.id??''}${state?` mood-${state}`:''}`}><FriendSprite id={friends.partner} fill/>{bubble&&<span className="pet-bubble" key={bubble} aria-hidden="true">{bubble}</span>}{state==='excited'&&<button className="pet-bubble pet-bubble-button" onClick={()=>g.setScreen('friends')}>새 펫!</button>}</div>:<p className="hero-empty">첫 펫을 기다리고 있어요</p>}<div className="pixel-ground"/></div>
+      <div className="hero-scene">{friends.partner?<div className={`hero-friend tier-${friendById(friends.partner)?.tier??4} family-${friendById(friends.partner)?.family.id??''}${state?` mood-${state}`:''}`} onClick={state==='excited'?()=>g.setScreen('friends'):undefined}><FriendSprite id={friends.partner} fill/>{bubble&&<span className="pet-bubble" key={bubble} aria-hidden="true">{bubble}</span>}{state==='excited'&&<button className="pet-bubble pet-bubble-button" onClick={()=>g.setScreen('friends')}>새 펫!</button>}</div>:<p className="hero-empty">첫 펫을 기다리고 있어요</p>}<div className="pixel-ground"/></div>
       <LevelCard level={levelFor(g.totalCorrect)} exp={g.totalCorrect}/>
     </section>
     <nav className="mode-menu" aria-label="게임 선택">

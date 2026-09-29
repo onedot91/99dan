@@ -51,11 +51,13 @@ export function PlayScreen({game:g,partner,best}:{readonly game:RushGame;readonl
     <section className="question-area arcade-panel" aria-label="현재 문제">
       <div className="question-content" key={r.answered+':'+r.phase}>
         {r.question.kind==='compare'?<>
-          <h1 className="comparison-heading">두 식의 결과를 비교하세요</h1>
+          <h1 className="comparison-heading">알맞은 기호는?</h1>
           <div className="comparison-layout">
-            <div className="comparison-fact" aria-label={`왼쪽 식 ${a} 곱하기 ${b}`}>{a} × {b}</div>
+            <div className="comparison-fact left" aria-label={`왼쪽 식 ${a} 곱하기 ${b}`}>{a} × {b}</div>
+            {/* On phones the pad moves below, so the sign gets its own blank between the two facts. */}
+            <strong className={`compare-slot${r.entry?'':' answer-placeholder'}`} aria-hidden="true">{(['<','=','>'] as const)[Number(r.entry)-1]??'?'}</strong>
             <div className="compare-pad" role="group" aria-label="두 식 사이에 들어갈 기호 선택">{(['<','=','>'] as const).map((key,index)=><button key={key} disabled={r.phase!=='question'} aria-label={key==='<'?'왼쪽이 작다':key==='='?'두 식이 같다':'왼쪽이 크다'} className={r.phase!=='question'&&r.entry===String(index+1)?'selected':''} onClick={()=>g.input(key)}>{key}{r.entry===String(index+1)&&hitFx}</button>)}</div>
-            <div className="comparison-fact" aria-label={`오른쪽 식 ${r.question.other?.a} 곱하기 ${r.question.other?.b}`}>{r.question.other?.a} × {r.question.other?.b}</div>
+            <div className="comparison-fact right" aria-label={`오른쪽 식 ${r.question.other?.a} 곱하기 ${r.question.other?.b}`}>{r.question.other?.a} × {r.question.other?.b}</div>
           </div>
         </>
           :<h1 className="equation" aria-label={r.question.kind==='product'?`${a} 곱하기 ${b}`:`${a} 곱하기 ${b}, 빈칸 채우기`}>{r.question.kind==='missing-a'?answer:a}<span>×</span>{r.question.kind==='missing-b'?answer:b}<span>=</span>{r.question.kind==='product'?answer:a*b}</h1>}

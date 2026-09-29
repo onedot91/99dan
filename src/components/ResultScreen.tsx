@@ -8,12 +8,12 @@ import { PixelArt, TROPHY } from './PixelArt';
 import { ExpBar, expRatio } from './Progress';
 import { STAR, Sprite } from './Sprite';
 import type { Friends } from '../game/useFriends';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { BACKGROUNDS } from '../game/background';
 import type { BackgroundId } from '../game/background';
 // Orbs fly one after another, then the bar fills, then the level-up stamp and unlocks land.
 const ORB_STEP=70,MAX_ORBS=10;
-export function Stat({icon,value,label}:{readonly icon:IconName;readonly value:string;readonly label:string}){
+export function Stat({icon,value,label}:{readonly icon:IconName;readonly value:string;readonly label:ReactNode}){
   return <div className="stat"><span><Icon name={icon}/>{label}</span><strong>{value}</strong></div>;
 }
 function useCountUp(target:number,skip:boolean,ms=900){
@@ -46,12 +46,12 @@ export function ResultScreen({game:g,rewards,friends,syncState,retrySave,unlocke
     <div className="result-hero">
       <div className="trophy-celebration" aria-hidden="true"><PixelArt kind="trophy"/><span className="trophy-particles">{Array.from({length:10},(_,i)=><i key={i}/>)}</span></div>
       {rewards?.newRecord&&<p className="record-ribbon">{rewards.firstRecord?'첫 기록!':'최고 기록 갱신!'}</p>}
-      <h1>오늘의 기록</h1>
+      <h1 className="wide-only">오늘의 기록</h1>
       <div className="result-score" aria-label={`${r.score}점`}><strong aria-hidden="true">{shown.toLocaleString()}</strong><span aria-hidden="true">점</span></div>
       {rewards?.toBest!=null&&<p className="result-goal">최고 기록까지 {rewards.toBest.toLocaleString()}점!</p>}
     </div>
     <div className="result-details">
-      <div className="stats-grid"><Stat icon="star" label="정답" value={`${r.correct}개`}/><Stat icon="target" label="다시 볼 문제" value={`${r.answered-r.correct}개`}/></div>
+      <div className="stats-grid"><Stat icon="star" label="정답" value={`${r.correct}개`}/><Stat icon="target" label={<><span className="wide-only">다시 볼 문제</span><span className="narrow-only">복습</span></>} value={`${r.answered-r.correct}개`}/></div>
       {rewards&&<div className={`exp-card${rewards.levelUp?' level-up':''}`}>
         <div className="exp-head">
           <span className="level-number"><small>Lv</small>{rewards.levelAfter.number}</span>

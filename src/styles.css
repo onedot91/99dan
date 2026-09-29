@@ -260,3 +260,6 @@ img{image-rendering:pixelated}
   .practice-modes .mode-button>svg{display:none}
   .practice-modes .mode-button strong{font-size:var(--text-lg)}
 }
+
+/* The narrowest phones need the room for the combo meter; the yellow number still reads as the score. */
+@media(max-width:360px){.header-score .score-word{display:none}.header-status{gap:var(--s3)}}

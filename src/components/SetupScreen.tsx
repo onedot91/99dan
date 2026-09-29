@@ -8,7 +8,7 @@ export function SetupScreen({game:g}:{readonly game:RushGame}){
   const pageCount=Math.ceil(g.weak.length/6);
   const currentPage=Math.min(page,Math.max(0,pageCount-1));
   if(g.screen==='tables'){
-    const startLabel=g.tables.length===TABLES.length?'전체 구구단 시작':g.tables.length?`${g.tables.length}개 단 · ${g.tables.length*8}문제 시작`:'연습할 단을 골라 줘';
+    const startLabel=g.tables.length===TABLES.length?'전체 구구단 시작':g.tables.length?`${g.tables.length}개 단 · ${g.tables.length*8}문제 시작`:'단을 골라요';
     return <main className="setup-screen">
       <div className="screen-heading"><h1>단별 연습</h1></div>
       <div className="table-picker">{TABLES.map(n=><button key={n} aria-pressed={g.tables.includes(n)} className={g.tables.includes(n)?'selected':''} onClick={()=>g.toggleTable(n)}><strong>{n}</strong>단{g.tables.includes(n)&&<Icon name="check"/>}</button>)}</div>

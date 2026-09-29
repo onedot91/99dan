@@ -23,6 +23,7 @@ import { bestBefore, useRunRewards } from './game/useRunRewards';
 import { useFriends } from './game/useFriends';
 import { FriendsScreen } from './components/FriendsScreen';
 import './friends.css';
+import './mobile.css';
 import { BACKGROUNDS, isUnlocked, loadBackground, saveBackground } from './game/background';
 import { BackgroundPicker } from './components/BackgroundPicker';
 import { levelFor } from './game/learning';
@@ -70,14 +71,14 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
     <header className="header">
       <button className="brand brand-button" aria-label={g.screen==='play'?'연습을 마치고 기록 보기':'번호 변경하려면 20번 누르기'} onClick={handleBrandClick}><span className="brand-mark">{cloud.profile?.avatar?<img src={cloud.profile.avatar} alt="" width="40" height="40"/>:<Icon name="bolt" size={24}/>}</span><span className="student-number">{numberLabel(studentNumber)}</span></button>
       {g.screen==='play'&&g.run&&<div className="header-status">
-        <span className={`header-score score-display${g.run.phase==='wrong'?' wrong':''}${g.run.phase==='correct'?' gained':''}${g.run.phase==='wrong'&&g.run.penalty===0?' score-floor':''}`}>점수 <strong key={g.run.score}>{g.run.score.toLocaleString()}</strong>{g.run.phase==='correct'&&<em className="score-gain" key={g.run.answered} aria-hidden="true">{/^\+\d+/.exec(g.run.feedback)?.[0]}</em>}{g.run.phase==='wrong'&&g.run.penalty>0&&<em className="score-loss" key={g.run.answered} aria-hidden="true">-{g.run.penalty}</em>}</span>
+        <span className={`header-score score-display${g.run.phase==='wrong'?' wrong':''}${g.run.phase==='correct'?' gained':''}${g.run.phase==='wrong'&&g.run.penalty===0?' score-floor':''}`}><span className="score-word">점수</span> <strong key={g.run.score}>{g.run.score.toLocaleString()}</strong>{g.run.phase==='correct'&&<em className="score-gain" key={g.run.answered} aria-hidden="true">{/^\+\d+/.exec(g.run.feedback)?.[0]}</em>}{g.run.phase==='wrong'&&g.run.penalty>0&&<em className="score-loss" key={g.run.answered} aria-hidden="true">-{g.run.penalty}</em>}</span>
         {headerTimer&&<div className="header-timer" role="timer" aria-label="남은 시간" aria-live="off"><Icon name="clock"/><span>{headerTimer}</span></div>}
         <ComboMeter run={g.run}/>
       </div>}
       <div className="header-actions">
-        <button className="quiet-button sound-button" aria-label={!audio.available?'소리 사용 불가':audio.enabled?'소리 끄기':'소리 켜기'} aria-pressed={audio.enabled} disabled={!audio.available||audio.pending} onClick={()=>void audio.toggle()}><Icon name={audio.enabled?'sound':'muted'}/><span>{audio.enabled?'ON':'OFF'}</span></button>
+        <button className="quiet-button sound-button" aria-label={!audio.available?'소리 사용 불가':audio.enabled?'소리 끄기':'소리 켜기'} aria-pressed={audio.enabled} disabled={!audio.available||audio.pending} onClick={()=>void audio.toggle()}><Icon name={audio.enabled?'sound':'muted'}/><span className="wide-only">{audio.enabled?'ON':'OFF'}</span></button>
         {g.screen!=='play'&&<BackgroundPicker value={background} level={level} onChange={changeBackground}/>}
-        {g.screen==='play'?<button className="quiet-button end-button" onClick={()=>g.end(true)}><Icon name="close"/><span>끝내기</span></button>:g.screen==='home'?<button className="quiet-button" onClick={()=>g.setScreen('records')}><Icon name="chart"/><span>내 기록</span></button>:<button className="quiet-button home-button" onClick={()=>g.setScreen('home')}><Icon name="back"/><span>처음으로</span></button>}
+        {g.screen==='play'?<button className="quiet-button end-button" onClick={()=>g.end(true)}><Icon name="close"/><span>끝내기</span></button>:g.screen==='home'?<button className="quiet-button" aria-label="내 기록" onClick={()=>g.setScreen('records')}><Icon name="chart"/><span className="wide-only">내 기록</span></button>:<button className="quiet-button home-button" aria-label="처음으로" onClick={()=>g.setScreen('home')}><Icon name="back"/><span className="wide-only">처음으로</span></button>}
       </div>
     </header>
     <div className="screen-content" ref={content} tabIndex={-1} key={g.screen}>

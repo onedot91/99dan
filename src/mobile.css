@@ -1,0 +1,21 @@
+/* Phones: keep words to a minimum and the layout compact (see DESIGN.md, 모바일 원칙).
+   Loaded last so these rules win over the per-screen files. */
+.narrow-only{display:none}
+@media(max-width:700px){
+  .wide-only{display:none!important}
+  .narrow-only{display:inline}
+  /* Header buttons are icons only; 끝내기 keeps its word because it ends the run. */
+  .header-actions .quiet-button:not(.end-button){width:40px;padding:0}
+  .home h1{font-size:28px}
+  .hall-screen .pixel-art{height:48px;width:64px}
+  .hall-screen{gap:var(--s3)}
+  .trophy-celebration{width:80px;height:56px}
+  .result-hero{gap:var(--s1)}
+  .stat{padding:var(--s2) var(--s3);gap:var(--s1)}
+  .stats-grid{gap:var(--s3)}
+  .stage-head span{display:none}
+  /* The partner tag sits beside the portrait instead of on its own row under it. */
+  .friend-detail{grid-template-areas:"portrait total" "portrait name" "portrait stars" "portrait tag" "portrait blurb" "action action"}
+  .friend-detail>.partner-tag{grid-column:auto;grid-area:tag}
+  .comparison-heading{font-size:var(--text-base);margin-bottom:var(--s3)}
+}
