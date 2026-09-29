@@ -50,9 +50,17 @@ export function masteryOf(record:FactRecord|undefined):Mastery{
 export function masteredIds(records:Records):ReadonlySet<string>{
   return new Set(FACTS.filter(f=>masteryOf(records[f.id])==='mastered').map(f=>f.id));
 }
-// Every level costs the same 15 lifetime correct answers (never a growing gap), and each
-// level grants one friend pick. Keep in sync with supabase/migrations/20260928000000_friends.sql.
-export const LEVEL_STEP=15;
+// Early levels come fast so new players get pets quickly: 10, 20, 30, 40 lifetime correct
+// answers, then a flat 50 per level with no cap. Each level grants one friend pick.
+// Keep in sync with supabase/migrations/20260929000000_slower_levels.sql.
+export const LEVEL_STEP=50;
+const EARLY_STEPS=[10,20,30,40] as const;
+// Lifetime correct answers needed to reach a level.
+export function levelFloor(level:number):number{
+  let floor=0;
+  for(let n=1;n<level;n++)floor+=EARLY_STEPS[n-1]??LEVEL_STEP;
+  return floor;
+}
 // Titles only name ranges of levels; they never change how fast levels come.
 export const TITLES=[[1,'초보 모험가'],[3,'숫자 탐험가'],[6,'곱셈 전사'],[10,'룬의 기사'],[15,'숫자 마법사'],[20,'곱셈 영웅'],[30,'별의 수호자'],[40,'전설의 대마법사'],[50,'곱셈 제왕']] as const;
 export type Level={readonly number:number;readonly label:string;readonly floor:number;readonly next:number|null};
@@ -60,6 +68,7 @@ export function titleFor(level:number):string{
   return TITLES.reduce<string>((found,[from,label])=>level>=from?label:found,TITLES[0][1]);
 }
 export function levelFor(correct:number):Level{
-  const number=Math.floor(Math.max(0,correct)/LEVEL_STEP)+1;
-  return {number,label:titleFor(number),floor:(number-1)*LEVEL_STEP,next:number*LEVEL_STEP};
+  const c=Math.max(0,correct),early=levelFloor(EARLY_STEPS.length+1);
+  const number=c>=early?EARLY_STEPS.length+1+Math.floor((c-early)/LEVEL_STEP):1+EARLY_STEPS.filter((_,i)=>c>=levelFloor(i+2)).length;
+  return {number,label:titleFor(number),floor:levelFloor(number),next:levelFloor(number+1)};
 }

@@ -28,8 +28,9 @@ const EGG:readonly string[]=Array.from({length:6},(_,r)=>Array.from({length:18},
 }).join(''));
 // Later stages fill more of the frame, so each evolution visibly grows (feet stay on one baseline).
 const STAGE_PAD={1:10,2:6,3:3,4:0} as const;
-export function viewBoxFor(id:string|null):string{
-  const pad=STAGE_PAD[friendById(id)?.tier??4];
+// Early stages get extra padding so they read as smaller; `fill` drops it for tiny slots.
+export function viewBoxFor(id:string|null,fill=false):string{
+  const pad=fill?0:STAGE_PAD[friendById(id)?.tier??4];
   return `${-pad} ${-2*pad} ${SIZE+2*pad} ${SIZE+2*pad}`;
 }
 const span=(row:string)=>{const left=row.search(/[^.]/);return left<0?{left:0,right:15}:{left,right:row.length-1-[...row].reverse().join('').search(/[^.]/)};};

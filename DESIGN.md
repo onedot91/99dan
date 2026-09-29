@@ -4,7 +4,7 @@
 초등 3학년 곱셈 회상 게임. 1280×650 크롬북과 모바일에서 스크롤 없이 조작한다. 64개 식의 곱, 빈칸 인수, 두 곱의 비교 문제를 1·2·3분 도전, 단별 연습, 약점 연습에서 제공한다.
 
 ## Visual contract
-16비트 콘솔 스타일. 계단식 밤하늘 띠, 픽셀 별(`src/assets/stars.svg`), 3겹 픽셀 산(`src/assets/mountains.svg`)을 고정 배경으로 깐다. 패널·버튼은 모서리 픽셀이 빠진 4방향 box-shadow 외곽선(`--ring`), 위 하이라이트/아래 그림자 베벨, 4px 낙차(`--drop`)로 만든다. 누르면 4px 내려가고 베벨이 반전된다. radius 0. 스프라이트는 `Sprite.tsx`의 ASCII 맵(한 글자=한 픽셀)을 `<rect>`로 그리며 색은 CSS 토큰 클래스(`px-*`)에서 온다. UI는 실제 React DOM. 글꼴은 Galmuri11 Bold(OFL, `src/assets/fonts`, 로컬 번들·외부 요청 없음), 숫자도 같은 글꼴. School_Timer 동물 프로필 이미지는 `image-rendering:pixelated`.
+16비트 콘솔 스타일. 계단식 밤하늘 띠, 픽셀 별(`src/assets/stars.svg`), 3겹 픽셀 산(`src/assets/mountains.svg`)을 고정 배경으로 깐다. 헤더의 배경 버튼으로 밤·노을·숲·바다·눈을 차례로 바꿀 수 있다. 테마마다 하늘 띠 색, 입자 타일(`src/assets/backgrounds/*-sky.svg`), 지면 띠(`*-ground.svg`)가 바뀌고 선택은 기기에 번호별로 저장된다(`src/game/background.ts`). 패널·버튼은 모서리 픽셀이 빠진 4방향 box-shadow 외곽선(`--ring`), 위 하이라이트/아래 그림자 베벨, 4px 낙차(`--drop`)로 만든다. 누르면 4px 내려가고 베벨이 반전된다. radius 0. 스프라이트는 `Sprite.tsx`의 ASCII 맵(한 글자=한 픽셀)을 `<rect>`로 그리며 색은 CSS 토큰 클래스(`px-*`)에서 온다. UI는 실제 React DOM. 글꼴은 Galmuri11 Bold(OFL, `src/assets/fonts`, 로컬 번들·외부 요청 없음), 숫자도 같은 글꼴. School_Timer 동물 프로필 이미지는 `image-rendering:pixelated`.
 
 ## Tokens
 CSS :root가 단일 출처. 모든 색은 기본/하이라이트/그림자 3단: panel #2a2856 (hi #5552a0, lo #1d1b40), paper #fff4d6 (hi #fffdf3, shade #d9c49a), mint #5ee08a (#b4f5c8/#2a9d5c), yellow #ffd23f (#fff3a3/#c77d0a), coral #ff7a8a (#b8324a), blue #4cc9ff (#2766c7), orange #ff9f1c, red #ff4d5e, silver/bronze(순위). outline #0b0a1f, ink #1c1638. Pixel unit `--px` 4px. Text 18/21/24/33/48/72px, equation `clamp(36px,16cqi,96px)`로 문제 패널 너비에 맞춤, 최소 13pt. Spacing 4~64px.
@@ -19,13 +19,14 @@ PixelArt, Icon, NumberPad, compare-pad, Stat, Pager, arcade-panel, primary-butto
 
 ## Audio and motion
 Web Audio created/unlocked only on sound-toggle gesture. Default OFF, resets OFF on refresh. Explicit 소리 켜기/끄기 labels and aria-pressed. 칩튠 합성: 25% 펄스파 리드, 삼각파 베이스, 짧은 노이즈 타격. 정답음은 연속 정답마다 도-레-미-파-솔로 올라가고 5콤보마다 아르페지오 팡파르(10·15·20콤보는 한 단계씩 높게). 오답은 부드러운 삼각파 두 음(겁주지 않음). 결과는 신기록 팡파르 > 레벨 업 음계 > 기본 완료 팡파르 중 하나만. Low-pass 4.2kHz, compressor, 최대 24 voice, 새 효과음이 이전 효과음을 끊음, immediate mute including scheduled voices. Hidden document silences sound. No music/network audio.
-모션은 steps() 타이밍으로 스프라이트 프레임처럼 끊어 보이게 한다. 입력: 숫자가 답 칸에 쾅 박히고(130ms) 키패드가 눌려 찌그러진다. 정답: 답 칸 1프레임 흰 섬광, 답 칸에서 퍼지는 2겹 충격파, 포물선으로 떨어지는 12개 파편, 헤더 점수 튕김과 “+N” 칩, 방금 찬 보너스 칸 팝, +점수 팝업(모두 450ms 안에 끝남). 다음 문제는 110ms 안에 흐리지 않게 튀어 들어와 반응시간을 해치지 않는다. 5콤보마다 문제 패널만 흔들리고 금빛으로 한 번 맥동하며 “N 콤보!” 배너(440ms). 10콤보 이상은 문제 패널에 금빛 테두리(정지 상태)와 더 큰 주황 점수 팝업. 오답: 답 칸만 흔들린다. 결과: 통계 카드 순차 등장, 카운트업이 끝나면 점수 도장. 오답: 220ms 흔들림과 감점 표시. 결과: 점수 카운트업 900ms, 신기록 도장, EXP 바 채우기, 레벨 업 도장, 새로 익힌 식 칩. Only opacity/transform animate. 문제 패널 밖 전체 화면 흔들림·번쩍임 없음. 플레이 중 배경은 움직이지 않는다(홈 캐릭터 걷기·커서 깜빡임만 연속). Correct feedback lasts 450ms; wrong feedback 350ms before retrying the same fact without exposing the answer. Reduced motion disables movement, particles and banners without removing feedback text or changing sound preference.
+모션은 steps() 타이밍으로 스프라이트 프레임처럼 끊어 보이게 한다. 입력: 숫자가 답 칸에 쾅 박히고(130ms) 키패드가 눌려 찌그러진다. 정답: 답 칸 1프레임 흰 섬광, 답 칸에서 퍼지는 2겹 충격파, 포물선으로 떨어지는 12개 파편, 헤더 점수 튕김과 “+N” 칩, 방금 찬 보너스 칸 팝, +점수 팝업(모두 450ms 안에 끝남). 다음 문제는 110ms 안에 흐리지 않게 튀어 들어와 반응시간을 해치지 않는다. 5콤보마다 문제 패널만 흔들리고 금빛으로 한 번 맥동하며 “N 콤보!” 배너(440ms). 10콤보 이상은 문제 패널에 금빛 테두리(정지 상태)와 더 큰 주황 점수 팝업. 오답: 답 칸만 흔들린다. 결과: 통계 카드 순차 등장, 카운트업이 끝나면 점수 도장. 오답: 220ms 흔들림과 감점 표시. 결과: 점수 카운트업 900ms, 신기록 도장, EXP 바 채우기, 레벨 업 도장, 새로 익힌 식 칩. Only opacity/transform animate. 문제 패널 밖 전체 화면 흔들림·번쩍임 없음. 플레이 중 배경은 움직이지 않는다(홈 캐릭터 걷기·시간 바 펫 까딱임·커서 깜빡임만 연속). Correct feedback lasts 450ms; wrong feedback 350ms before retrying the same fact without exposing the answer. Reduced motion disables movement, particles and banners without removing feedback text or changing sound preference.
 
 ## Motivation (learning-safe)
 보상은 속도보다 꾸준함과 숙달에 준다. 점수 규칙·출제·재출제·피드백 시간은 바꾸지 않는다.
 - 레벨: 누적 정답 15개마다 1레벨(고정 간격, 상한 없음). 칭호는 레벨 구간 이름(1 초보 모험가 … 50 곱셈 제왕, “구구단”이라는 말은 쓰지 않음). 홈과 기록 화면에 EXP 바, 결과에 +EXP와 레벨 업.
 - 펫 나무: 레벨마다 1번 선택(레벨 1 = 첫 펫). 8종 × (아기 1 + 속성 4 + 변신 12 + 전설 24) = 328. 진화는 부모를 가진 경우에만 가능. 선택지 3개는 학생 번호·선택 횟수 시드로 고정(새로고침으로 다시 뽑기 불가). 스프라이트는 몸통 반쪽 ASCII를 좌우 반전하고, 속성 팔레트와 꼬리, 날개·왕관·마법 모자, 전설 테두리 빛(별빛 금색·달빛 보라)을 겹쳐 만든다. 단계마다 모습과 크기가 확실히 다르다: 1단계는 깨진 알껍데기 속 아기(틀의 약 55%), 2단계 67%, 3단계 80%, 4단계 100%이며 발 기준선은 같다. 4단계 최종 진화형은 실루엣부터 다르다: 별빛은 뒤에 금빛 햇살, 빨간 망토, 금빛 눈; 달빛은 뒤에 초승달, 보라 망토, 청록빛 눈. 두 형태 모두 금/보라 테두리 빛을 두른다. 도감과 펫 나무는 1→4단계 열로 보여 주고 그림 아래에는 그 단계에서 더해진 것만 적는다. 기본 캐릭터는 없다: 첫 펫을 고르기 전 홈에는 어떤 펫도 나오지 않는다. 고른 펫이 홈에서 걷는다. 결과에서 레벨 업하면 “새 펫 고르기”.
-- 콤보 미터: 실제 점수 규칙(두 번째 연속 정답부터 +10, 최대 +50)을 5칸 보너스 칸으로 보여 줌. 5콤보부터 불꽃.
+- 콤보 미터: 실제 점수 규칙(두 번째 연속 정답부터 +10, 최대 +50)을 5칸 보너스 칸으로 보여 줌. 5콤보부터 불꽃. 플레이 중 헤더에서 점수·타이머 옆에 둔다.
+- 시간 바 펫: 대표 펫이 시간 바의 초록 끝에 서서 도전에서는 시간이 줄수록 왼쪽으로, 연습에서는 맞힌 만큼 오른쪽으로 걷는다. 펫이 없으면 바만 보인다.
 - 구구단 도감: 8×8 칸에 익힌 식(연속 3회 정답, 금색)·연습 중(파랑)·다시 볼 식(빨강)·아직 안 푼 식. 좁은 화면은 “내 기록/구구단 도감” 전환.
 - 결과: 끝까지 한 도전이 이전 최고보다 높으면 “최고 기록 갱신!”(첫 기록은 “첫 기록!”), 아니면 “최고 기록까지 N점!”. 이번에 새로 익힌 식을 칩으로 보여 줌.
 - 명예의 전당: 1등 왕관, 2·3등 은·동색, 내 순위는 “나” 표시.

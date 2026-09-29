@@ -52,6 +52,19 @@ img{image-rendering:pixelated}
 .app::before,.app::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
 .app::before{background:url(./assets/stars.svg) 0 0/320px 320px repeat;opacity:.9}
 .app::after{top:auto;height:160px;background:url(./assets/mountains.svg) 0 100%/480px 160px repeat-x}
+/* Selectable backgrounds: each swaps the sky bands, the particle tile and the ground strip. */
+.app[data-bg=sunset]{background:linear-gradient(#2a1a4f 0 34%,#45205e 34% 52%,#6b2a66 52% 66%,#9a3764 66% 78%,#c24d5e 78% 88%,#e0704f 88%)}
+.app[data-bg=sunset]::before{background-image:url(./assets/backgrounds/sunset-sky.svg);opacity:1}
+.app[data-bg=sunset]::after{background-image:url(./assets/backgrounds/sunset-ground.svg)}
+.app[data-bg=forest]{background:linear-gradient(#0b1a1f 0 34%,#0f2428 34% 52%,#132e30 52% 66%,#173839 66% 78%,#1b4341 78% 88%,#204f4a 88%)}
+.app[data-bg=forest]::before{background-image:url(./assets/backgrounds/forest-sky.svg);opacity:1}
+.app[data-bg=forest]::after{background-image:url(./assets/backgrounds/forest-ground.svg)}
+.app[data-bg=ocean]{background:linear-gradient(#081b3a 0 34%,#0b2450 34% 52%,#0e2e63 52% 66%,#123a78 66% 78%,#16478c 78% 88%,#1b55a0 88%)}
+.app[data-bg=ocean]::before{background-image:url(./assets/backgrounds/ocean-sky.svg);opacity:1}
+.app[data-bg=ocean]::after{background-image:url(./assets/backgrounds/ocean-ground.svg)}
+.app[data-bg=snow]{background:linear-gradient(#1b2340 0 34%,#222c4d 34% 52%,#2a375c 52% 66%,#33436b 66% 78%,#3d507a 78% 88%,#485d89 88%)}
+.app[data-bg=snow]::before{background-image:url(./assets/backgrounds/snow-sky.svg);opacity:1}
+.app[data-bg=snow]::after{background-image:url(./assets/backgrounds/snow-ground.svg)}
 .header{width:100%;max-width:var(--frame);margin:auto;height:var(--header);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--s2)}
 .brand{display:flex;align-items:center;gap:var(--s3);font-weight:900;font-size:var(--text-lg);white-space:nowrap}
 .brand-button{grid-column:1;justify-self:start}
@@ -130,9 +143,15 @@ img{image-rendering:pixelated}
   .header-score{gap:var(--s1);font-size:var(--text-base)}
   .header-score strong{font-size:var(--text-lg)}
   .header-timer{font-size:var(--text-lg);gap:var(--s1)}
+  .header .combo-meter{min-height:32px;padding:0 var(--s2);gap:var(--s1)}
+  .header .combo-count{min-width:0;font-size:var(--text-lg)}
+  .header .combo-pips{gap:2px}
+  .header .combo-pips i{width:var(--s2);height:var(--s3)}
+  .header .combo-flame{height:20px}
   .brand-mark{width:var(--s8);height:var(--s8)}
   .header-actions{gap:var(--s3)}
   .header-actions .quiet-button{padding:var(--s2);min-height:40px}
+  .background-button>span{display:none}
   .home{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;gap:var(--s5);padding:var(--s3) 0 var(--s2);max-width:480px;width:100%;margin:auto;height:100%}
   .home-stage{align-items:center;gap:var(--s3)}
   .home h1{text-align:center}
