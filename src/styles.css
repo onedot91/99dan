@@ -149,21 +149,25 @@ img{image-rendering:pixelated}
 .pixel-shadow{fill:var(--outline);opacity:.6}
 .mode-menu{display:grid;gap:var(--s5)}
 .rush-card{display:grid;gap:var(--s3);padding:var(--s3);border:0;background:var(--yellow);color:var(--ink);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring),var(--drop)}
-.rush-durations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s3);padding:var(--px)}
-.rush-durations button{min-height:var(--control);border:0;background:var(--gold-hi);color:var(--ink);font-family:var(--mono);font-weight:900;box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--paper-shade),var(--ring)}
-.rush-durations button:hover{background:var(--paper-hi)}
-.rush-durations button[aria-pressed=true]{background:var(--ink);color:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--outline),var(--ring)}
-.rush-start{width:100%;min-height:72px;display:flex;align-items:center;gap:var(--s4);padding:var(--s3);border:0;border-top:var(--px) dashed var(--gold-shade);background:transparent;color:var(--ink);text-align:left}
-.rush-start strong{flex:1;font-size:var(--text-xl);white-space:nowrap}
-.rush-start:hover{background:var(--gold-hi)}
-.start-cursor{font-size:var(--text-xl);line-height:1}
+/* Duration is a selector: a recessed gold tray where only the chosen time pops up as a cream chip.
+   The only dark fill on the card is the start button. */
+.rush-durations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s1);padding:var(--s1);background:#e8b52a;box-shadow:inset 0 var(--px) 0 var(--gold-shade),inset 0 calc(-1 * var(--px)) 0 var(--gold-hi)}
+.rush-durations button{min-height:44px;border:0;background:transparent;color:#7a4a08;font-family:var(--mono);font-weight:900;box-shadow:none}
+@media(hover:hover){.rush-durations button:hover:not([aria-pressed=true]){color:var(--ink)}}
+.rush-durations button[aria-pressed=true]{background:var(--paper-hi);color:var(--ink);box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--paper-shade),var(--ring)}
+/* Start is the one action: a raised dark arcade button, centred, with a blinking ▶. */
+.rush-start{width:100%;min-height:64px;display:flex;align-items:center;justify-content:center;gap:var(--s3);margin:var(--s1) 0 var(--s2);padding:var(--s3);border:0;background:var(--ink);color:var(--yellow);box-shadow:inset 0 var(--px) 0 #3d3677,inset 0 calc(-1 * var(--px)) 0 var(--outline),var(--ring),var(--drop)}
+.rush-start:active:not(:disabled){box-shadow:inset 0 var(--px) 0 var(--outline),var(--ring)}
+.rush-start strong{font-size:var(--text-xl);white-space:nowrap;text-shadow:2px 2px 0 var(--outline)}
+@media(hover:hover){.rush-start:hover{background:#2a2350}}
+.rush-start .mode-icon{width:auto;height:auto;background:none;color:var(--yellow)}
+.start-cursor{font-size:var(--text-lg);line-height:1;color:var(--yellow)}
 .practice-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4)}
 .mode-button{width:100%;min-height:96px;display:flex;align-items:center;gap:var(--s4);padding:var(--s5);border:0;border-radius:0;background:var(--panel);text-align:left;box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop)}
 .mode-button strong{flex:1;font-size:var(--text-xl);white-space:nowrap}
 .mode-button:hover:not(:disabled){background:var(--panel-raised)}
 .mode-button:active:not(:disabled){box-shadow:inset 0 var(--px) 0 var(--panel-lo),var(--ring)}
-.mode-icon{display:grid;place-items:center;width:var(--control);height:var(--control);border:0;background:var(--outline);color:var(--yellow)}
-.rush-card .mode-icon{background:var(--ink)}
+.mode-icon{display:grid;place-items:center;flex:none;aspect-ratio:1;width:var(--control);height:var(--control);border:0;background:none;color:var(--yellow)}
 .screen-heading{display:grid;justify-items:center;gap:var(--s3);text-align:center}
 .screen-heading h1{text-shadow:var(--text-outline)}
 .pager{display:flex;align-items:center;justify-content:center;gap:var(--s4)}
@@ -171,9 +175,23 @@ img{image-rendering:pixelated}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s4);padding:var(--s5);text-align:center;background:var(--panel);box-shadow:inset 0 var(--px) 0 var(--panel-hi),var(--ring)}
 .empty-state p{color:var(--muted)}
 /* Level + EXP */
+/* Locked practice: solid (no see-through stars), muted, with a small lock badge in the corner. */
+.mode-button{position:relative}
+.practice-modes .mode-button{gap:var(--s3);padding:var(--s4)}
+/* Bare icons, like the trophy and pet below; no dark tile behind them. */
+.practice-modes .mode-icon{width:32px;height:32px}
+.mode-button:disabled{opacity:1;background:var(--panel-lo);color:var(--muted);box-shadow:inset 0 var(--px) 0 var(--panel),var(--ring),var(--drop)}
+.mode-button:disabled .mode-icon{color:var(--muted)}
+.mode-label{flex:1;display:grid;gap:var(--s1);min-width:0}
+.lock-pips{display:flex;gap:3px}
+.lock-pips i{width:14px;height:var(--s2);background:var(--panel-raised);box-shadow:inset 0 0 0 2px var(--outline)}
+.lock-pips i.on{background:var(--coral);box-shadow:inset 0 -2px 0 var(--coral-shade)}
+/* Both secondary icons share one 28px box so the row lines up. */
+.home-extras .hall-trophy,.home-extras .button-pet{width:28px;height:28px}
 .level-card{display:flex;align-items:center;gap:var(--s4);width:100%;max-width:420px;padding:var(--s3) var(--s4);background:var(--panel);box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop)}
-.level-number{display:grid;place-items:center;align-content:center;flex:none;width:56px;height:56px;background:var(--yellow);color:var(--ink);font-family:var(--mono);font-size:var(--text-title);line-height:1;box-shadow:inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--gold-shade),inset var(--px) var(--px) 0 var(--gold-hi),var(--ring)}
-.level-number small{font-size:13pt;line-height:1}
+.level-number{display:inline-block;flex:none;min-width:56px;height:56px;padding:0 var(--s2);text-align:center;white-space:nowrap;background:var(--yellow);color:var(--ink);font-family:var(--mono);font-size:var(--text-title);line-height:56px;box-shadow:inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--gold-shade),inset var(--px) var(--px) 0 var(--gold-hi),var(--ring)}
+/* One line, "Lv.1": line-height = badge height centres it and keeps "Lv." on the number's baseline. */
+.level-number small{margin-right:1px;font-size:13pt;line-height:1}
 .level-copy{flex:1;min-width:0;display:grid;gap:var(--s2)}
 .level-line{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);white-space:nowrap}
 .level-line strong{font-size:var(--text-lg)}
@@ -206,7 +224,7 @@ img{image-rendering:pixelated}
   .hero-scene{height:96px;max-width:300px}
 
   .level-card{padding:var(--s2) var(--s3);gap:var(--s3)}
-  .level-number{width:48px;height:48px;font-size:var(--text-xl)}
+  .level-number{min-width:48px;height:48px;line-height:48px;font-size:var(--text-xl)}
   .mode-menu{gap:var(--s4)}
   .rush-card{gap:var(--s2);padding:var(--s2)}
   .rush-durations button{min-height:44px}
@@ -252,7 +270,7 @@ img{image-rendering:pixelated}
 .duration-tabs button{min-height:var(--control);background:var(--panel);border:0;font-size:var(--text-base);white-space:nowrap;box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring)}
 .duration-tabs button:hover{background:var(--panel-raised)}
 .duration-tabs button[aria-pressed=true]{background:var(--yellow);color:var(--ink);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring)}
-.hall-button{color:var(--yellow)}
+/* Secondary home buttons share one text colour; their icons carry the colour. */
 .hall-trophy{height:24px}
 @media(min-width:701px) and (max-width:1000px){
   .home{gap:var(--s8);padding:var(--s4) 0}

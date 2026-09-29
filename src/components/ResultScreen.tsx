@@ -54,7 +54,7 @@ export function ResultScreen({game:g,rewards,friends,syncState,retrySave,unlocke
       <div className="stats-grid"><Stat icon="star" label="정답" value={`${r.correct}개`}/><Stat icon="target" label={<><span className="wide-only">다시 볼 문제</span><span className="narrow-only">복습</span></>} value={`${r.answered-r.correct}개`}/></div>
       {rewards&&<div className={`exp-card${rewards.levelUp?' level-up':''}`}>
         <div className="exp-head">
-          <span className="level-number"><small>Lv</small>{rewards.levelAfter.number}</span>
+          <span className="level-number"><small>Lv.</small>{rewards.levelAfter.number}</span>
           <strong>{rewards.levelUp?<span className="level-up-text">레벨 업!</span>:null}{rewards.levelAfter.label}</strong>
           <span className="exp-gain">+{rewards.expAfter-rewards.expBefore} EXP</span>
         </div>

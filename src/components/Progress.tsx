@@ -11,7 +11,7 @@ export function ExpBar({from,to,label}:{readonly from?:number;readonly to:number
 }
 export function LevelCard({level,exp}:{readonly level:Level;readonly exp:number}){
   return <div className="level-card">
-    <span className="level-number"><small>Lv</small>{level.number}</span>
+    <span className="level-number"><small>Lv.</small>{level.number}</span>
     <div className="level-copy">
       <div className="level-line"><strong>{level.label}</strong></div>
       <ExpBar to={expRatio(level,exp)} label="다음 레벨까지 경험치"/>

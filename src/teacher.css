@@ -16,7 +16,7 @@
 .teacher-record-dot{position:absolute;top:var(--s1);right:var(--s1);width:8px;height:8px;background:var(--yellow)}
 .teacher-number[aria-pressed=true] .teacher-record-dot{background:var(--ink)}
 .teacher-level{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--s3);margin-bottom:var(--s4);padding:var(--s3);background:var(--bg)}
-.teacher-level .level-number{width:48px;height:48px;font-size:var(--text-xl)}
+.teacher-level .level-number{min-width:48px;height:48px;line-height:48px;font-size:var(--text-xl)}
 .teacher-level>div{display:grid;gap:var(--s1);min-width:0}
 .teacher-level small{color:var(--muted);font-size:13pt}
 .teacher-level .level-number small{color:var(--ink)}

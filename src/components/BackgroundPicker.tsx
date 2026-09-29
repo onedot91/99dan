@@ -17,7 +17,7 @@ export function BackgroundPicker({value,level,onChange}:{readonly value:Backgrou
     <button className="quiet-button background-button" aria-label={`배경 고르기, 지금 ${current?.label}`} aria-expanded={open} onClick={()=>setOpen(o=>!o)}><Icon name="image"/><span>배경</span></button>
     {open&&<div className="background-menu" role="group" aria-label="배경">
       {BACKGROUNDS.map(b=>{const unlocked=isUnlocked(b.id,level);return <button key={b.id} className={`background-option bg-swatch-${b.id}`} aria-pressed={b.id===value} disabled={!unlocked} aria-label={unlocked?b.label:`${b.label}, Lv${b.level}에 열림`} onClick={()=>{onChange(b.id);setOpen(false);}}>
-        <i aria-hidden="true"/><strong>{b.label}</strong>{unlocked?b.id===value&&<Icon name="check"/>:<small>Lv{b.level}</small>}
+        <i aria-hidden="true"/><strong>{b.label}</strong>{unlocked?b.id===value&&<Icon name="check"/>:<small>Lv.{b.level}</small>}
       </button>;})}
     </div>}
   </div>;

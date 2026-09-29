@@ -21,7 +21,7 @@
 .unlock-card strong{color:var(--yellow)}
 .unlock-used{color:var(--mint);white-space:nowrap}
 .exp-head{display:flex;align-items:center;gap:var(--s3);white-space:nowrap}
-.exp-head .level-number{width:44px;height:44px;font-size:var(--text-xl)}
+.exp-head .level-number{min-width:44px;height:44px;line-height:44px;font-size:var(--text-xl)}
 .exp-head strong{flex:1;display:flex;align-items:center;gap:var(--s2);font-size:var(--text-lg);min-width:0}
 .level-up-text{display:inline-block;padding:0 var(--s2);background:var(--yellow);color:var(--ink);box-shadow:var(--ring);transform:rotate(-3deg)}
 .exp-gain{color:var(--blue);font-family:var(--mono)}
@@ -103,4 +103,4 @@
   .records-screen .screen-heading,.records-board h2{display:none}
   .records-screen.show-summary .records-board,.records-screen.show-board .records-summary{display:none}
 }
-@media(max-height:450px) and (min-width:701px){.records-screen{max-width:560px;gap:var(--s3);padding:0}.records-summary{gap:var(--s3)}.records-screen .duration-tabs button{min-height:40px}.records-summary .level-card{padding:var(--s1) var(--s3)}.records-summary .level-number{width:40px;height:40px;font-size:var(--text-xl)}.records-summary .stat{padding:var(--s2) var(--s3);gap:0}.records-summary .stat>strong{font-size:var(--text-xl)}.records-screen .mastery-board{--cell:24px}}
+@media(max-height:450px) and (min-width:701px){.records-screen{max-width:560px;gap:var(--s3);padding:0}.records-summary{gap:var(--s3)}.records-screen .duration-tabs button{min-height:40px}.records-summary .level-card{padding:var(--s1) var(--s3)}.records-summary .level-number{min-width:40px;height:40px;line-height:40px;font-size:var(--text-xl)}.records-summary .stat{padding:var(--s2) var(--s3);gap:0}.records-summary .stat>strong{font-size:var(--text-xl)}.records-screen .mastery-board{--cell:24px}}
