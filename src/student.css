@@ -2,6 +2,8 @@
 .student-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s4)}
 .student-grid button{min-height:72px;display:flex;align-items:baseline;justify-content:center;gap:var(--s1);padding:var(--s3);background:var(--panel);border:0;box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop);font-size:var(--text-title);font-family:var(--mono)}
 .student-grid button span{font-size:var(--text-base)}
+.student-grid .spare-number{font-family:inherit;font-size:var(--text-xl);color:var(--yellow)}
+.spare-note{color:var(--muted);text-align:center}
 .student-grid button:hover{background:var(--mint);color:var(--ink)}
 .teacher-entry{justify-self:center}
 .teacher-code{width:100%;min-height:var(--control);padding:var(--s2) var(--s4);background:var(--outline);border:0;box-shadow:inset 0 var(--px) 0 #000,var(--ring);color:var(--paper);font:900 var(--text-title) var(--mono);text-align:center;letter-spacing:.2em}

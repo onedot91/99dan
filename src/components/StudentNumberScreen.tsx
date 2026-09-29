@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { saveStudentNumber } from '../game/studentNumber';
+import { SPARE_NUMBER, numberLabel, saveStudentNumber } from '../game/studentNumber';
 import { teacherLogin } from '../cloud/client';
 import { Icon } from './Icon';
 export function StudentNumberScreen({onConfirm,onTeacher}:{readonly onConfirm:(number:number)=>void;readonly onTeacher:(token:string)=>void}){
@@ -32,11 +32,11 @@ export function StudentNumberScreen({onConfirm,onTeacher}:{readonly onConfirm:(n
     <header className="header"><div className="brand"><span className="brand-mark"><Icon name="bolt"/></span><span>곱셈 게임</span></div></header>
     <div className="screen-content"><main className="student-screen">
       <div className="screen-heading"><h1>번호 선택</h1></div>
-      <div className="student-grid" aria-label="학생 번호">{Array.from({length:23},(_,i)=>i+1).map(number=><button key={number} aria-label={`${number}번`} onClick={()=>{setError(false);setPending(number);}}>{number}<span>번</span></button>)}</div>
+      <div className="student-grid" aria-label="학생 번호">{Array.from({length:23},(_,i)=>i+1).map(number=><button key={number} aria-label={`${number}번`} onClick={()=>{setError(false);setPending(number);}}>{number}<span>번</span></button>)}<button className="spare-number" aria-label="예비 번호" onClick={()=>{setError(false);setPending(SPARE_NUMBER);}}>예비</button></div>
       <button className="quiet-button teacher-entry" onClick={()=>{setCode('');setTeacherError('');setTeacherOpen(true);}}>교사 번호 입력</button>
     </main></div>
     <dialog ref={dialog} className="number-dialog arcade-panel" aria-labelledby="number-confirm-title" onCancel={()=>setPending(null)}>
-      <div className="number-confirm-content"><span className="number-preview">{pending}번</span><h2 id="number-confirm-title">내 번호가 맞아?</h2>
+      <div className="number-confirm-content"><span className="number-preview">{pending!==null&&numberLabel(pending)}</span><h2 id="number-confirm-title">{pending===SPARE_NUMBER?'예비 번호로 할까?':'내 번호가 맞아?'}</h2>{pending===SPARE_NUMBER&&<p className="spare-note">모든 펫과 배경을 쓸 수 있어.<br/>기록은 저장되지 않아.</p>}
       {error&&<p className="storage-error" role="alert">번호를 저장할 수 없어.<br/>브라우저 설정을 확인해 줘.</p>}
       <div className="number-confirm-actions"><button className="quiet-button" autoFocus onClick={()=>setPending(null)}>다시 고르기</button><button className="primary-button" onClick={confirm}>맞아, 시작!</button></div></div>
     </dialog>

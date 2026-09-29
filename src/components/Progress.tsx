@@ -9,11 +9,11 @@ export function ExpBar({from,to,label}:{readonly from?:number;readonly to:number
     <span className={from===undefined?'':'exp-fill-animated'} style={{'--from':from??to,'--to':to} as CSSProperties}/>
   </div>;
 }
-export function LevelCard({level,exp,mastered}:{readonly level:Level;readonly exp:number;readonly mastered?:number}){
+export function LevelCard({level,exp}:{readonly level:Level;readonly exp:number}){
   return <div className="level-card">
     <span className="level-number"><small>Lv</small>{level.number}</span>
     <div className="level-copy">
-      <div className="level-line"><strong>{level.label}</strong>{mastered!==undefined&&<span className="mastered-count">익힌 식 {mastered}/64</span>}</div>
+      <div className="level-line"><strong>{level.label}</strong></div>
       <ExpBar to={expRatio(level,exp)} label="다음 레벨까지 경험치"/>
       <small>{level.next===null?'최고 레벨 달성!':`다음 레벨까지 ${level.next-exp}문제`}</small>
     </div>

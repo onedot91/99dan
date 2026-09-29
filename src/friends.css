@@ -1,9 +1,38 @@
 .friend-sprite{display:block;width:100%;height:100%;image-rendering:pixelated}
 /* Home */
 .hero-scene .hero-friend{position:absolute;left:0;bottom:var(--s2);width:96px;height:96px;animation:hero-walk 7200ms linear infinite}
-.hero-friend .friend-sprite{animation:friend-bob 480ms steps(2,end) infinite}
+/* Turtles stroll slowly on the home screen only; the play-screen time bar keeps its pace. */
+.hero-scene .hero-friend.family-turtle{animation-duration:18000ms}
+.hero-friend.family-turtle .friend-sprite{animation-duration:960ms}
+.hero-friend .friend-sprite{animation:friend-bob 480ms steps(2,end) infinite;transform-origin:50% 100%;
+  /* A light pixel rim keeps dark pets readable on every background. */
+  filter:drop-shadow(2px 0 0 var(--paper)) drop-shadow(-2px 0 0 var(--paper)) drop-shadow(0 -2px 0 var(--paper)) drop-shadow(0 2px 0 var(--outline))}
+/* Drawn edge to edge, then scaled by stage so pets still look like they grow. */
+.hero-friend.tier-1 .friend-sprite{scale:.7}.hero-friend.tier-2 .friend-sprite{scale:.8}.hero-friend.tier-3 .friend-sprite{scale:.9}
+.hero-scene .hero-friend:is(.mood-sleep,.mood-wake,.mood-excited){left:50%;animation:none;transform:translateX(-50%)}
+.hero-friend.mood-sleep .friend-sprite{animation:pet-doze 1600ms steps(4,end) infinite}
+.hero-friend.mood-wake .friend-sprite{animation:pet-wake 520ms steps(6,end) 2}
+.hero-friend.mood-excited .friend-sprite{animation:pet-hop-home 900ms steps(6,end) infinite}
+.hero-scene:has(.mood-sleep,.mood-wake,.mood-excited){overflow:visible}
+.hero-friend.tier-1{--grow:.7}.hero-friend.tier-2{--grow:.8}.hero-friend.tier-3{--grow:.9}
+/* A speech bubble centred over the drawing, its pixel tail pointing down at the pet. */
+.pet-bubble{position:absolute;left:50%;bottom:calc(88% * var(--grow,1));translate:-50% 0;z-index:2;padding:2px var(--s2);border:0;background:var(--paper);color:var(--ink);font:inherit;font-size:var(--text-base);line-height:1.3;white-space:nowrap;box-shadow:var(--ring),0 calc(2 * var(--px)) 0 rgb(11 10 31 / .5);transform-origin:50% 100%;animation:bubble-pop 280ms steps(4,end) both}
+.pet-bubble::after{content:"";position:absolute;left:50%;top:100%;width:12px;height:var(--px);margin-left:-6px;background:var(--paper);box-shadow:calc(-1 * var(--px)) 0 0 var(--outline),var(--px) 0 0 var(--outline)}
+.pet-bubble::before{content:"";position:absolute;left:50%;top:calc(100% + var(--px));width:var(--px);height:var(--px);margin-left:-2px;background:var(--outline);box-shadow:-4px 0 0 var(--outline),4px 0 0 var(--outline),0 var(--px) 0 var(--outline)}
+.pet-bubble-button{cursor:pointer;animation:bubble-pop 280ms steps(4,end) both,bubble-nudge 900ms steps(6,end) 280ms infinite}
+.pet-bubble-button:hover{background:var(--paper-hi)}
+.mood-sleep .pet-bubble{background:none;color:var(--muted);box-shadow:none;font-size:var(--text-lg);left:70%;animation:bubble-float 1600ms steps(8,end) infinite}
+.mood-sleep .pet-bubble::before,.mood-sleep .pet-bubble::after{display:none}
+@keyframes pet-doze{0%,100%{transform:scale(1,1)}50%{transform:scale(1.04,.94)}}
+@keyframes pet-wake{0%,100%{transform:none}40%{transform:translateY(-16px)}70%{transform:translateY(0) scale(1.1,.9)}}
+@keyframes pet-hop-home{0%,50%,100%{transform:none}20%{transform:translateY(-12px)}35%{transform:translateY(0) scale(1.08,.92)}}
+@keyframes bubble-pop{0%{opacity:0;transform:scale(.3)}70%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:none}}
+@keyframes bubble-float{0%{opacity:0;transform:translate(0,6px)}30%,70%{opacity:1}100%{opacity:0;transform:translate(6px,-10px)}}
+@keyframes bubble-nudge{0%,50%,100%{transform:none}20%{transform:translateY(-4px)}}
+.hero-friend::after{content:"";position:absolute;left:20%;right:20%;bottom:-2px;height:var(--s1);background:var(--outline);opacity:.6;z-index:-1}
 @keyframes friend-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .home-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4)}
+.home-extras .quiet-button{white-space:nowrap;min-width:0}
 .friends-button{color:var(--mint)}
 .friends-button.has-pick{background:var(--yellow);color:var(--ink);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring),var(--drop)}
 .friends-button.has-pick:hover:not(:disabled){background:var(--gold-hi)}

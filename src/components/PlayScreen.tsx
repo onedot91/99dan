@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { RushGame } from '../game/useRushGame';
 import type { Run } from '../types/game';
 import { NumberPad } from './NumberPad';
@@ -14,16 +15,22 @@ export function ComboMeter({run:r}:{readonly run:Run}){
   const justFilled=r.phase==='correct'&&r.combo<=MAX_BONUS_STEPS?bonusSteps-1:-1;
   return <div className={`combo-meter ${tier}`} aria-label={`연속 정답 ${r.combo}개, 다음 보너스 ${bonusSteps*10}점`}>
     {tier&&<Sprite map={FLAME} className="combo-flame"/>}
-    <span className="combo-count" key={r.combo}><small>콤보</small>{r.combo}</span>
+    <span className="combo-count"><small>콤보</small></span>
     <span className="combo-pips" aria-hidden="true">{Array.from({length:MAX_BONUS_STEPS},(_,i)=><i key={i} className={`${i<bonusSteps?'on':''}${i===justFilled?' just':''}`}/>)}</span>
   </div>;
 }
-export function PlayScreen({game:g,partner}:{readonly game:RushGame;readonly partner:string|null}){
+export function PlayScreen({game:g,partner,best}:{readonly game:RushGame;readonly partner:string|null;readonly best:number|null}){
+  // Where on the bar this run passed the previous best, fixed once it happens.
+  const flag=useRef<{readonly runId:string;readonly at:number}|null>(null);
   const r=g.run;if(!r)return null;
   const seconds=Math.ceil(r.remaining/1000);
   const progress=Math.min(1,Math.max(0,r.mode==='rush'?r.remaining/(r.duration*60000):r.correct/r.limit));
   const combo=r.phase==='correct'&&r.combo>0&&r.combo%5===0;
   const tier=tierOf(r.combo);
+  if(r.mode==='rush'&&best!==null&&best>0&&r.score>best&&flag.current?.runId!==r.id)flag.current={runId:r.id,at:progress};
+  const flagAt=flag.current?.runId===r.id?flag.current.at:null;
+  // The pet cheers each answer from the edge of the screen, never over the question.
+  const reaction=r.phase==='correct'?combo?'combo':'hop':r.phase==='wrong'?'wobble':'';
   // Hit effects burst from the answer itself: shockwave rings plus sparks that arc and fall.
   const hitFx=r.phase==='correct'?<span className="hit-fx" key={`fx:${r.answered}`} aria-hidden="true"><i className="shock"/><i className="shock late"/>{Array.from({length:12},(_,i)=><b key={i}/>)}</span>:null;
   // Each typed digit is its own node so it can pop in as it lands.
@@ -34,7 +41,12 @@ export function PlayScreen({game:g,partner}:{readonly game:RushGame;readonly par
       {r.mode!=='rush'&&<span className="time"><Icon name="book"/>{Math.min(r.correct+Number(r.phase==='question'),r.limit)} / {r.limit}</span>}
       <div className="time-track" role="progressbar" aria-label={r.mode==='rush'?'남은 시간':'연습 진행'} aria-valuenow={r.mode==='rush'?seconds:r.correct} aria-valuemin={0} aria-valuemax={r.mode==='rush'?r.duration*60:r.limit}><span style={{transform:`scaleX(${progress})`}}/></div>
       {/* The partner pet rides the edge of the bar: walking left as time runs out, right as practice fills up. */}
-      {partner&&<div className="time-runner" aria-hidden="true"><div className={`time-pet${r.mode==='rush'?' leftward':''}`} style={{transform:`translateX(${progress*100}%)`}}><FriendSprite id={partner} fill/></div></div>}
+      {(partner||flagAt!==null)&&<div className="time-runner" aria-hidden="true">
+        {flagAt!==null&&<span className="best-flag" style={{left:`${flagAt*100}%`}}><Icon name="flag"/><em>최고 기록 돌파!</em></span>}
+        {partner&&<div className={`time-pet${r.mode==='rush'?' leftward':''}`} style={{transform:`translateX(${progress*100}%)`}}>
+          <span className={`pet-react${reaction?` react-${reaction}`:''}`} key={`${r.answered}:${reaction}`}><FriendSprite id={partner} fill/>{reaction==='combo'&&Array.from({length:6},(_,i)=><i key={i}/>)}</span>
+        </div>}
+      </div>}
     </div>
     <section className="question-area arcade-panel" aria-label="현재 문제">
       <div className="question-content" key={r.answered+':'+r.phase}>

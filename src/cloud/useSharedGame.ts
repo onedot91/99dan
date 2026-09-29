@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RushGame } from '../game/useRushGame';
-import { beginRun, cloudConfigured, finishRun, loadCapabilities, loadProfile } from './client';
+import { beginRun, cloudConfigured as configured, finishRun, loadCapabilities, loadProfile } from './client';
+import { isSpare } from '../game/studentNumber';
 import type { SharedProfile, SyncState } from './types';
 import type { Run } from '../types/game';
 export function useSharedGame(studentNumber:number,game:RushGame){
+  const cloudConfigured=configured&&!isSpare(studentNumber);
   const [state,setState]=useState<SyncState>(cloudConfigured?'loading':'unconfigured');
   const [profile,setProfile]=useState<SharedProfile|null>(null);
   const [friendsSync,setFriendsSync]=useState(false);

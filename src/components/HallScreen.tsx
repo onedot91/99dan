@@ -6,13 +6,14 @@ import type { Standing } from '../cloud/types';
 import { PixelArt } from './PixelArt';
 import { Icon } from './Icon';
 import { CROWN, Sprite } from './Sprite';
+import { isSpare } from '../game/studentNumber';
 export function HallScreen({ready,studentNumber,initialDuration}:{readonly ready:boolean;readonly studentNumber:number;readonly initialDuration:Duration}){
   const [duration,setDuration]=useState<Duration>(initialDuration);
   const [rows,setRows]=useState<readonly Standing[]>([]);
   const [state,setState]=useState<'loading'|'ready'|'error'>('loading');
   const [retry,setRetry]=useState(0);
   useEffect(()=>{
-    if(!ready||!cloudConfigured)return;
+    if(!ready||!cloudConfigured||isSpare(studentNumber))return;
     let active=true;
     const load=async()=>{try{const next=await loadLeaders(studentNumber,duration);if(active){setRows(next);setState('ready');}}catch{if(active)setState('error');}};
     setState('loading');void load();
@@ -21,6 +22,6 @@ export function HallScreen({ready,studentNumber,initialDuration}:{readonly ready
   },[duration,ready,retry,studentNumber]);
   return <main className="hall-screen"><div className="screen-heading"><PixelArt kind="trophy"/><h1>명예의 전당</h1></div>
     <div className="duration-tabs" role="group" aria-label="기록 단계">{DURATIONS.map(n=><button key={n} aria-pressed={duration===n} onClick={()=>setDuration(n)}>{n}분 도전</button>)}</div>
-    {!cloudConfigured?<div className="empty-state" role="status">연결 필요</div>:!ready||state==='loading'?<div className="empty-state" role="status">불러오는 중</div>:state==='error'?<button className="quiet-button" onClick={()=>setRetry(n=>n+1)}>다시 불러오기</button>:rows.length?<ol className="podium">{rows.map((row,i)=><li className={`${['first','second','third'][i]??''}${row.studentNumber===studentNumber?' me':''}`} key={row.studentNumber}><strong className="rank">{i===0&&<Sprite map={CROWN} className="rank-crown"/>}{i+1}</strong>{row.avatar?<img src={row.avatar} alt="" width="56" height="56"/>:<Icon name="star" size={40}/>}<span>{row.studentNumber}번{row.studentNumber===studentNumber&&<em className="me-tag">나</em>}</span><b>{row.score.toLocaleString()}점</b></li>)}</ol>:<div className="empty-state">기록 없음</div>}
+    {isSpare(studentNumber)?<div className="empty-state" role="status">예비 번호는 순위에 들어가지 않아요</div>:!cloudConfigured?<div className="empty-state" role="status">연결 필요</div>:!ready||state==='loading'?<div className="empty-state" role="status">불러오는 중</div>:state==='error'?<button className="quiet-button" onClick={()=>setRetry(n=>n+1)}>다시 불러오기</button>:rows.length?<ol className="podium">{rows.map((row,i)=><li className={`${['first','second','third'][i]??''}${row.studentNumber===studentNumber?' me':''}`} key={row.studentNumber}><strong className="rank">{i===0&&<Sprite map={CROWN} className="rank-crown"/>}{i+1}</strong>{row.avatar?<img src={row.avatar} alt="" width="56" height="56"/>:<Icon name="star" size={40}/>}<span>{row.studentNumber}번{row.studentNumber===studentNumber&&<em className="me-tag">나</em>}</span><b>{row.score.toLocaleString()}점</b></li>)}</ol>:<div className="empty-state">기록 없음</div>}
   </main>;
 }

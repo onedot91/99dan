@@ -11,7 +11,6 @@
 .wrong .answer-feedback{animation:loss-arrive 320ms steps(4,end)}
 .wrong .score-display strong,.header-score.wrong:not(.score-floor) strong{animation:score-drop 320ms steps(4,end)}
 .wrong .score-loss,.header-score.wrong .score-loss{animation:loss-arrive 320ms steps(4,end)}
-.combo-count{animation:count-bump 240ms steps(3,end)}
 .combo-flame{animation:flame-arrive 300ms steps(3,end)}
 .combo-milestone .question-area{outline-color:var(--yellow)}
 .combo-milestone .question-content{animation:power-hit 420ms steps(7,end)}
@@ -70,10 +69,21 @@
 @keyframes score-slam{0%{transform:scale(1)}35%{transform:scale(1.25) rotate(-2deg)}70%{transform:scale(.96)}100%{transform:none}}
 .record-ribbon{animation:stamp-in 420ms steps(5,end) 350ms both}
 .result-goal{animation:page-enter 300ms steps(3,end) 900ms both}
-.exp-fill-animated{animation:exp-fill 900ms steps(12,end) 500ms both}
+/* Result reward chain: orbs fly in one by one, then the bar fills, then stamps and unlocks land. */
+.result-screen{--fill-at:calc(400ms + var(--orbs,0) * var(--orb-step,70ms));--stamp-at:calc(var(--fill-at) + 900ms)}
+.exp-fill-animated{animation:exp-fill 900ms steps(12,end) var(--fill-at,500ms) both}
+.exp-orbs{position:absolute;inset:0;pointer-events:none}
+.exp-orbs i{position:absolute;left:calc(8% + var(--x) * .84);bottom:var(--s3);width:10px;height:10px;background:var(--blue);box-shadow:inset -2px -2px 0 var(--blue-shade),inset 2px 2px 0 #bfeaff,0 0 0 2px var(--outline);opacity:0;animation:orb-fly 460ms steps(8,end) calc(300ms + var(--i) * var(--orb-step,70ms)) both}
+@keyframes orb-fly{0%{opacity:0;transform:translateY(-120px) scale(.6)}20%{opacity:1;transform:translateY(-110px) scale(1.2)}85%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(0) scale(.3)}}
+.unlock-card{animation:unlock-in 420ms steps(6,end) calc(var(--stamp-at) + 400ms) both}
+@keyframes unlock-in{0%{opacity:0;transform:translateX(40px)}60%{opacity:1;transform:translateX(-4px)}100%{opacity:1;transform:none}}
+.friend-cta{animation:cta-hop 1200ms steps(6,end) calc(var(--stamp-at) + 600ms) infinite}
+@keyframes cta-hop{0%,40%,100%{transform:none}10%{transform:translateY(-6px)}20%{transform:translateY(0)}28%{transform:translateY(-3px)}}
+/* Tapping skips ahead: negative delays land finite animations on their last frame. */
+.result-screen.skip *{animation-delay:-60s!important}
 .exp-card{animation:page-enter 240ms steps(3,end) 200ms both}
-.level-up .level-up-text{animation:stamp-in 360ms steps(5,end) 1300ms both}
-.level-up .level-number{animation:count-bump 300ms steps(3,end) 1300ms}
+.level-up .level-up-text{animation:stamp-in 360ms steps(5,end) var(--stamp-at,1300ms) both}
+.level-up .level-number{animation:count-bump 300ms steps(3,end) var(--stamp-at,1300ms)}
 .mastered-card{animation:page-enter 240ms steps(3,end) 400ms both}
 .mastered-card li{animation:chip-pop 240ms steps(3,end) both}
 .mastered-card li:nth-child(1){animation-delay:600ms}.mastered-card li:nth-child(2){animation-delay:680ms}.mastered-card li:nth-child(3){animation-delay:760ms}
@@ -112,7 +122,7 @@
 @keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .hit-fx,.combo-banner,.trophy-particles,.score-gain{display:none}
+  .hit-fx,.combo-banner,.trophy-particles,.score-gain,.exp-orbs,.pet-react>i,.best-flag em{display:none}
   .hero-scene .hero-friend{left:50%;transform:translateX(-50%)}
   .record-ribbon,.level-up-text{transform:rotate(-3deg)}
 }

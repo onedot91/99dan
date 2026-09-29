@@ -16,7 +16,24 @@
 /* Inset by half a pet so the pet stays on screen at either end of the bar. */
 .time-runner{position:absolute;left:calc(var(--s1) + var(--pet) / 2);right:calc(var(--s1) + var(--pet) / 2);bottom:calc(var(--s4) - var(--s1));pointer-events:none}
 .time-pet{width:100%;transition:transform 240ms linear}
-.time-pet .friend-sprite{display:block;width:var(--pet);height:var(--pet);margin-left:calc(var(--pet) / -2);animation:friend-bob 480ms steps(2,end) infinite}
+.time-pet .pet-react{position:relative;display:block;width:var(--pet);height:var(--pet);margin-left:calc(var(--pet) / -2);transform-origin:50% 100%}
+.time-pet .friend-sprite{animation:friend-bob 480ms steps(2,end) infinite}
+.pet-react.react-hop{animation:pet-hop 360ms steps(6,end)}
+.pet-react.react-combo{animation:pet-spin 520ms steps(8,end)}
+.pet-react.react-wobble{animation:pet-wobble 340ms steps(6,end)}
+.pet-react>i{position:absolute;left:50%;top:40%;width:6px;height:6px;background:var(--yellow);box-shadow:0 0 0 2px var(--outline);animation:pet-spark 520ms steps(6,end) both}
+.pet-react>i:nth-of-type(1){--x:-28px;--y:-20px}.pet-react>i:nth-of-type(2){--x:28px;--y:-20px}.pet-react>i:nth-of-type(3){--x:-34px;--y:4px;background:var(--mint)}
+.pet-react>i:nth-of-type(4){--x:34px;--y:4px;background:var(--mint)}.pet-react>i:nth-of-type(5){--x:0;--y:-34px;background:var(--blue)}.pet-react>i:nth-of-type(6){--x:0;--y:-8px;background:var(--orange)}
+@keyframes pet-hop{0%,100%{transform:none}40%{transform:translateY(-14px) scale(1.05,.95)}70%{transform:translateY(0) scale(1.1,.9)}}
+@keyframes pet-spin{0%{transform:none}40%{transform:translateY(-18px) rotate(180deg)}80%{transform:translateY(-4px) rotate(360deg)}100%{transform:none}}
+@keyframes pet-wobble{0%,100%{transform:none}25%{transform:rotate(-10deg)}50%{transform:rotate(8deg) translateY(2px)}75%{transform:rotate(-4deg)}}
+@keyframes pet-spark{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(.4)}}
+/* Planted where this run passed the previous best; the pet keeps walking past it. */
+.best-flag{position:absolute;bottom:0;display:flex;align-items:flex-end;color:var(--yellow);transform:translateX(-4px);animation:flag-plant 360ms steps(5,end) both}
+.best-flag svg{width:24px;height:24px;filter:drop-shadow(2px 2px 0 var(--outline))}
+.best-flag em{position:absolute;bottom:calc(100% + var(--s1));left:50%;padding:2px var(--s2);background:var(--yellow);color:var(--ink);font-style:normal;font-size:var(--text-base);white-space:nowrap;box-shadow:var(--ring);transform:translateX(-50%);animation:flag-toast 1800ms steps(9,end) both}
+@keyframes flag-plant{0%{opacity:0;transform:translate(-4px,-24px)}60%{opacity:1;transform:translate(-4px,4px)}100%{opacity:1;transform:translateX(-4px)}}
+@keyframes flag-toast{0%{opacity:0;transform:translate(-50%,8px) scale(.6)}15%{opacity:1;transform:translate(-50%,0) scale(1.1)}25%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}
 .time-pet.leftward .friend-sprite{scale:-1 1}
 .time,.combo{display:flex;align-items:center;gap:var(--s2);white-space:nowrap}
 .time{font-family:var(--mono);font-size:var(--text-xl);color:var(--yellow);text-shadow:var(--text-outline)}
@@ -24,13 +41,13 @@
 .time-track>span{display:block;width:100%;height:100%;background:linear-gradient(var(--mint-hi) 0 25%,var(--mint) 25% 75%,var(--mint-shade) 75%);transform-origin:left}
 .time-track::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 20px,var(--outline) 20px 24px)}
 .combo-meter{display:flex;align-items:center;gap:var(--s2);padding:var(--s1) var(--s3);min-height:40px;background:var(--panel);box-shadow:inset 0 var(--px) 0 var(--panel-hi),var(--ring);white-space:nowrap}
-.combo-count{display:flex;align-items:baseline;gap:var(--s1);font-family:var(--mono);font-size:var(--text-xl);color:var(--paper);min-width:3.2em}
+.combo-count{display:flex;align-items:baseline;gap:var(--s1);font-family:var(--mono);font-size:var(--text-xl);color:var(--paper)}
 .combo-count small{font-size:13pt;color:var(--muted)}
 .combo-pips{display:flex;gap:var(--s1)}
 .combo-pips i{width:var(--s3);height:var(--s4);background:var(--outline);box-shadow:inset 0 0 0 2px var(--panel-lo)}
 .combo-pips i.on{background:var(--yellow);box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--gold-shade)}
-.combo-meter.hot .combo-count{color:var(--yellow)}
-.combo-meter.blaze .combo-count{color:var(--orange)}
+.combo-meter.hot .combo-count small{color:var(--yellow)}
+.combo-meter.blaze .combo-count small{color:var(--orange)}
 .combo-meter.hot .combo-pips i.on{background:var(--orange);box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--red)}
 .combo-flame{height:28px}
 .question-area.arcade-panel{position:relative;container-type:inline-size;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:var(--s5);padding:var(--panel-pad);background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 var(--px) var(--paper-hi),inset 0 calc(-2 * var(--px)) 0 var(--paper-shade),inset 0 0 0 calc(2 * var(--px)) var(--paper),inset 0 0 0 calc(3 * var(--px)) var(--paper-shade),var(--ring),var(--drop)}

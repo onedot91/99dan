@@ -1,6 +1,7 @@
 import { SpriteLayer } from './Sprite';
 import type { SpriteMap } from './Sprite';
-const TROPHY:SpriteMap=[
+// Also used as the hall-of-fame button icon so every entry point shows the same trophy.
+export const TROPHY:SpriteMap=[
   '...oooooooooooooo...',
   '.ooohhyyyyyyyyyYooo.',
   'oyyohyyyyyyyyyyYoyyo',

@@ -2,10 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { saveFriends } from '../cloud/client';
 import type { FriendState, SharedProfile } from '../cloud/types';
 import { levelFor } from './learning';
-import { friendById, offersFor, sanitizeOwned } from './friends';
+import { FRIENDS, friendById, offersFor, sanitizeOwned } from './friends';
+import { isSpare } from './studentNumber';
 const EMPTY:FriendState={owned:[],partner:null};
 const storageKey=(n:number)=>`gugudan-rush.friends.${n}`;
 function readLocal(n:number):FriendState{
+  if(isSpare(n)){
+    // The spare number owns every pet; only the partner choice is remembered.
+    const owned=FRIENDS.map(f=>f.id);
+    try{const raw:unknown=JSON.parse(localStorage.getItem(storageKey(n))??'null');const partner=raw&&typeof raw==='object'&&'partner' in raw&&typeof raw.partner==='string'&&owned.includes(raw.partner)?raw.partner:owned[0]??null;return {owned,partner};}
+    catch{return {owned,partner:owned[0]??null};}
+  }
   try{
     const raw:unknown=JSON.parse(localStorage.getItem(storageKey(n))??'null');
     if(!raw||typeof raw!=='object'||!('owned' in raw)||!Array.isArray(raw.owned))return EMPTY;
@@ -35,7 +42,7 @@ export function useFriends(studentNumber:number,totalCorrect:number,cloud:{reado
     if(!server.owned.length&&local.owned.length&&local.owned.length<=level){persist(local);return;}
     setState(server);writeLocal(studentNumber,server);
   },[server]);
-  const pending=Math.max(0,level-state.owned.length);
+  const pending=isSpare(studentNumber)?0:Math.max(0,level-state.owned.length);
   const offers=useMemo(()=>pending?offersFor(state.owned,studentNumber):[],[pending,state.owned,studentNumber]);
   const pick=(id:string)=>{
     if(!offers.some(f=>f.id===id))return;

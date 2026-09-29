@@ -10,7 +10,8 @@ export type RunRewards={
   readonly levelBefore:Level;readonly levelAfter:Level;readonly levelUp:boolean;
   readonly expBefore:number;readonly expAfter:number;readonly newlyMastered:readonly Fact[];
 };
-function bestBefore(g:RushGame,shared:readonly Best[]|undefined):number|null{
+// The best score for this run's duration from before the run; stable while it plays.
+export function bestBefore(g:RushGame,shared:readonly Best[]|undefined):number|null{
   const run=g.run;if(!run||run.mode!=='rush')return null;
   const local=g.sessions.filter(s=>s.mode==='rush'&&s.duration===run.duration&&s.scoringVersion===5&&!s.endedEarly).map(s=>s.score);
   const remote=shared?.filter(b=>b.duration===run.duration).map(b=>b.score)??[];

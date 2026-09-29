@@ -55,6 +55,11 @@ img{image-rendering:pixelated}
 /* Selectable backgrounds: each swaps the sky bands, the particle tile and the ground strip. */
 .header-actions{position:relative}
 .background-picker{display:flex}
+/* A small live copy of a background, used when a level unlocks one. */
+.bg-preview{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(#14132b 0 34%,#18163a 34% 52%,#1d1a47 52% 66%,#221e54 66% 78%,#282262 78% 88%,#2e2670 88%)}
+.bg-preview::before,.bg-preview::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+.bg-preview::before{background:url(./assets/stars.svg) 0 0/160px 160px repeat;opacity:.9}
+.bg-preview::after{top:auto;height:60%;background:url(./assets/mountains.svg) 0 100%/180px 60px repeat-x}
 .background-menu{position:absolute;top:calc(100% + var(--s3));right:0;z-index:20;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);width:min(312px,calc(100vw - 2 * var(--page-pad)));max-height:calc(100dvh - var(--header) - var(--s4));overflow-y:auto;padding:var(--s2);background:var(--panel);box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop)}
 .background-option{display:flex;align-items:center;gap:var(--s2);min-height:40px;padding:var(--s1) var(--s2);border:0;background:var(--panel-lo);text-align:left;box-shadow:var(--ring)}
 .background-option strong{flex:1;white-space:nowrap}
@@ -74,33 +79,33 @@ img{image-rendering:pixelated}
 .bg-swatch-volcano i{background:linear-gradient(#1f0d14 0 40%,#ff9f1c 40% 55%,#2a1218 55%)}
 .bg-swatch-aurora i{background:linear-gradient(#08122a 0 25%,#1f7a6a 25% 45%,#0b1c3a 45% 75%,#c9e4f0 75%)}
 .bg-swatch-space i{background:linear-gradient(#05040f 0 60%,#9ea3c0 60% 70%,#6b6f8a 70%)}
-.app[data-bg=sunset]{background:linear-gradient(#2a1a4f 0 34%,#45205e 34% 52%,#6b2a66 52% 66%,#9a3764 66% 78%,#c24d5e 78% 88%,#e0704f 88%)}
-.app[data-bg=sunset]::before{background-image:url(./assets/backgrounds/sunset-sky.svg);opacity:1}
-.app[data-bg=sunset]::after{background-image:url(./assets/backgrounds/sunset-ground.svg)}
-.app[data-bg=forest]{background:linear-gradient(#0b1a1f 0 34%,#0f2428 34% 52%,#132e30 52% 66%,#173839 66% 78%,#1b4341 78% 88%,#204f4a 88%)}
-.app[data-bg=forest]::before{background-image:url(./assets/backgrounds/forest-sky.svg);opacity:1}
-.app[data-bg=forest]::after{background-image:url(./assets/backgrounds/forest-ground.svg)}
-.app[data-bg=ocean]{background:linear-gradient(#081b3a 0 34%,#0b2450 34% 52%,#0e2e63 52% 66%,#123a78 66% 78%,#16478c 78% 88%,#1b55a0 88%)}
-.app[data-bg=ocean]::before{background-image:url(./assets/backgrounds/ocean-sky.svg);opacity:1}
-.app[data-bg=ocean]::after{background-image:url(./assets/backgrounds/ocean-ground.svg)}
-.app[data-bg=snow]{background:linear-gradient(#1b2340 0 34%,#222c4d 34% 52%,#2a375c 52% 66%,#33436b 66% 78%,#3d507a 78% 88%,#485d89 88%)}
-.app[data-bg=snow]::before{background-image:url(./assets/backgrounds/snow-sky.svg);opacity:1}
-.app[data-bg=snow]::after{background-image:url(./assets/backgrounds/snow-ground.svg)}
-.app[data-bg=blossom]{background:linear-gradient(#2a1d45 0 34%,#3d2459 34% 52%,#56306b 52% 66%,#733d7a 66% 78%,#944c86 78% 88%,#b05e8f 88%)}
-.app[data-bg=blossom]::before{background-image:url(./assets/backgrounds/blossom-sky.svg);opacity:1}
-.app[data-bg=blossom]::after{background-image:url(./assets/backgrounds/blossom-ground.svg)}
-.app[data-bg=desert]{background:linear-gradient(#1c1633 0 34%,#2b1e3f 34% 52%,#40284a 52% 66%,#5a3450 66% 78%,#7a4350 78% 88%,#9a5a4c 88%)}
-.app[data-bg=desert]::before{background-image:url(./assets/backgrounds/desert-sky.svg);opacity:1}
-.app[data-bg=desert]::after{background-image:url(./assets/backgrounds/desert-ground.svg)}
-.app[data-bg=volcano]{background:linear-gradient(#140a10 0 34%,#1f0d14 34% 52%,#2e1218 52% 66%,#42181c 66% 78%,#5c1f1f 78% 88%,#7a2a1f 88%)}
-.app[data-bg=volcano]::before{background-image:url(./assets/backgrounds/volcano-sky.svg);opacity:1}
-.app[data-bg=volcano]::after{background-image:url(./assets/backgrounds/volcano-ground.svg)}
-.app[data-bg=aurora]{background:linear-gradient(#08122a 0 22%,#0e3a4a 22% 30%,#1f7a6a 30% 36%,#0e3a4a 36% 44%,#0b1c3a 44% 60%,#10244a 60% 78%,#15305a 78%)}
-.app[data-bg=aurora]::before{background-image:url(./assets/backgrounds/aurora-sky.svg);opacity:1}
-.app[data-bg=aurora]::after{background-image:url(./assets/backgrounds/aurora-ground.svg)}
-.app[data-bg=space]{background:linear-gradient(#05040f 0 34%,#0a0818 34% 52%,#0f0c22 52% 66%,#15112e 66% 78%,#1b163a 78% 88%,#221c47 88%)}
-.app[data-bg=space]::before{background-image:url(./assets/backgrounds/space-sky.svg);opacity:1}
-.app[data-bg=space]::after{background-image:url(./assets/backgrounds/space-ground.svg)}
+:is(.app,.bg-preview)[data-bg=sunset]{background:linear-gradient(#2a1a4f 0 34%,#45205e 34% 52%,#6b2a66 52% 66%,#9a3764 66% 78%,#c24d5e 78% 88%,#e0704f 88%)}
+:is(.app,.bg-preview)[data-bg=sunset]::before{background-image:url(./assets/backgrounds/sunset-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=sunset]::after{background-image:url(./assets/backgrounds/sunset-ground.svg)}
+:is(.app,.bg-preview)[data-bg=forest]{background:linear-gradient(#0b1a1f 0 34%,#0f2428 34% 52%,#132e30 52% 66%,#173839 66% 78%,#1b4341 78% 88%,#204f4a 88%)}
+:is(.app,.bg-preview)[data-bg=forest]::before{background-image:url(./assets/backgrounds/forest-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=forest]::after{background-image:url(./assets/backgrounds/forest-ground.svg)}
+:is(.app,.bg-preview)[data-bg=ocean]{background:linear-gradient(#081b3a 0 34%,#0b2450 34% 52%,#0e2e63 52% 66%,#123a78 66% 78%,#16478c 78% 88%,#1b55a0 88%)}
+:is(.app,.bg-preview)[data-bg=ocean]::before{background-image:url(./assets/backgrounds/ocean-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=ocean]::after{background-image:url(./assets/backgrounds/ocean-ground.svg)}
+:is(.app,.bg-preview)[data-bg=snow]{background:linear-gradient(#1b2340 0 34%,#222c4d 34% 52%,#2a375c 52% 66%,#33436b 66% 78%,#3d507a 78% 88%,#485d89 88%)}
+:is(.app,.bg-preview)[data-bg=snow]::before{background-image:url(./assets/backgrounds/snow-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=snow]::after{background-image:url(./assets/backgrounds/snow-ground.svg)}
+:is(.app,.bg-preview)[data-bg=blossom]{background:linear-gradient(#2a1d45 0 34%,#3d2459 34% 52%,#56306b 52% 66%,#733d7a 66% 78%,#944c86 78% 88%,#b05e8f 88%)}
+:is(.app,.bg-preview)[data-bg=blossom]::before{background-image:url(./assets/backgrounds/blossom-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=blossom]::after{background-image:url(./assets/backgrounds/blossom-ground.svg)}
+:is(.app,.bg-preview)[data-bg=desert]{background:linear-gradient(#1c1633 0 34%,#2b1e3f 34% 52%,#40284a 52% 66%,#5a3450 66% 78%,#7a4350 78% 88%,#9a5a4c 88%)}
+:is(.app,.bg-preview)[data-bg=desert]::before{background-image:url(./assets/backgrounds/desert-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=desert]::after{background-image:url(./assets/backgrounds/desert-ground.svg)}
+:is(.app,.bg-preview)[data-bg=volcano]{background:linear-gradient(#140a10 0 34%,#1f0d14 34% 52%,#2e1218 52% 66%,#42181c 66% 78%,#5c1f1f 78% 88%,#7a2a1f 88%)}
+:is(.app,.bg-preview)[data-bg=volcano]::before{background-image:url(./assets/backgrounds/volcano-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=volcano]::after{background-image:url(./assets/backgrounds/volcano-ground.svg)}
+:is(.app,.bg-preview)[data-bg=aurora]{background:linear-gradient(#08122a 0 22%,#0e3a4a 22% 30%,#1f7a6a 30% 36%,#0e3a4a 36% 44%,#0b1c3a 44% 60%,#10244a 60% 78%,#15305a 78%)}
+:is(.app,.bg-preview)[data-bg=aurora]::before{background-image:url(./assets/backgrounds/aurora-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=aurora]::after{background-image:url(./assets/backgrounds/aurora-ground.svg)}
+:is(.app,.bg-preview)[data-bg=space]{background:linear-gradient(#05040f 0 34%,#0a0818 34% 52%,#0f0c22 52% 66%,#15112e 66% 78%,#1b163a 78% 88%,#221c47 88%)}
+:is(.app,.bg-preview)[data-bg=space]::before{background-image:url(./assets/backgrounds/space-sky.svg);opacity:1}
+:is(.app,.bg-preview)[data-bg=space]::after{background-image:url(./assets/backgrounds/space-ground.svg)}
 .header{width:100%;max-width:var(--frame);margin:auto;height:var(--header);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--s2)}
 .brand{display:flex;align-items:center;gap:var(--s3);font-weight:900;font-size:var(--text-lg);white-space:nowrap}
 .brand-button{grid-column:1;justify-self:start}
@@ -116,6 +121,13 @@ img{image-rendering:pixelated}
 .quiet-button{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--control);padding:var(--s2) var(--s3);border:0;border-radius:0;background:var(--panel);font-size:var(--text-base);box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring),var(--drop)}
 .quiet-button:hover:not(:disabled){background:var(--panel-raised)}
 .quiet-button:active:not(:disabled){box-shadow:inset 0 var(--px) 0 var(--panel-lo),var(--ring)}
+/* Header exits read apart at a glance: coral stops a run, blue goes back home. */
+.end-button{background:var(--coral);color:var(--ink);box-shadow:inset 0 var(--px) 0 #ffb3bc,inset 0 calc(-1 * var(--px)) 0 var(--coral-shade),var(--ring),var(--drop)}
+.end-button:hover:not(:disabled){background:#ff949f}
+.end-button:active:not(:disabled){box-shadow:inset 0 var(--px) 0 var(--coral-shade),var(--ring)}
+.home-button{background:var(--blue-shade);color:var(--paper-hi);box-shadow:inset 0 var(--px) 0 var(--blue),inset 0 calc(-1 * var(--px)) 0 #1a4690,var(--ring),var(--drop)}
+.home-button:hover:not(:disabled){background:#3279dc}
+.home-button:active:not(:disabled){box-shadow:inset 0 var(--px) 0 #1a4690,var(--ring)}
 .sound-button{color:var(--muted);font-family:var(--mono)}
 .sound-button[aria-pressed=true]{color:var(--ink);background:var(--mint);box-shadow:inset 0 var(--px) 0 var(--mint-hi),inset 0 calc(-1 * var(--px)) 0 var(--mint-shade),var(--ring),var(--drop)}
 .sound-button[aria-pressed=true]:hover:not(:disabled){background:var(--mint-hi)}
@@ -165,8 +177,7 @@ img{image-rendering:pixelated}
 .level-copy{flex:1;min-width:0;display:grid;gap:var(--s2)}
 .level-line{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);white-space:nowrap}
 .level-line strong{font-size:var(--text-lg)}
-.level-copy small,.mastered-count{font-size:13pt;color:var(--muted)}
-.mastered-count{color:var(--yellow)}
+.level-copy small{font-size:13pt;color:var(--muted)}
 .exp-bar{position:relative;height:var(--s4);background:var(--outline);box-shadow:var(--ring);overflow:hidden}
 .exp-bar>span{position:absolute;inset:0;background:linear-gradient(var(--blue) 0 50%,var(--blue-shade) 50%);transform-origin:left;transform:scaleX(var(--to))}
 .exp-bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 12px,var(--outline) 12px 16px)}
@@ -242,6 +253,7 @@ img{image-rendering:pixelated}
 .duration-tabs button:hover{background:var(--panel-raised)}
 .duration-tabs button[aria-pressed=true]{background:var(--yellow);color:var(--ink);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring)}
 .hall-button{color:var(--yellow)}
+.hall-trophy{height:24px}
 @media(min-width:701px) and (max-width:1000px){
   .home{gap:var(--s8);padding:var(--s4) 0}
   .practice-modes .mode-button{padding:var(--s3);gap:var(--s3)}
