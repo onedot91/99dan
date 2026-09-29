@@ -23,6 +23,7 @@
 .exp-head{display:flex;align-items:center;gap:var(--s3);white-space:nowrap}
 .exp-head .level-number{min-width:44px;height:44px;line-height:44px;font-size:var(--text-xl)}
 .exp-head strong{flex:1;display:flex;align-items:center;gap:var(--s2);font-size:var(--text-lg);min-width:0}
+.level-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .level-up-text{display:inline-block;padding:0 var(--s2);background:var(--yellow);color:var(--ink);box-shadow:var(--ring);transform:rotate(-3deg)}
 .exp-gain{color:var(--blue);font-family:var(--mono)}
 .level-up{background:linear-gradient(var(--panel-raised),var(--panel))}

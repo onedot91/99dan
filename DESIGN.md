@@ -21,6 +21,7 @@ Home buttons have names only, no subtitles/footer disclaimers. The previously se
 - 한 줄로 읽어야 하는 것은 한 줄로: 비교 문제는 "식 [기호] 식"을 한 줄에 두고 기호 버튼은 아래 줄.
 - 겹침 금지: 테두리(4px)와 버튼 그림자(8px)를 합쳐 요소 사이를 최소 24px 띄우고, 글자는 줄바꿈되지 않게 한다.
 - 터치 기기에선 :hover 강조를 쓰지 않는다(`@media(hover:hover)`).
+- 가장 넓어지는 경우로 확인한다: 예) 결과 화면은 최고 기록·레벨 업·새 배경·펫 고르기가 한꺼번에 나올 때. 한 칸 레이아웃은 `minmax(0,1fr)`로 두어 긴 줄이 화면을 밀어내지 않게 한다.
 - 휴대폰 전용 규칙은 `src/mobile.css`(가장 나중에 로드)에 모은다.
 
 ## Primitives

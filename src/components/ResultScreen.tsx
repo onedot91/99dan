@@ -55,7 +55,7 @@ export function ResultScreen({game:g,rewards,friends,syncState,retrySave,unlocke
       {rewards&&<div className={`exp-card${rewards.levelUp?' level-up':''}`}>
         <div className="exp-head">
           <span className="level-number"><small>Lv.</small>{rewards.levelAfter.number}</span>
-          <strong>{rewards.levelUp?<span className="level-up-text">레벨 업!</span>:null}{rewards.levelAfter.label}</strong>
+          <strong>{rewards.levelUp?<span className="level-up-text">레벨 업!</span>:null}<span className="level-label">{rewards.levelAfter.label}</span></strong>
           <span className="exp-gain">+{rewards.expAfter-rewards.expBefore} EXP</span>
         </div>
         <ExpBar from={rewards.levelUp?0:expRatio(rewards.levelAfter,rewards.expBefore)} to={expRatio(rewards.levelAfter,rewards.expAfter)} label="레벨 경험치"/>
@@ -72,7 +72,7 @@ export function ResultScreen({game:g,rewards,friends,syncState,retrySave,unlocke
       </div>}
       <div className={`result-actions${friends.pending?' with-pick':''}`}>
         {friends.pending>0&&<button className="primary-button friend-cta" onClick={()=>g.setScreen('friends')}>새 펫 고르기 ({friends.pending})</button>}
-        <button className={friends.pending?'quiet-button':'primary-button'} disabled={syncState==='saving'} onClick={()=>syncState==='error'?void retrySave():g.setScreen('hall')}><Sprite map={TROPHY} className="hall-trophy"/>{syncState==='saving'?'기록 저장 중':syncState==='error'?'저장 재시도':'명예의 전당'}</button>
+        <button aria-label={syncState==='saving'?'기록 저장 중':syncState==='error'?'저장 재시도':'명예의 전당'} className={friends.pending?'quiet-button':'primary-button'} disabled={syncState==='saving'} onClick={()=>syncState==='error'?void retrySave():g.setScreen('hall')}><Sprite map={TROPHY} className="hall-trophy"/><span className="hall-label">{syncState==='saving'?'기록 저장 중':syncState==='error'?'저장 재시도':'명예의 전당'}</span></button>
       </div>
     </div>
   </main>;

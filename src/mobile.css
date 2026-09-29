@@ -18,4 +18,22 @@
   .friend-detail{grid-template-areas:"portrait total" "portrait name" "portrait stars" "portrait tag" "portrait blurb" "action action"}
   .friend-detail>.partner-tag{grid-column:auto;grid-area:tag}
   .comparison-heading{font-size:var(--text-base);margin-bottom:var(--s3)}
+  /* The question sits dead centre; feedback floats over the panel's bottom edge instead of reserving a row. */
+  .answer-feedback{position:absolute;left:0;right:0;bottom:var(--s2);min-height:0;pointer-events:none}
+  /* Result: never wider than the screen, even with level-up + unlock + pet pick at once. */
+  .result-screen{grid-template-columns:minmax(0,1fr)}
+  .result-hero,.result-details{min-width:0}
+  /* In the flow under the trophy, so it never covers it on narrow phones. */
+  .record-ribbon{position:static;font-size:var(--text-base);padding:2px var(--s2)}
+  .exp-head{gap:var(--s2)}
+  .exp-head strong{font-size:var(--text-base)}
+  .exp-card.level-up .level-label{display:none}
+  .unlock-card{gap:var(--s2);padding:var(--s2)}
+  .unlock-card .bg-preview{width:56px;height:40px}
+  .unlock-card p{font-size:var(--text-base);line-height:1.3}
+  .unlock-card small{display:none}
+  .unlock-card .quiet-button{min-height:40px;padding:var(--s1) var(--s2);white-space:nowrap}
+  .result-actions.with-pick{grid-template-columns:minmax(0,1fr) auto}
+  .result-actions.with-pick .hall-label{display:none}
+  .result-actions button{white-space:nowrap}
 }
