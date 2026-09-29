@@ -1,5 +1,7 @@
 @font-face{font-family:"Galmuri11";src:url(./assets/fonts/Galmuri11-Bold.woff2) format("woff2");font-weight:100 900;font-display:swap}
 :root{
+  /* The pixel palette is fixed: opt out of browsers' automatic dark-mode recolouring. */
+  color-scheme:only light;
   font-family:"Galmuri11","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   color:var(--paper);background:var(--bg);font-size:var(--text-base);font-weight:700;font-synthesis:none;
   -webkit-font-smoothing:none;

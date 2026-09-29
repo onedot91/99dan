@@ -124,6 +124,11 @@
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
   .hit-fx,.combo-banner,.trophy-particles,.score-gain,.exp-orbs,.pet-react>i,.best-flag em{display:none}
-  .hero-scene .hero-friend{left:50%;transform:translateX(-50%)}
+  /* The home pet's slow stroll and bob stay on: Windows with "Show animations" off (common on
+     school PCs and remote desktops) reports reduced motion, and a frozen pet reads as broken. */
+  .hero-scene .hero-friend:not(.mood-sleep,.mood-wake,.mood-excited){animation:hero-walk 7200ms linear infinite!important}
+  .hero-scene .hero-friend.family-turtle:not(.mood-sleep,.mood-wake,.mood-excited){animation-duration:18000ms!important}
+  .hero-friend .friend-sprite{animation:friend-bob 480ms steps(2,end) infinite!important}
+  .hero-friend.family-turtle .friend-sprite{animation-duration:960ms!important}
   .record-ribbon,.level-up-text{transform:rotate(-3deg)}
 }
