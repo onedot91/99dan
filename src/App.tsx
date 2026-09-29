@@ -23,7 +23,9 @@ import { useRunRewards } from './game/useRunRewards';
 import { useFriends } from './game/useFriends';
 import { FriendsScreen } from './components/FriendsScreen';
 import './friends.css';
-import { BACKGROUNDS, loadBackground, nextBackground, saveBackground } from './game/background';
+import { isUnlocked, loadBackground, saveBackground } from './game/background';
+import { BackgroundPicker } from './components/BackgroundPicker';
+import { levelFor } from './game/learning';
 export function App(){
   const [studentNumber,setStudentNumber]=useState(loadStudentNumber);
   const [teacherToken,setTeacherToken]=useState<string|null>(null);
@@ -44,9 +46,11 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   const rewards=useRunRewards(g,cloud.profile?.best);
   const friends=useFriends(studentNumber,g.totalCorrect,cloud);
   const audio=useGameAudio(g.run,g.screen,rewards?.newRecord?'record':rewards?.levelUp?'levelup':'finish');
-  const [background,setBackground]=useState(()=>loadBackground(studentNumber));
-  const backgroundLabel=BACKGROUNDS.find(b=>b.id===background)?.label;
-  const changeBackground=()=>{const next=nextBackground(background);setBackground(next);saveBackground(studentNumber,next);};
+  const [savedBackground,setBackground]=useState(()=>loadBackground(studentNumber));
+  const level=levelFor(g.totalCorrect).number;
+  // A background above the current level (e.g. after a teacher reset) falls back to night.
+  const background=isUnlocked(savedBackground,level)?savedBackground:'night';
+  const changeBackground=(id:typeof background)=>{setBackground(id);saveBackground(studentNumber,id);};
   const content=useRef<HTMLDivElement>(null);
   const numberChangeClickCount=useRef(0);
   useEffect(()=>{content.current?.focus({preventScroll:true});},[g.screen]);
@@ -69,7 +73,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       </div>}
       <div className="header-actions">
         <button className="quiet-button sound-button" aria-label={!audio.available?'소리 사용 불가':audio.enabled?'소리 끄기':'소리 켜기'} aria-pressed={audio.enabled} disabled={!audio.available||audio.pending} onClick={()=>void audio.toggle()}><Icon name={audio.enabled?'sound':'muted'}/><span>{audio.enabled?'ON':'OFF'}</span></button>
-        {g.screen!=='play'&&<button className="quiet-button background-button" aria-label={`배경 바꾸기, 지금 ${backgroundLabel}`} onClick={changeBackground}><Icon name="image"/><span>{backgroundLabel}</span></button>}
+        {g.screen!=='play'&&<BackgroundPicker value={background} level={level} onChange={changeBackground}/>}
         {g.screen==='play'?<button className="quiet-button" onClick={()=>g.end(true)}><Icon name="close"/><span>끝내기</span></button>:g.screen==='home'?<button className="quiet-button" onClick={()=>g.setScreen('records')}><Icon name="chart"/><span>내 기록</span></button>:<button className="quiet-button" onClick={()=>g.setScreen('home')}><Icon name="back"/><span>처음으로</span></button>}
       </div>
     </header>
