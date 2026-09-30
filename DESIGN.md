@@ -6,7 +6,7 @@
 ## Visual contract
 16비트 콘솔 스타일. 계단식 밤하늘 띠, 픽셀 별(`src/assets/stars.svg`), 3겹 픽셀 산(`src/assets/mountains.svg`)을 고정 배경으로 깐다. 헤더의 '배경' 버튼을 누르면 배경 메뉴가 열린다. 배경은 레벨에 따라 열린다: 밤 Lv1, 노을 Lv2, 벚꽃 Lv3, 숲 Lv4, 사막 Lv6, 바다 Lv8, 눈 Lv10, 화산 Lv15, 오로라 Lv20, 우주 Lv30. 잠긴 배경도 메뉴에 필요한 레벨과 함께 보여 목표가 되게 하고, 저장된 배경이 현재 레벨보다 높으면(교사 초기화 등) 밤으로 돌아간다. 테마마다 하늘 띠 색, 입자 타일(`src/assets/backgrounds/*-sky.svg`), 지면 띠(`*-ground.svg`)가 바뀌고 선택은 기기에 번호별로 저장된다(`src/game/background.ts`). 패널·버튼은 모서리 픽셀이 빠진 4방향 box-shadow 외곽선(`--ring`), 위 하이라이트/아래 그림자 베벨, 4px 낙차(`--drop`)로 만든다. 누르면 4px 내려가고 베벨이 반전된다. radius 0. 스프라이트는 `Sprite.tsx`의 ASCII 맵(한 글자=한 픽셀)을 `<rect>`로 그리며 색은 CSS 토큰 클래스(`px-*`)에서 온다. UI는 실제 React DOM. 글꼴은 Galmuri11 Bold(OFL, `src/assets/fonts`, 로컬 번들·외부 요청 없음), 숫자도 같은 글꼴. School_Timer 동물 프로필 이미지는 `image-rendering:pixelated`.
 
-색은 고정이다: 기기가 다크 모드여도 같은 화면이 나오도록 `color-scheme: only light`(index.html 메타와 :root)로 브라우저 자동 다크 변환을 막고, 주소창 색(theme-color)은 배경색 #14132b로 맞춘다.
+색은 고정이다: 기기가 다크 모드여도 같은 화면이 나와야 한다. 삼성 인터넷·안드로이드 크롬 계열은 페이지가 다크 모드 대응을 선언하지 않으면 색을 자동으로 어둡게 바꾸고, `color-scheme: only light`를 쓰면 오히려 그 처리가 걸린다. 그래서 `color-scheme: light dark`(index.html 메타와 :root)로 대응을 선언하고, `@media(prefers-color-scheme:dark)`에 라이트와 같은 값을 넣어 화면은 그대로 둔다(그 값은 :root와 항상 같게 유지). 대화상자·입력창은 `color-scheme: light`로 고정. 주소창 색(theme-color)은 배경색 #14132b.
 
 ## Tokens
 CSS :root가 단일 출처. 모든 색은 기본/하이라이트/그림자 3단: panel #2a2856 (hi #5552a0, lo #1d1b40), paper #fff4d6 (hi #fffdf3, shade #d9c49a), mint #5ee08a (#b4f5c8/#2a9d5c), yellow #ffd23f (#fff3a3/#c77d0a), coral #ff7a8a (#b8324a), blue #4cc9ff (#2766c7), orange #ff9f1c, red #ff4d5e, silver/bronze(순위). outline #0b0a1f, ink #1c1638. Pixel unit `--px` 4px. Text 18/21/24/33/48/72px, equation `clamp(36px,16cqi,96px)`로 문제 패널 너비에 맞춤, 최소 13pt. Spacing 4~64px.
