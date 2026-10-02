@@ -8,6 +8,7 @@ import { FRIENDS, friendById } from '../game/friends';
 import { FriendSprite } from './FriendSprite';
 
 function totals(profile:SharedProfile){return Object.values(profile.records).reduce((sum,record)=>({attempts:sum.attempts+record.attempts,correct:sum.correct+record.correct,wrong:sum.wrong+record.wrong}),{attempts:0,correct:0,wrong:0});}
+const sessionDate=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 function TeacherDetail({profile,onReset}:{readonly profile:SharedProfile;readonly onReset:()=>void}){
   const number=profile.studentNumber;
   const total=totals(profile);
@@ -24,7 +25,7 @@ function TeacherDetail({profile,onReset}:{readonly profile:SharedProfile;readonl
     <p className="teacher-summary">정답 <strong>{total.correct}</strong><span aria-hidden="true">·</span> 오답 <strong>{total.wrong}</strong></p>
     <div className="teacher-bests">{DURATIONS.map(duration=><div key={duration}><span>{duration}분 최고</span><strong>{profile.best.find(best=>best.duration===duration)?.score.toLocaleString()??'—'}</strong></div>)}</div>
     <h3>최근 도전</h3>
-    {recent.length?<div className="teacher-sessions">{recent.map(session=><div key={session.id}><strong>{modeLabel(session.mode,session.duration)}</strong><span>정답 {session.correct}개</span><b>{session.score.toLocaleString()}점</b></div>)}</div>:<p className="teacher-empty">기록 없음</p>}
+    {recent.length?<div className="teacher-sessions">{recent.map(session=><div key={session.id}><div className="teacher-session-info"><strong>{modeLabel(session.mode,session.duration)}</strong>{session.finishedAt?<time dateTime={session.finishedAt}>{sessionDate.format(new Date(session.finishedAt))}</time>:<small>날짜 정보 없음</small>}</div><span>정답 {session.correct}개</span><b>{session.score.toLocaleString()}점</b></div>)}</div>:<p className="teacher-empty">기록 없음</p>}
   </section>;
 }
 

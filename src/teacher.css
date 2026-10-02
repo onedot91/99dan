@@ -37,6 +37,8 @@
 .teacher-sessions{display:grid;gap:var(--s1)}
 .teacher-sessions>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--s3);padding:var(--s2) var(--s3);background:var(--panel-raised);font-size:var(--text-base)}
 .teacher-sessions b{color:var(--yellow);font-family:var(--mono)}
+.teacher-session-info{display:grid;gap:var(--s1);min-width:0;overflow-wrap:anywhere}
+.teacher-session-info time,.teacher-session-info small{color:var(--muted);font-size:13px;line-height:1.4}
 .teacher-empty{color:var(--muted)}
 .teacher-reset{white-space:nowrap}
 .teacher-message{display:grid;justify-items:center;gap:var(--s4);text-align:center}

@@ -45,6 +45,26 @@ async function rpc(name:string,args:object):Promise<unknown>{
   if(!response.ok)throw new Error('DATABASE_REQUEST_FAILED');
   const text=await response.text();return text?JSON.parse(text):null;
 }
+function record(value:unknown):Record<string,unknown>{
+  if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('INVALID_DATABASE_RESPONSE');
+  return Object.fromEntries(Object.entries(value));
+}
+async function teacherRecords(){
+  const result=await rpc('gugudan_teacher_records',{});
+  if(!Array.isArray(result))throw new Error('INVALID_DATABASE_RESPONSE');
+  const profiles=result.map(record);
+  const ids=profiles.flatMap(profile=>Array.isArray(profile.sessions)?profile.sessions.slice(-5).map(session=>record(session).id).filter(validId):[]);
+  const dates=new Map<string,string>();
+  for(let offset=0;offset<ids.length;offset+=60){
+    const query=new URLSearchParams({select:'id,finished_at',id:`in.(${ids.slice(offset,offset+60).join(',')})`,finished_at:'not.is.null'});
+    const response=await fetch(`${url}/rest/v1/gugudan_runs?${query}`,{headers:{apikey:key,Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw new Error('DATABASE_REQUEST_FAILED');
+    const rows:unknown=await response.json();
+    if(!Array.isArray(rows))throw new Error('INVALID_DATABASE_RESPONSE');
+    for(const value of rows){const row=record(value);if(validId(row.id)&&typeof row.finished_at==='string')dates.set(row.id,row.finished_at);}
+  }
+  return profiles.map(profile=>({...profile,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
+}
 Deno.serve(async request=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
   if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
@@ -67,7 +87,7 @@ Deno.serve(async request=>{
     }
     if(data.action==='teacherRecords'||data.action==='teacherReset'||data.action==='teacherResetAll'){
       if(!await teacherIdentity(request.headers.get('X-Gugudan-Session')))return json({error:'SESSION_REQUIRED'},401);
-      if(data.action==='teacherRecords')return json(await rpc('gugudan_teacher_records',{}));
+      if(data.action==='teacherRecords')return json(await teacherRecords());
       if(data.action==='teacherResetAll'){await rpc('gugudan_teacher_reset_all',{});return json({ok:true});}
       if(!validNumber(data.studentNumber))return json({error:'INVALID_STUDENT'},400);
       await rpc('gugudan_teacher_reset',{p_student:data.studentNumber});return json({ok:true});
