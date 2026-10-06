@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { VerticalCount } from '../game/verticalSets';
 import type { RushGame } from '../game/useRushGame';
 import { WEAK_UNLOCK_THRESHOLD } from '../game/useRushGame';
 import { levelFor } from '../game/learning';
@@ -15,8 +16,9 @@ const greetKey=(n:number)=>`gugudan-rush.greeted.${n}`;
 const today=()=>new Date().toLocaleDateString('sv');
 function greetedToday(n:number):boolean{try{return localStorage.getItem(greetKey(n))===today();}catch{return true;}}
 type Mood='sleep'|'wake'|null;
-export function HomeScreen({game:g,friends,studentNumber}:{readonly game:RushGame;readonly friends:Friends;readonly studentNumber:number}){
+export function HomeScreen({game:g,friends,studentNumber,onVertical,onHall,verticalStarting,verticalBlocked,verticalSaving,verticalError,onVerticalRetry}:{readonly game:RushGame;readonly friends:Friends;readonly studentNumber:number;readonly onVertical:(count:VerticalCount)=>void;readonly onHall:()=>void;readonly verticalStarting:boolean;readonly verticalBlocked:boolean;readonly verticalSaving:boolean;readonly verticalError:boolean;readonly onVerticalRetry:()=>void}){
   const [mood,setMood]=useState<Mood>(null);
+  const [verticalChallenge,setVerticalChallenge]=useState<VerticalCount|null>(null);
   // The partner can arrive after the first render when it loads from the server.
   useEffect(()=>{if(friends.partner&&!greetedToday(studentNumber))setMood('sleep');},[friends.partner!==null,studentNumber]);
   useEffect(()=>{
@@ -35,8 +37,10 @@ export function HomeScreen({game:g,friends,studentNumber}:{readonly game:RushGam
     </section>
     <nav className="mode-menu" aria-label="게임 선택">
       <div className="rush-card">
-        <div className="rush-durations" role="group" aria-label="도전 시간">{DURATIONS.map(n=><button key={n} aria-pressed={g.duration===n} onClick={()=>g.setDuration(n)}>{n}분</button>)}</div>
-        <button className="rush-start" onClick={()=>g.start('rush')}><span className="mode-icon"><Icon name="bolt" size={30}/></span><strong>{g.duration}분 도전 시작</strong><span className="start-cursor" aria-hidden="true">▶</span></button>
+        <div className="rush-durations challenge-options" role="group" aria-label="도전 선택">{DURATIONS.map(n=><button key={n} aria-pressed={verticalChallenge===null&&g.duration===n} disabled={verticalStarting} onClick={()=>{setVerticalChallenge(null);g.setDuration(n);}}>{n}분</button>)}{([5,10] as const).map(count=><button key={count} className="vertical-challenge-option" aria-pressed={verticalChallenge===count} disabled={verticalStarting} onClick={()=>setVerticalChallenge(count)}>{count}문제</button>)}</div>
+        <button className="rush-start" disabled={verticalStarting||verticalChallenge!==null&&verticalBlocked} onClick={verticalChallenge!==null?()=>onVertical(verticalChallenge):()=>g.start('rush')}><span className="mode-icon"><Icon name={verticalChallenge?'book':'bolt'} size={30}/></span><strong>{verticalStarting?'불러오는 중':verticalChallenge!==null?`${verticalChallenge}문제 도전 시작`:`${g.duration}분 도전 시작`}</strong><span className="start-cursor" aria-hidden="true">▶</span></button>
+        {verticalChallenge!==null&&verticalBlocked&&(verticalSaving?<p className="challenge-error" role="status">점수 저장 중</p>:<div className="challenge-error" role="alert"><p>점수를 저장하지 못했습니다.</p><button className="quiet-button" disabled={verticalStarting} onClick={onVerticalRetry}>저장 재시도</button></div>)}
+        {verticalChallenge!==null&&verticalError&&!verticalBlocked&&<p className="challenge-error" role="alert">시작하지 못했습니다. 다시 시도해 주세요.</p>}
       </div>
       <div className="practice-modes">
         {/* Locked: a lock icon and a 5-pip gauge under the label, so it reads as "almost there", not broken. */}
@@ -44,8 +48,8 @@ export function HomeScreen({game:g,friends,studentNumber}:{readonly game:RushGam
         <button className="mode-button" onClick={()=>g.setScreen('tables')}><span className="mode-icon"><Icon name="book" size={28}/></span><strong>단별 연습</strong><Icon name="arrow"/></button>
       </div>
       <div className="home-extras">
-        <button className="hall-button quiet-button" onClick={()=>g.setScreen('hall')}><Sprite map={TROPHY} className="hall-trophy"/>명예의 전당</button>
-        <button className={`friends-button quiet-button${friends.pending?' has-pick':''}`} onClick={()=>g.setScreen('friends')}>{friends.pending?<>새 펫 고르기<b>{friends.pending}</b></>:<>{friends.partner&&<FriendSprite id={friends.partner} crop className="button-pet"/>}펫 {friends.owned.length}</>}</button>
+        <button className="hall-button quiet-button" onClick={onHall}><Sprite map={TROPHY} className="hall-trophy"/><span className="wide-only">명예의 전당</span><span className="narrow-only">순위</span></button>
+        <button className={`friends-button quiet-button${friends.pending?' has-pick':''}`} onClick={()=>g.setScreen('friends')}>{friends.pending?<><span className="wide-only">새 펫 고르기</span><span className="narrow-only">새 펫</span><b>{friends.pending}</b></>:<>{friends.partner&&<FriendSprite id={friends.partner} crop className="button-pet"/>}펫 {friends.owned.length}</>}</button>
       </div>
     </nav>
   </main>;

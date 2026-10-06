@@ -40,9 +40,9 @@ async function identity(token:string|null):Promise<number|null>{
   const bytes=Uint8Array.from(signature.match(/../g)??[],s=>Number.parseInt(s,16));
   return await crypto.subtle.verify('HMAC',await signingKey,bytes,encoder.encode(`${student}.${expiry}`))?n:null;
 }
-async function rpc(name:string,args:object):Promise<unknown>{
+async function rpc(name:string,args:object,optional=false):Promise<unknown>{
   const response=await fetch(`${url}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(10000)});
-  if(!response.ok)throw new Error('DATABASE_REQUEST_FAILED');
+  if(!response.ok){if(optional&&response.status===404&&record(await response.json()).code==='PGRST202')return null;throw new Error('DATABASE_REQUEST_FAILED');}
   const text=await response.text();return text?JSON.parse(text):null;
 }
 function record(value:unknown):Record<string,unknown>{
@@ -63,7 +63,13 @@ async function teacherRecords(){
     if(!Array.isArray(rows))throw new Error('INVALID_DATABASE_RESPONSE');
     for(const value of rows){const row=record(value);if(validId(row.id)&&typeof row.finished_at==='string')dates.set(row.id,row.finished_at);}
   }
-  return profiles.map(profile=>({...profile,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
+  const settings=await rpc('gugudan_teacher_vertical_assignments',{});
+  if(!Array.isArray(settings))throw new Error('INVALID_DATABASE_RESPONSE');
+  const difficulties=new Map(settings.map(value=>{const row=record(value);if(!validNumber(row.studentNumber)||!validDuration(row.difficulty))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.difficulty];}));
+  const metrics=await rpc('gugudan_teacher_vertical_metrics',{},true);
+  if(metrics!==null&&!Array.isArray(metrics))throw new Error('INVALID_DATABASE_RESPONSE');
+  const summaries=new Map((metrics??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.stats];}));
+  return profiles.map(profile=>({...profile,canResetScopes:true,verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
 }
 Deno.serve(async request=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
@@ -85,15 +91,55 @@ Deno.serve(async request=>{
       }
       attempts.delete(address);return json({token:await issueTeacher()});
     }
-    if(data.action==='teacherRecords'||data.action==='teacherReset'||data.action==='teacherResetAll'){
+    if(data.action==='teacherRecords'||data.action==='teacherReset'||data.action==='teacherResetAll'||data.action==='teacherResetScoped'||data.action==='teacherSetVertical'){
       if(!await teacherIdentity(request.headers.get('X-Gugudan-Session')))return json({error:'SESSION_REQUIRED'},401);
       if(data.action==='teacherRecords')return json(await teacherRecords());
       if(data.action==='teacherResetAll'){await rpc('gugudan_teacher_reset_all',{});return json({ok:true});}
       if(!validNumber(data.studentNumber))return json({error:'INVALID_STUDENT'},400);
+      if(data.action==='teacherResetScoped'){
+        const scopes=data.scopes;
+        if(!Array.isArray(scopes)||scopes.length<1||scopes.length>5||new Set(scopes).size!==scopes.length||!scopes.every(scope=>['rush-1','rush-2','rush-3','vertical-5','vertical-10'].includes(scope)))return json({error:'INVALID_RESET_SCOPES'},400);
+        await rpc('gugudan_teacher_reset_scoped',{p_student:data.studentNumber,p_scopes:scopes});return json({ok:true});
+      }
+      if(data.action==='teacherSetVertical'){
+        if(!validDuration(data.difficulty))return json({error:'INVALID_DIFFICULTY'},400);
+        return json(await rpc('gugudan_teacher_set_vertical',{p_student:data.studentNumber,p_difficulty:data.difficulty}));
+      }
       await rpc('gugudan_teacher_reset',{p_student:data.studentNumber});return json({ok:true});
     }
     const student=await identity(request.headers.get('X-Gugudan-Session'));
     if(student===null)return json({error:'SESSION_REQUIRED'},401);
+    if(data.action==='verticalAssignment')return json(await rpc('gugudan_vertical_assignment',{p_student:student}));
+    if(data.action==='verticalLeaders'){
+      if(data.count!==undefined&&data.count!==5&&data.count!==10)return json({error:'INVALID_COUNT'},400);
+      if(data.tightTime!==undefined&&typeof data.tightTime!=='boolean')return json({error:'INVALID_RUN'},400);
+      if(data.cellScoring!==undefined&&typeof data.cellScoring!=='boolean')return json({error:'INVALID_RUN'},400);
+      if(data.cellScoring===true)return json(await rpc('gugudan_vertical_leaders_cells',{p_count:data.count===10?10:5}));
+      if(data.tightTime===true)return json(await rpc('gugudan_vertical_leaders_tight',{p_count:data.count===10?10:5}));
+      return json(await rpc(data.count===10?'gugudan_vertical_leaders_count':'gugudan_vertical_leaders',data.count===10?{p_count:10}:{}));
+    }
+    if(data.action==='verticalBegin'){
+      if(data.cellScoring!==undefined&&typeof data.cellScoring!=='boolean'||data.cellScoring===true&&data.tightTime!==true)return json({error:'INVALID_RUN'},400);
+      if(data.tightTime!==undefined&&typeof data.tightTime!=='boolean'||data.tightTime===true&&(data.timeScoring!==true||data.directZero!==true))return json({error:'INVALID_RUN'},400);
+      if(data.directZero!==undefined&&typeof data.directZero!=='boolean'||data.directZero===true&&(data.puzzleOperands!==true||data.puzzles!==true||data.manualZero!==true))return json({error:'INVALID_RUN'},400);
+      if(data.puzzleOperands!==undefined&&typeof data.puzzleOperands!=='boolean'||data.puzzleOperands===true&&(data.puzzles!==true||data.manualZero!==true))return json({error:'INVALID_RUN'},400);
+      if(!validId(data.id)||(data.timeScoring!==undefined&&typeof data.timeScoring!=='boolean')||(data.manualZero!==undefined&&typeof data.manualZero!=='boolean')||(data.puzzles!==undefined&&typeof data.puzzles!=='boolean')||(data.puzzles===true&&data.manualZero!==true)||(data.count!==undefined&&data.count!==5&&data.count!==10))return json({error:'INVALID_RUN'},400);
+      if(data.cellScoring===true)return json(await rpc('gugudan_vertical_begin_cells',{p_student:student,p_id:data.id,p_count:data.count===10?10:5}));
+      if(data.tightTime===true)return json(await rpc('gugudan_vertical_begin_tight',{p_student:student,p_id:data.id,p_count:data.count===10?10:5}));
+      if(data.directZero===true)return json(await rpc('gugudan_vertical_begin_direct_zero',{p_student:student,p_id:data.id,p_count:data.count===10?10:5,p_timed:data.timeScoring===true}));
+      if(data.puzzleOperands===true)return json(await rpc('gugudan_vertical_begin_variety',{p_student:student,p_id:data.id,p_count:data.count===10?10:5,p_timed:data.timeScoring===true}));
+      if(data.puzzles===true)return json(await rpc('gugudan_vertical_begin_puzzles',{p_student:student,p_id:data.id,p_count:data.count===10?10:5,p_timed:data.timeScoring===true}));
+      if(data.manualZero===true)return json(await rpc('gugudan_vertical_begin_manual',{p_student:student,p_id:data.id,p_count:data.count===10?10:5,p_timed:data.timeScoring===true}));
+      return json(await rpc(data.count===10?'gugudan_vertical_begin_count':data.timeScoring===true?'gugudan_vertical_begin_timed':'gugudan_vertical_begin',data.count===10?{p_student:student,p_id:data.id,p_count:10,p_timed:data.timeScoring===true}:{p_student:student,p_id:data.id}));
+    }
+    if(data.action==='verticalFinish'){
+      if(!validId(data.id)||!Array.isArray(data.events)||data.events.length>2000||!data.events.every(value=>{
+        if(!value||typeof value!=='object'||Array.isArray(value))return false;
+        const event=Object.fromEntries(Object.entries(value));
+        return typeof event.question==='number'&&Number.isInteger(event.question)&&event.question>=0&&event.question<10&&typeof event.step==='number'&&Number.isInteger(event.step)&&event.step>=0&&event.step<100&&typeof event.answer==='number'&&Number.isInteger(event.answer)&&event.answer>=0&&event.answer<=9&&(event.ms===undefined||typeof event.ms==='number'&&Number.isInteger(event.ms)&&event.ms>=0&&event.ms<=1000000000);
+      }))return json({error:'INVALID_EVENTS'},400);
+      return json(await rpc('gugudan_vertical_finish',{p_student:student,p_id:data.id,p_events:data.events}));
+    }
     if(data.action==='capabilities')return json({questionTypes:true,friends:true});
     if(data.action==='saveFriends'){
       const friends=data.friends,partner=data.partner;

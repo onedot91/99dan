@@ -3,7 +3,8 @@ import { TABLES } from '../types/game';
 import type { Duration, Mode, Records, Run, Screen, SessionResult } from '../types/game';
 import { chooseFact, isWeak, updateRecord, weakFacts } from './learning';
 import { expectedAnswer, nextQuestion } from './questions';
-export const WRONG_PENALTY=30;
+import { WRONG_PENALTY } from './points';
+export { WRONG_PENALTY } from './points';
 export const WEAK_UNLOCK_THRESHOLD=5;
 export const correctPointsFor=(ms:number,combo:number)=>
   Math.max(100,200-Math.min(100,Math.floor(ms/100)))+Math.min(Math.max(combo-1,0),5)*10;

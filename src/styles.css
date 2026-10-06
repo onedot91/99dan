@@ -162,6 +162,10 @@ img{image-rendering:pixelated}
 .rush-durations button{min-height:44px;border:0;background:transparent;color:#7a4a08;font-family:var(--mono);font-weight:900;box-shadow:none}
 @media(hover:hover){.rush-durations button:hover:not([aria-pressed=true]){color:var(--ink)}}
 .rush-durations button[aria-pressed=true]{background:var(--paper-hi);color:var(--ink);box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--paper-shade),var(--ring)}
+.rush-durations.challenge-options{grid-template-columns:repeat(5,minmax(0,1fr))}
+.vertical-challenge-option{display:grid;align-content:center;justify-items:center;line-height:1.3;padding:var(--s1);white-space:nowrap;font-size:var(--text-base)}
+.challenge-error{font-size:var(--text-base);color:var(--ink);text-align:center}
+.challenge-error button{margin-top:var(--s2)}
 /* Start is the one action: a raised dark arcade button, centred, with a blinking ▶. */
 .rush-start{width:100%;min-height:64px;display:flex;align-items:center;justify-content:center;gap:var(--s3);margin:var(--s1) 0 var(--s2);padding:var(--s3);border:0;background:var(--ink);color:var(--yellow);box-shadow:inset 0 var(--px) 0 #3d3677,inset 0 calc(-1 * var(--px)) 0 var(--outline),var(--ring),var(--drop)}
 .rush-start:active:not(:disabled){box-shadow:inset 0 var(--px) 0 var(--outline),var(--ring)}
