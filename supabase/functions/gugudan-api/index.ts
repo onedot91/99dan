@@ -63,13 +63,25 @@ async function teacherRecords(){
     if(!Array.isArray(rows))throw new Error('INVALID_DATABASE_RESPONSE');
     for(const value of rows){const row=record(value);if(validId(row.id)&&typeof row.finished_at==='string')dates.set(row.id,row.finished_at);}
   }
+  // Finished two-digit runs live in their own table; keep each student's latest five for 최근 도전.
+  const verticalQuery=new URLSearchParams({select:'id,student_number,questions,score,mistakes,finished_at',finished_at:'not.is.null',order:'finished_at.desc',limit:'1000'});
+  const verticalResponse=await fetch(`${url}/rest/v1/gugudan_vertical_runs?${verticalQuery}`,{headers:{apikey:key,Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10000)});
+  if(!verticalResponse.ok)throw new Error('DATABASE_REQUEST_FAILED');
+  const verticalRows:unknown=await verticalResponse.json();
+  if(!Array.isArray(verticalRows))throw new Error('INVALID_DATABASE_RESPONSE');
+  const verticalSessions=new Map<number,unknown[]>();
+  for(const value of verticalRows){
+    const row=record(value),list=verticalSessions.get(Number(row.student_number))??[];
+    if(!validNumber(row.student_number)||!validId(row.id)||typeof row.finished_at!=='string'||!Array.isArray(row.questions)||list.length>=5)continue;
+    list.push({id:row.id,finishedAt:row.finished_at,count:row.questions.length,score:row.score,mistakes:row.mistakes});verticalSessions.set(row.student_number,list);
+  }
   const settings=await rpc('gugudan_teacher_vertical_assignments',{});
   if(!Array.isArray(settings))throw new Error('INVALID_DATABASE_RESPONSE');
   const difficulties=new Map(settings.map(value=>{const row=record(value);if(!validNumber(row.studentNumber)||!validDuration(row.difficulty))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.difficulty];}));
   const metrics=await rpc('gugudan_teacher_vertical_metrics',{},true);
   if(metrics!==null&&!Array.isArray(metrics))throw new Error('INVALID_DATABASE_RESPONSE');
   const summaries=new Map((metrics??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.stats];}));
-  return profiles.map(profile=>({...profile,canResetScopes:true,verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
+  return profiles.map(profile=>({...profile,canResetScopes:true,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
 }
 Deno.serve(async request=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});

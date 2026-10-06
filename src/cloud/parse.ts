@@ -1,5 +1,5 @@
 import type { Duration, Mode, Records, SessionResult } from '../types/game';
-import type { FriendState, SharedProfile } from './types';
+import type { FriendState, SharedProfile, VerticalSession } from './types';
 import { friendById, sanitizeOwned } from '../game/friends';
 import { validVerticalDifficulty } from '../game/verticalSets';
 import { parseVerticalMetrics } from '../game/verticalRecommendation';
@@ -26,7 +26,9 @@ export function profile(value:unknown,studentNumber:number):SharedProfile{
     return [id,{attempts:number(r.attempts),correct:number(r.correct),wrong:number(r.wrong),totalMs:number(r.totalMs),streak:number(r.streak),fastStreak:number(r.fastStreak),recent:array(r.recent).map(value=>{const a=object(value);return {correct:bool(a.correct),ms:number(a.ms)};}),reviewAt:r.reviewAt===null?null:number(r.reviewAt),interval:number(r.interval),lastSeen:number(r.lastSeen)}];
   }));
   const sessions:readonly SessionResult[]=array(data.sessions).map(value=>{const s=object(value);return {id:text(s.id),finishedAt:typeof s.finishedAt==='string'&&Number.isFinite(Date.parse(s.finishedAt))?s.finishedAt:null,duration:duration(s.duration),mode:mode(s.mode),score:score(s.score),correct:number(s.correct),answered:number(s.answered),bestCombo:number(s.bestCombo),fastest:s.fastest===null?null:number(s.fastest),accuracy:number(s.accuracy),endedEarly:bool(s.endedEarly),scoringVersion:s.scoringVersion===5?5:s.scoringVersion===4?4:s.scoringVersion===3?3:s.scoringVersion===2?2:1};});
+  // Only the teacher records carry two-digit runs; an older server leaves them out.
+  const verticalSessions:readonly VerticalSession[]=data.verticalSessions===undefined?[]:array(data.verticalSessions).map(value=>{const s=object(value);const finishedAt=text(s.finishedAt);if(!Number.isFinite(Date.parse(finishedAt)))throw new Error('INVALID_DATE');return {id:text(s.id),finishedAt,count:number(s.count),score:score(s.score),mistakes:number(s.mistakes)};});
   if(data.verticalDifficulty!==undefined&&!validVerticalDifficulty(data.verticalDifficulty))throw new Error('INVALID_VERTICAL_DIFFICULTY');
   if(data.canResetScopes!==undefined&&typeof data.canResetScopes!=='boolean')throw new Error('INVALID_RESET_CAPABILITY');
-  return {studentNumber,canResetScopes:data.canResetScopes===true,verticalMetrics:parseVerticalMetrics(data.verticalMetrics),avatar:avatarPath(data.avatar),records,sessions,friends:friends(data),verticalDifficulty:validVerticalDifficulty(data.verticalDifficulty)?data.verticalDifficulty:null,best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:score(b.score),correct:number(b.correct)};})};
+  return {studentNumber,canResetScopes:data.canResetScopes===true,verticalMetrics:parseVerticalMetrics(data.verticalMetrics),avatar:avatarPath(data.avatar),records,sessions,verticalSessions,friends:friends(data),verticalDifficulty:validVerticalDifficulty(data.verticalDifficulty)?data.verticalDifficulty:null,best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:score(b.score),correct:number(b.correct)};})};
 }

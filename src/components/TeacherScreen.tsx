@@ -45,7 +45,11 @@ function TeacherVerticalSettings({profile,onSave}:{readonly profile:SharedProfil
 function TeacherDetail({profile,onReset,onSaveVertical}:{readonly profile:SharedProfile;readonly onReset:()=>void;readonly onSaveVertical:(studentNumber:number,difficulty:Difficulty)=>Promise<void>}){
   const number=profile.studentNumber;
   const total=totals(profile);
-  const recent=profile.sessions.slice(-5).reverse();
+  // Times-table and two-digit runs in one list, newest first; old sessions without a date go last.
+  const recent=[
+    ...profile.sessions.slice(-5).reverse().map(s=>({id:s.id,label:modeLabel(s.mode,s.duration),finishedAt:s.finishedAt??null,detail:`정답 ${s.correct}개`,score:s.score})),
+    ...profile.verticalSessions.map(s=>({id:s.id,label:`두 자리 수 ${s.count}문제`,finishedAt:s.finishedAt,detail:`오답 ${s.mistakes}개`,score:s.score}))
+  ].sort((a,b)=>(b.finishedAt?Date.parse(b.finishedAt):-Infinity)-(a.finishedAt?Date.parse(a.finishedAt):-Infinity)).slice(0,5);
   const level=levelFor(total.correct);
   const partner=friendById(profile.friends?.partner);
   return <section className="teacher-detail" aria-label={`${number}번 상세 기록`}>
@@ -59,7 +63,7 @@ function TeacherDetail({profile,onReset,onSaveVertical}:{readonly profile:Shared
     <div className="teacher-bests">{DURATIONS.map(duration=><div key={duration}><span>{duration}분 최고</span><strong>{profile.best.find(best=>best.duration===duration)?.score.toLocaleString()??'—'}</strong></div>)}</div>
     <TeacherVerticalSettings key={number} profile={profile} onSave={onSaveVertical}/>
     <h3>최근 도전</h3>
-    {recent.length?<div className="teacher-sessions">{recent.map(session=><div key={session.id}><div className="teacher-session-info"><strong>{modeLabel(session.mode,session.duration)}</strong>{session.finishedAt?<time dateTime={session.finishedAt}>{sessionDate.format(new Date(session.finishedAt))}</time>:<small>날짜 정보 없음</small>}</div><span>정답 {session.correct}개</span><b>{session.score.toLocaleString()}점</b></div>)}</div>:<p className="teacher-empty">기록 없음</p>}
+    {recent.length?<div className="teacher-sessions">{recent.map(session=><div key={session.id}><div className="teacher-session-info"><strong>{session.label}</strong>{session.finishedAt?<time dateTime={session.finishedAt}>{sessionDate.format(new Date(session.finishedAt))}</time>:<small>날짜 정보 없음</small>}</div><span>{session.detail}</span><b>{session.score.toLocaleString()}점</b></div>)}</div>:<p className="teacher-empty">기록 없음</p>}
   </section>;
 }
 
@@ -110,7 +114,7 @@ export function TeacherScreen({token,onExit}:{readonly token:string;readonly onE
       {state==='loading'?<p role="status">불러오는 중</p>:state==='expired'?<div className="teacher-message" role="alert"><p>교사 번호를 다시 입력해 주세요.</p><button className="primary-button" onClick={onExit}>번호 선택</button></div>:state==='error'?<div className="teacher-message" role="alert"><p>기록을 불러오지 못했습니다.</p><button className="primary-button" onClick={()=>void load()}>다시 시도</button></div>:<>
         <section className="teacher-list" aria-label="학생 선택">
           <div className="teacher-section-head"><h1>학생 선택</h1><div className="teacher-list-actions"><button className="quiet-button teacher-icon-button" onClick={()=>void load()} aria-label="기록 새로고침" title="기록 새로고침"><Icon name="refresh" size={22}/></button><button className="quiet-button teacher-reset-all teacher-icon-button" aria-label="전체 기록 초기화" title="전체 기록 초기화" onClick={()=>openReset('all')}><Icon name="trashAll" size={22}/></button></div></div>
-          <div className="teacher-number-grid">{profiles.map(profile=>{const hasRecords=totals(profile).attempts>0||profile.sessions.length>0||profile.best.length>0;const today=playedToday(profile.sessions,now);const difficulty=profile.verticalDifficulty;const difficultyLabel=difficulty===null?'':verticalSet(difficulty).label;return <button key={profile.studentNumber} className={`teacher-number${today?' played-today':''}`} aria-label={`${profile.studentNumber}번${hasRecords?', 기록 있음':''}${today?', 오늘 플레이':''}${difficultyLabel?`, 두 자리 수 ${difficultyLabel}`:''}`} aria-pressed={selected===profile.studentNumber} onClick={()=>setSelected(profile.studentNumber)}>{difficulty!==null&&<span className="teacher-difficulty-badge" data-difficulty={difficulty} title={`두 자리 수 난이도: ${difficultyLabel}`} aria-hidden="true">{difficultyBadges[difficulty]}</span>}<span>{profile.studentNumber}번</span><small className="teacher-number-level">{hasRecords?`Lv.${levelFor(totals(profile).correct).number}`:'\u00a0'}</small></button>;})}</div>
+          <div className="teacher-number-grid">{profiles.map(profile=>{const hasRecords=totals(profile).attempts>0||profile.sessions.length>0||profile.best.length>0;const today=playedToday([...profile.sessions,...profile.verticalSessions.map(s=>({finishedAt:s.finishedAt,answered:s.count}))],now);const difficulty=profile.verticalDifficulty;const difficultyLabel=difficulty===null?'':verticalSet(difficulty).label;return <button key={profile.studentNumber} className={`teacher-number${today?' played-today':''}`} aria-label={`${profile.studentNumber}번${hasRecords?', 기록 있음':''}${today?', 오늘 플레이':''}${difficultyLabel?`, 두 자리 수 ${difficultyLabel}`:''}`} aria-pressed={selected===profile.studentNumber} onClick={()=>setSelected(profile.studentNumber)}>{difficulty!==null&&<span className="teacher-difficulty-badge" data-difficulty={difficulty} title={`두 자리 수 난이도: ${difficultyLabel}`} aria-hidden="true">{difficultyBadges[difficulty]}</span>}<span>{profile.studentNumber}번</span><small className="teacher-number-level">{hasRecords?`Lv.${levelFor(totals(profile).correct).number}`:'\u00a0'}</small></button>;})}</div>
         </section>
         {active&&<TeacherDetail profile={active} onReset={()=>openReset(selected)} onSaveVertical={saveVertical}/>}
       </>}
