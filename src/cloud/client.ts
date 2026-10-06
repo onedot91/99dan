@@ -69,6 +69,13 @@ function standings(data:unknown):readonly Standing[]{
 export async function loadVerticalLeaders(studentNumber:number,count:VerticalCount=5):Promise<readonly Standing[]>{
   return standings(await authenticated(studentNumber,'verticalLeaders',{count,tightTime:true,cellScoring:true}));
 }
+// Best score (null until a cell-scored run) and finished runs for 5 and 10 questions.
+export type VerticalRecord={readonly count:VerticalCount;readonly best:number|null;readonly runs:number};
+export async function loadVerticalRecords(studentNumber:number):Promise<readonly VerticalRecord[]>{
+  const data=await authenticated(studentNumber,'verticalRecords');
+  if(!Array.isArray(data))throw new Error('INVALID_VERTICAL_RECORDS');
+  return data.map(value=>{const row=object(value);if((row.count!==5&&row.count!==10)||(row.best!==null&&typeof row.best!=='number')||typeof row.runs!=='number')throw new Error('INVALID_VERTICAL_RECORDS');return {count:row.count,best:row.best,runs:row.runs};});
+}
 export async function beginVerticalRun(studentNumber:number,id:string,count:VerticalCount=5):Promise<VerticalStart>{
   const data=object(await authenticated(studentNumber,'verticalBegin',{id,timeScoring:true,manualZero:true,puzzles:true,puzzleOperands:true,directZero:true,tightTime:true,cellScoring:true,count}));
   const difficulty=assignment(data,studentNumber);

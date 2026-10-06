@@ -122,6 +122,22 @@ Deno.serve(async request=>{
     const student=await identity(request.headers.get('X-Gugudan-Session'));
     if(student===null)return json({error:'SESSION_REQUIRED'},401);
     if(data.action==='verticalAssignment')return json(await rpc('gugudan_vertical_assignment',{p_student:student}));
+    // A student's own two-digit records for 내 기록: best cell-scored score (as the hall of fame ranks it) and finished runs, per 5/10 questions.
+    if(data.action==='verticalRecords'){
+      const query=new URLSearchParams({select:'questions,score,cell_scoring',student_number:`eq.${student}`,finished_at:'not.is.null',limit:'5000'});
+      const response=await fetch(`${url}/rest/v1/gugudan_vertical_runs?${query}`,{headers:{apikey:key,Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10000)});
+      if(!response.ok)throw new Error('DATABASE_REQUEST_FAILED');
+      const rows:unknown=await response.json();
+      if(!Array.isArray(rows))throw new Error('INVALID_DATABASE_RESPONSE');
+      const totals=[5,10].map(count=>({count,best:null as number|null,runs:0}));
+      for(const value of rows){
+        const row=record(value),total=totals.find(t=>Array.isArray(row.questions)&&t.count===row.questions.length);
+        if(!total)continue;
+        total.runs+=1;
+        if(row.cell_scoring===true&&typeof row.score==='number'&&(total.best===null||row.score>total.best))total.best=row.score;
+      }
+      return json(totals);
+    }
     if(data.action==='verticalLeaders'){
       if(data.count!==undefined&&data.count!==5&&data.count!==10)return json({error:'INVALID_COUNT'},400);
       if(data.tightTime!==undefined&&typeof data.tightTime!=='boolean')return json({error:'INVALID_RUN'},400);

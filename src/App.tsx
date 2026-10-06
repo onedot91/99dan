@@ -123,7 +123,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       {(g.screen==='tables'||g.screen==='weak')&&<SetupScreen game={g}/>}
       {g.screen==='result'&&<ResultScreen game={g} rewards={rewards} friends={friends} syncState={cloud.state} retrySave={cloud.retrySave} unlocked={unlockedNow} onUseBackground={changeBackground}/>}
       {g.screen==='friends'&&<FriendsScreen friends={friends} onCelebrate={()=>audio.cue('friend')}/>}
-      {g.screen==='records'&&<RecordsScreen game={g} best={cloud.profile?.best}/>}
+      {g.screen==='records'&&<RecordsScreen game={g} best={cloud.profile?.best} studentNumber={studentNumber}/>}
     </div>
   </div>;
 }
