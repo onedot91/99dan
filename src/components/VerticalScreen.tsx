@@ -29,7 +29,8 @@ export function VerticalBoard({fact,session,steps,current,onFocus,wrong}:{readon
   const feedback=verticalFeedback(session);
   const renderOperand=(row:'operand-a'|'operand-b',value:number)=>places.map(place=>{
     const index=puzzle?steps.findIndex(step=>step.row===row&&step.place===place):-1;
-    const source=!puzzle&&!!current&&stage!=='sum'&&(row==='operand-a'?place<2:place===(stage==='ones'?0:1));
+    const bPlace=direct&&current?.row==='sum'&&current.place===0?0:current?.bPlace;
+    const source=!puzzle&&!!current&&stage!=='sum'&&(row==='operand-a'?place<2:place===bPlace);
     if(index<0)return <span key={place} className={source?'source-digit':''}><span>{place<2?digitAt(value,place):''}</span></span>;
     const cell=steps[index]!,active=cell.id===current?.id,isSolved=solved?.has(index);
     return <DigitCell key={place} active={active} carry={false} source={false} selectable={!isSolved} value={active?session.entry:isSolved?String(cell.expected):''} label={`${row==='operand-a'?'위의 수':'곱하는 수'} ${PLACES[place]}의 자리`} wrong={wrong} confirmKey={feedback?.correct&&feedback.cellId===cell.id?feedback.key:null} attempt={session.events.length} onFocus={()=>onFocus(index)}/>;
@@ -55,7 +56,7 @@ export function VerticalBoard({fact,session,steps,current,onFocus,wrong}:{readon
     </div>;
   };
   return <div className="vertical-board" role="group" data-stage={puzzle?'puzzle':stage} data-direct-zero={direct?'true':undefined} data-addition-carry={!puzzle&&stage==='sum'&&steps.some(s=>s.row==='carry-sum')?'true':undefined} aria-label={puzzle?'빈칸이 있는 완성된 세로식':`${fact.a} 곱하기 ${fact.b}, 세로식`}>
-    <div className="vertical-columns" aria-hidden="true">{places.map(place=><i key={place} className={current?.place===place?'active-column':''}/>)}</div>
+    <div className="vertical-columns" aria-hidden="true">{places.map(place=><i key={place}/>)}</div>
     {puzzle||stage==='sum'?<div className="vertical-row carry-row" aria-hidden="true"/>:renderRow(stage==='tens'?'carry-tens':'carry-ones',true)}
     <div className="vertical-row operand-row" aria-label={puzzle?'위의 수':`위의 수 ${fact.a}`}>{renderOperand('operand-a',fact.a)}</div>
     <div className="vertical-row operand-row" aria-label={puzzle?'곱하는 수':`곱하는 수 ${fact.b}`}>{renderOperand('operand-b',fact.b).map((cell,index)=>places[index]===2?<span className="vertical-operator" data-product={!puzzle&&current&&stage!=='sum'?stage:undefined} key={2}><span>×</span></span>:cell)}</div>

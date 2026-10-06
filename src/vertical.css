@@ -42,7 +42,6 @@
 .vertical-columns{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));pointer-events:none;border-inline:var(--line) dashed var(--paper-shade)}
 .vertical-columns>i{position:relative}
 .vertical-columns>i+i{border-left:var(--line) dashed var(--paper-shade)}
-.vertical-columns .active-column::before{content:"";position:absolute;inset:0;background:var(--gold-hi);opacity:.45;animation:vertical-column-in var(--vertical-enter) steps(4,end)}
 .vertical-row{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;min-height:0}
 .vertical-row>span{display:grid;place-items:center;height:100%}
 .vertical-row.future-row{opacity:.55}
