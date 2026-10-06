@@ -37,3 +37,8 @@
   .result-actions.with-pick .hall-label{display:none}
   .result-actions button{white-space:nowrap}
 }
+/* Narrowest phones: three-letter backgrounds plus "Lv.NN" still fit on one line. */
+@media(max-width:360px){
+  .background-menu .background-option{gap:var(--s1);padding:var(--s1)}
+  .background-menu .background-option i{width:16px;height:16px}
+}

@@ -77,7 +77,7 @@ Deno.serve(async request=>{
     if(data.action==='capabilities')return json({questionTypes:true,friends:true});
     if(data.action==='saveFriends'){
       const friends=data.friends,partner=data.partner;
-      if(!Array.isArray(friends)||friends.length>400||!friends.every(id=>typeof id==='string'&&/^[a-z]+(\.[a-z]+){0,3}$/.test(id))||(partner!==null&&typeof partner!=='string'))return json({error:'INVALID_FRIENDS'},400);
+      if(!Array.isArray(friends)||friends.length>400||!friends.every(id=>typeof id==='string'&&/^[a-z]+(\.[a-z]+){0,4}$/.test(id))||(partner!==null&&typeof partner!=='string'))return json({error:'INVALID_FRIENDS'},400);
       await rpc('gugudan_save_friends',{p_student:student,p_friends:friends,p_partner:partner});return json({ok:true});
     }
     if(data.action==='profile')return json(await rpc('gugudan_profile',{p_student:student}));

@@ -27,10 +27,10 @@ const EGG:readonly string[]=Array.from({length:6},(_,r)=>Array.from({length:18},
   return c>=13||(r===3&&c%5===2)?'q':'p';
 }).join(''));
 // Later stages fill more of the frame, so each evolution visibly grows (feet stay on one baseline).
-const STAGE_PAD={1:10,2:6,3:3,4:0} as const;
+const STAGE_PAD={1:11,2:7,3:4,4:2,5:0} as const;
 // Early stages get extra padding so they read as smaller; `fill` drops it for tiny slots.
 export function viewBoxFor(id:string|null,fill=false):string{
-  const pad=fill?0:STAGE_PAD[friendById(id)?.tier??4];
+  const pad=fill?0:STAGE_PAD[friendById(id)?.tier??5];
   return `${-pad} ${-2*pad} ${SIZE+2*pad} ${SIZE+2*pad}`;
 }
 const span=(row:string)=>{const left=row.search(/[^.]/);return left<0?{left:0,right:15}:{left,right:row.length-1-[...row].reverse().join('').search(/[^.]/)};};
@@ -56,7 +56,14 @@ function cloak(body:readonly string[],fromRow:number,fill:string):Layer{
   }
   return {map:rows,x:0,y:SIZE-body.length+fromRow};
 }
-// Back to front: cloak, tail and wings behind the body, then body, headwear, aura sparkles.
+// Tier 5 parts. 천사: feathered wings behind and a halo floating over the top; 우주: a planet ring
+// whose back arc passes behind the body and front arc in front, with two small planets.
+const FEATHERS:readonly string[]=['oo......','owoo....','owwwoo..','opwwwwo.','.opwwwwo','..opppwo','...oqqo.','....oo..'];
+const HALO:readonly string[]=['..hhhhhh..','.y......y.','..yyyyyy..'];
+const RING_BACK:readonly string[]=['....EEEEEEEEEEEEEEEE....','..EE................EE..'];
+const RING_FRONT:readonly string[]=['bE....................Eb','.bbEEEEEEEEEEEEEEEEEEbb.'];
+const PLANET:readonly string[]=['.oo.','ofyo','offo','.oo.'];
+// Back to front: cloak, feathers, tail and wings behind the body, then body, headwear, ring, sparkles.
 function layersOf(friend:Friend):readonly Layer[]{
   const plain=friend.family.half.map(row=>row+mirrorRow(row));
   const body=friend.aura?glowingEyes(plain,friend.aura.id==='star'?'y':'E'):plain;
@@ -65,6 +72,12 @@ function layersOf(friend:Friend):readonly Layer[]{
   const headRow=Math.max(0,body.findIndex(row=>row.replace(/\./g,'').length>=8));
   const layers:Layer[]=[];
   if(friend.aura)layers.push(cloak(body,headRow+Math.round((body.length-headRow)*.4),friend.aura.id==='star'?'K':'U'));
+  const ringY=y0+Math.round(body.length*.6);
+  if(friend.myth?.id==='angel'){
+    const r=Math.round(body.length*.3),s=span(body[r]??'');
+    layers.push({map:FEATHERS,x:Math.max(0,x0+s.left-FEATHERS[0]!.length+2),y:y0+r-5},{map:FEATHERS.map(mirrorRow),x:Math.min(SIZE-FEATHERS[0]!.length,x0+s.right-1),y:y0+r-5});
+  }
+  if(friend.myth?.id==='cosmos')layers.push({map:RING_BACK,x:0,y:ringY-2});
   if(friend.element){
     const r=Math.round(body.length*.62),tail=friend.element.tail;
     layers.push({map:tail,x:Math.min(SIZE-tail[0]!.length,x0+span(body[r]??'').right-1),y:y0+r-tail.length+2});
@@ -79,6 +92,7 @@ function layersOf(friend:Friend):readonly Layer[]{
     layers.push({map:art,x:(SIZE-width)/2,y:Math.max(0,y0+headRow-art.length+1)});
   }
   if(friend.tier===1)layers.push({map:EGG,x:x0-1,y:SIZE-EGG.length});
+  if(friend.myth?.id==='cosmos')layers.push({map:RING_FRONT,x:0,y:ringY},{map:PLANET,x:0,y:1},{map:PLANET,x:SIZE-PLANET[0]!.length,y:8});
   if(friend.aura)for(const [x,y] of (friend.aura.id==='star'?[[0,2],[21,4],[0,15]]:[[21,1],[21,13],[0,16]]) as readonly (readonly [number,number])[])layers.push({map:friend.aura.spark,x,y});
   return layers;
 }
@@ -104,11 +118,20 @@ export function friendPixels(id:string|null,silhouette=false,silhouetteColor='cu
     const x=layer.x+i,y=layer.y+j,fill=ch==='.'?undefined:color(ch);
     if(fill&&x>=0&&x<SIZE&&y>=0&&y<SIZE)(grid[y] as (string|undefined)[])[x]=fill;
   }));
-  // Legendary friends get a one-pixel glow traced around the whole silhouette.
-  if(friend.aura&&!silhouette){
+  // The halo floats just above whatever is on top (head, ears or hat), in front if there is no room.
+  if(friend.myth?.id==='angel'){
+    const top=Math.max(0,grid.findIndex(row=>row.some(c=>c!==undefined))-3);
+    HALO.forEach((row,j)=>[...row].forEach((ch,i)=>{if(ch!=='.')(grid[top+j] as (string|undefined)[])[(SIZE-HALO[0]!.length)/2+i]=color(ch);}));
+  }
+  // Legendary friends get a one-pixel glow traced around the whole silhouette; mythic ones a second ring.
+  const trace=(fill:string)=>{
     const filled=(x:number,y:number)=>grid[y]?.[x]!==undefined;
     const glow=grid.map((row,y)=>row.map((c,x)=>c===undefined&&(filled(x-1,y)||filled(x+1,y)||filled(x,y-1)||filled(x,y+1))));
-    glow.forEach((row,y)=>row.forEach((on,x)=>{if(on)(grid[y] as (string|undefined)[])[x]=friend.aura?.glow;}));
+    glow.forEach((row,y)=>row.forEach((on,x)=>{if(on)(grid[y] as (string|undefined)[])[x]=fill;}));
+  };
+  if(friend.aura&&!silhouette){
+    trace(friend.aura.glow);
+    if(friend.myth)trace(friend.myth.glow);
     // Behind everything: a sunburst for 별빛, a crescent moon for 달빛. Fills only empty pixels.
     const backdrop=friend.aura.id==='star'?sunburst:crescent;
     grid.forEach((row,y)=>row.forEach((c,x)=>{const fill=c===undefined?backdrop(x,y):undefined;if(fill)row[x]=fill;}));

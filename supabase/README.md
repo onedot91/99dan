@@ -32,6 +32,6 @@
 
 ## 펫 나무 (2026-09-28, 미적용)
 
-`migrations/20260928000000_friends.sql`은 `gugudan_players`에 `friends`(jsonb 배열)와 `partner` 열을 추가합니다. 프로필·교사 조회에 펫 정보를 포함하고, 저장 RPC `gugudan_save_friends`를 추가합니다. 서버는 저장할 때 형식, 중복, 진화 순서(부모 보유), 개수를 확인합니다. 개수는 레벨을 넘을 수 없습니다(`migrations/20260929000000_slower_levels.sql`에서 15개마다 한 레벨이던 속도를 초반 10·20·30·40개, 이후 50개마다로 변경. 이미 가진 펫은 유지되며, 새 펫은 새 한도 안에서만 받을 수 있습니다). 교사 초기화(개별·전체)는 펫도 함께 지웁니다.
+`migrations/20260928000000_friends.sql`은 `gugudan_players`에 `friends`(jsonb 배열)와 `partner` 열을 추가합니다. 프로필·교사 조회에 펫 정보를 포함하고, 저장 RPC `gugudan_save_friends`를 추가합니다. 서버는 저장할 때 형식, 중복, 진화 순서(부모 보유), 개수를 확인합니다. 개수는 레벨을 넘을 수 없습니다(`migrations/20260929000000_slower_levels.sql`에서 15개마다 한 레벨이던 속도를 초반 10·20·30·40개, 이후 50개마다로 변경. 이미 가진 펫은 유지되며, 새 펫은 새 한도 안에서만 받을 수 있습니다). 교사 초기화(개별·전체)는 펫도 함께 지웁니다. `migrations/20261006000000_mythic_friends.sql`은 5단계 신화 펫(`family.element.form.aura.myth`, 점 4개)을 받도록 id 형식만 넓힙니다. 기존 1~4단계 펫과 레벨 계산은 그대로입니다. 이 마이그레이션과 함께 `gugudan-api` Edge Function(같은 id 형식 검사)도 다시 배포해야 5단계 펫이 저장됩니다.
 
 적용 순서: 마이그레이션 적용 → `gugudan-api` Edge Function 재배포(`capabilities`에 `friends:true`, `saveFriends` 액션). 적용 전에는 앱이 펫을 브라우저 localStorage(`gugudan-rush.friends.<번호>`)에만 저장합니다. 적용 뒤 서버에 펫이 없으면, 레벨 한도 안에 있는 브라우저 기록을 한 번 서버로 올립니다.

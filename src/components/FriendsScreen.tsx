@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { AURAS, ELEMENTS, FAMILIES, FORMS, FRIENDS, TIER_LABEL, friendById, stepName } from '../game/friends';
+import { AURAS, ELEMENTS, FAMILIES, FORMS, FRIENDS, MYTHS, TIER_LABEL, friendById, stepName } from '../game/friends';
 import type { Friend } from '../game/friends';
 import type { Friends } from '../game/useFriends';
 import { FriendSprite } from './FriendSprite';
 // 을/를 follows whether the last syllable has a final consonant.
 const objectJosa=(name:string)=>{const code=name.charCodeAt(name.length-1)-0xac00;return code>=0&&code<11172&&code%28!==0?'을':'를';};
-const Stars=({tier}:{readonly tier:number})=><span className="tier-stars" aria-label={`${tier}단계 ${TIER_LABEL[tier as 1|2|3|4]}`}>{'★'.repeat(tier)}<i>{'★'.repeat(4-tier)}</i></span>;
+const Stars=({tier}:{readonly tier:number})=><span className="tier-stars" aria-label={`${tier}단계 ${TIER_LABEL[tier as 1|2|3|4|5]}`}>{'★'.repeat(tier)}<i>{'★'.repeat(5-tier)}</i></span>;
 function PickView({friends,onPicked}:{readonly friends:Friends;readonly onPicked:(id:string)=>void}){
   const have=new Set(friends.owned);
   return <section className="friend-pick" aria-labelledby="friend-pick-title">
@@ -33,11 +33,14 @@ function TreeView({friends,onPick}:{readonly friends:Friends;readonly onPick:()=
   const [family,setFamily]=useState(()=>friendById(friends.partner)?.family.id??FAMILIES[0]?.id??'slime');
   const [element,setElement]=useState(()=>friendById(friends.partner)?.element?.id??ELEMENTS[0]?.id??'fire');
   const [selected,setSelected]=useState<string>(()=>friends.partner??family);
+  // Stage 5 shows the two myths of one legend at a time: the last legend tapped, else the first one.
+  const [legend,setLegend]=useState(()=>friends.partner?.split('.').slice(0,4).join('.')??'');
+  const branch=legend.split('.').length===4&&legend.startsWith(`${family}.${element}.`)?legend:`${family}.${element}.${FORMS[0]?.id}.${AURAS[0]?.id}`;
   const open=(f:Friend)=>have.has(f.id)||(f.parent===null||have.has(f.parent));
   const node=(id:string)=>{
     const f=friendById(id);if(!f)return null;
     const state=have.has(id)?'owned':open(f)?'open':'locked';
-    return <button key={id} className={`tree-node ${state}${friends.partner===id?' partner':''}${selected===id?' selected':''}`} aria-pressed={selected===id} aria-label={`${state==='locked'?'잠긴 펫':f.name}${state==='owned'?', 모음':state==='open'?', 고를 수 있음':''}`} onClick={()=>setSelected(id)}>
+    return <button key={id} className={`tree-node ${state}${friends.partner===id?' partner':''}${branch===id?' branch':''}${selected===id?' selected':''}`} aria-pressed={selected===id} aria-label={`${state==='locked'?'잠긴 펫':f.name}${state==='owned'?', 모음':state==='open'?', 고를 수 있음':''}`} onClick={()=>{setSelected(id);if(f.tier>=4)setLegend(id.split('.').slice(0,4).join('.'));}}>
       <span className="tree-art"><FriendSprite id={id} silhouette={state!=='owned'}/></span><small>{stepName(f)}</small>
     </button>;
   };
@@ -56,15 +59,16 @@ function TreeView({friends,onPick}:{readonly friends:Friends;readonly onPick:()=
       {friends.pending>0&&<button className="primary-button friend-pick-button" onClick={onPick}>새 펫 고르기 ({friends.pending})</button>}
     </section>
     <section className="friend-tree" aria-label="펫 나무">
-      <div className="family-tabs" role="group" aria-label="펫 종류">{FAMILIES.map(f=>{const count=friends.owned.filter(id=>id.split('.')[0]===f.id).length;return <button key={f.id} aria-pressed={family===f.id} aria-label={`${f.name} ${count}마리`} onClick={()=>{setFamily(f.id);setSelected(f.id);}}><FriendSprite id={f.id} silhouette={!have.has(f.id)}/><small>{count}</small></button>;})}</div>
+      <div className="family-tabs" role="group" aria-label="펫 종류">{FAMILIES.map(f=>{const count=friends.owned.filter(id=>id.split('.')[0]===f.id).length;return <button key={f.id} aria-pressed={family===f.id} aria-label={`${f.name} ${count}마리`} onClick={()=>{setFamily(f.id);setSelected(f.id);}}><FriendSprite id={f.id} silhouette={!have.has(f.id)} crop/><small>{count}</small></button>;})}</div>
       <div className="element-tabs" role="group" aria-label="속성">{ELEMENTS.map(e=>{const count=friends.owned.filter(id=>id.startsWith(`${family}.${e.id}`)).length;return <button key={e.id} aria-pressed={element===e.id} onClick={()=>{setElement(e.id);setSelected(`${family}.${e.id}`);}}>{e.name}<small>{count}</small></button>;})}</div>
-      {/* Four stages, left to right. Each stage only adds one thing to the friend before it. */}
+      {/* Five stages, left to right. Each stage only adds one thing to the friend before it. */}
       <div className="stage-grid">
-        {([1,2,3,4] as const).map(t=><p key={t} className="stage-head"><strong>{t}단계</strong><span> {TIER_LABEL[t]}</span></p>)}
+        {([1,2,3,4,5] as const).map(t=><p key={t} className="stage-head"><strong>{t}단계</strong><span> {TIER_LABEL[t]}</span></p>)}
         <div className="stage-col">{node(family)}</div>
         <div className="stage-col">{node(`${family}.${element}`)}</div>
         <div className="stage-col">{FORMS.map(form=>node(`${family}.${element}.${form.id}`))}</div>
         <div className="stage-col">{FORMS.map(form=><div key={form.id} className="stage-pair">{AURAS.map(a=>node(`${family}.${element}.${form.id}.${a.id}`))}</div>)}</div>
+        <div className="stage-col">{MYTHS.map(m=>node(`${branch}.${m.id}`))}</div>
       </div>
     </section>
   </div>;

@@ -62,7 +62,7 @@ export function levelFloor(level:number):number{
   return floor;
 }
 // Titles only name ranges of levels; they never change how fast levels come.
-export const TITLES=[[1,'초보 모험가'],[3,'숫자 탐험가'],[6,'곱셈 전사'],[10,'룬의 기사'],[15,'숫자 마법사'],[20,'곱셈 영웅'],[30,'별의 수호자'],[40,'전설의 대마법사'],[50,'곱셈 제왕']] as const;
+export const TITLES=[[1,'초보 모험가'],[3,'숫자 탐험가'],[6,'곱셈 전사'],[10,'룬의 기사'],[15,'숫자 마법사'],[20,'곱셈 영웅'],[30,'별의 수호자'],[40,'전설의 대마법사'],[50,'곱셈 제왕'],[60,'곱셈 황제'],[70,'은하 정복자'],[80,'우주의 수호신'],[90,'불멸의 전설'],[100,'곱셈의 신']] as const;
 export type Level={readonly number:number;readonly label:string;readonly floor:number;readonly next:number|null};
 export function titleFor(level:number):string{
   return TITLES.reduce<string>((found,[from,label])=>level>=from?label:found,TITLES[0][1]);

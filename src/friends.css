@@ -8,13 +8,13 @@
   /* A light pixel rim keeps dark pets readable on every background. */
   filter:drop-shadow(2px 0 0 var(--paper)) drop-shadow(-2px 0 0 var(--paper)) drop-shadow(0 -2px 0 var(--paper)) drop-shadow(0 2px 0 var(--outline))}
 /* Drawn edge to edge, then scaled by stage so pets still look like they grow. */
-.hero-friend.tier-1 .friend-sprite{scale:.7}.hero-friend.tier-2 .friend-sprite{scale:.8}.hero-friend.tier-3 .friend-sprite{scale:.9}
+.hero-friend.tier-1 .friend-sprite{scale:.6}.hero-friend.tier-2 .friend-sprite{scale:.7}.hero-friend.tier-3 .friend-sprite{scale:.8}.hero-friend.tier-4 .friend-sprite{scale:.9}
 .hero-scene .hero-friend:is(.mood-sleep,.mood-wake,.mood-excited){left:50%;animation:none;transform:translateX(-50%)}
 .hero-friend.mood-sleep .friend-sprite{animation:pet-doze 1600ms steps(4,end) infinite}
 .hero-friend.mood-wake .friend-sprite{animation:pet-wake 520ms steps(6,end) 2}
 .hero-friend.mood-excited .friend-sprite{animation:pet-hop-home 900ms steps(6,end) infinite}
 .hero-scene:has(.mood-sleep,.mood-wake,.mood-excited){overflow:visible}
-.hero-friend.tier-1{--grow:.7}.hero-friend.tier-2{--grow:.8}.hero-friend.tier-3{--grow:.9}
+.hero-friend.tier-1{--grow:.6}.hero-friend.tier-2{--grow:.7}.hero-friend.tier-3{--grow:.8}.hero-friend.tier-4{--grow:.9}
 /* A speech bubble centred over the drawing, its pixel tail pointing down at the pet. */
 .pet-bubble{position:absolute;left:50%;bottom:calc(88% * var(--grow,1));translate:-50% 0;z-index:2;padding:2px var(--s2);border:0;background:var(--paper);color:var(--ink);font:inherit;font-size:var(--text-base);line-height:1.3;white-space:nowrap;box-shadow:var(--ring),0 calc(2 * var(--px)) 0 rgb(11 10 31 / .5);transform-origin:50% 100%;animation:bubble-pop 280ms steps(4,end) both}
 .pet-bubble::after{content:"";position:absolute;left:50%;top:100%;width:12px;height:var(--px);margin-left:-6px;background:var(--paper);box-shadow:calc(-1 * var(--px)) 0 0 var(--outline),var(--px) 0 0 var(--outline)}
@@ -87,15 +87,15 @@
 .partner-tag{padding:0 var(--s2);background:var(--mint);color:var(--ink);box-shadow:var(--ring)}
 .friend-detail .friend-pick-button{background:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring),var(--drop)}
 .friend-tree{display:grid;gap:var(--s4)}
-.family-tabs{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:var(--s2)}
-.family-tabs button{position:relative;display:grid;place-items:center;height:calc(var(--cell) + 8px);padding:2px;border:0;background:var(--panel);color:#3a3672;box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring)}
+.family-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s2)}
+.family-tabs button{position:relative;display:grid;place-items:center;height:calc(var(--cell) + 8px);padding:var(--s2);border:0;background:var(--panel);color:#3a3672;box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring)}
 .family-tabs button[aria-pressed=true]{background:var(--panel-hi);box-shadow:inset 0 0 0 var(--px) var(--yellow),var(--ring)}
 .family-tabs small{position:absolute;right:2px;bottom:0;font-size:13px;color:var(--paper);text-shadow:var(--text-outline)}
 .element-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2)}
 .element-tabs button{display:flex;align-items:center;justify-content:center;gap:var(--s1);min-height:40px;border:0;background:var(--panel);font-size:15px;box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring)}
 .element-tabs button[aria-pressed=true]{background:var(--yellow);color:var(--ink);box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring)}
 .element-tabs small{font-size:13px;opacity:.75}
-.stage-grid{display:grid;grid-template-columns:repeat(3,auto) auto;grid-template-rows:auto;column-gap:var(--s5);row-gap:var(--s2);justify-content:start}
+.stage-grid{display:grid;grid-template-columns:repeat(5,auto);grid-template-rows:auto;column-gap:var(--s5);row-gap:var(--s2);justify-content:start}
 .stage-head{margin:0;color:var(--muted);font-size:13pt;white-space:nowrap}
 .stage-head strong{color:var(--yellow)}
 .stage-col{display:grid;align-content:center;gap:var(--s2)}
@@ -109,13 +109,14 @@
 .tree-node.owned small{color:var(--paper)}
 .tree-node.open .tree-art{color:#5a5396;box-shadow:inset 0 0 0 2px var(--yellow)}
 .tree-node.partner .tree-art{box-shadow:inset 0 0 0 3px var(--mint)}
+.tree-node.branch .tree-art{background-image:linear-gradient(transparent calc(100% - 4px),var(--blue) 0)}
 .tree-node.selected .tree-art{outline:3px solid var(--paper);outline-offset:1px}
 .tree-node:hover .tree-art{background:var(--panel-hi)}
 @keyframes offer-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes reveal-pop{0%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1.2)}75%{transform:scale(.95)}100%{transform:none}}
 @media(max-width:1000px){.friend-tree-view{--cell:48px;gap:var(--s5)}}
 @media(max-width:860px){
-  .friend-tree-view{--cell:min(48px,calc((100vw - 2 * var(--page-pad) - 64px) / 5));grid-template-columns:minmax(0,1fr);justify-items:center;gap:var(--s3)}
+  .friend-tree-view{--cell:min(48px,calc((100vw - 2 * var(--page-pad) - 80px) / 6));grid-template-columns:minmax(0,1fr);justify-items:center;gap:var(--s3)}
   .friend-detail{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"portrait total" "portrait name" "portrait stars" "portrait blurb" "action action";justify-items:start;text-align:left;width:100%;padding:var(--s3);gap:var(--s1) var(--s3)}
   .friend-portrait{grid-area:portrait;width:88px;height:88px}
   .friend-total{grid-area:total}.friend-detail h2{grid-area:name}.friend-detail .tier-stars{grid-area:stars}.friend-blurb{grid-area:blurb}
@@ -151,10 +152,10 @@
 @media(max-width:700px) and (max-height:700px){
   .friend-portrait{width:64px;height:64px}
   .friend-blurb,.friend-total{display:none}
-  .family-tabs button{height:calc(var(--cell) - 4px)}
+  .family-tabs button{height:calc(var(--cell) - 8px);padding:4px}
   .element-tabs button{min-height:34px}
   .friend-tree{gap:var(--s2)}
-  .friend-tree-view{--cell:min(40px,calc((100vw - 2 * var(--page-pad) - 64px) / 5))}
+  .friend-tree-view{--cell:min(40px,calc((100vw - 2 * var(--page-pad) - 80px) / 6))}
   .tree-node small{font-size:12px}
 }
 @media(max-height:450px) and (min-width:701px){

@@ -1,9 +1,12 @@
-// Early backgrounds come every level or two so new players unlock something soon; later ones are long goals.
+// Early backgrounds come every level or two so new players unlock something soon; later ones are long goals,
+// spaced further apart up to Lv.100.
 export const BACKGROUNDS=[
   {id:'night',label:'밤',level:1},{id:'sunset',label:'노을',level:2},{id:'blossom',label:'벚꽃',level:3},
   {id:'forest',label:'숲',level:4},{id:'desert',label:'사막',level:6},{id:'ocean',label:'바다',level:8},
   {id:'snow',label:'눈',level:10},{id:'volcano',label:'화산',level:15},{id:'aurora',label:'오로라',level:20},
-  {id:'space',label:'우주',level:30},
+  {id:'space',label:'우주',level:30},{id:'firefly',label:'반딧불',level:35},{id:'crystal',label:'보석',level:42},
+  {id:'gold',label:'황금',level:50},{id:'candy',label:'사탕',level:60},{id:'rainbow',label:'무지개',level:72},
+  {id:'storm',label:'폭풍',level:85},{id:'heaven',label:'천상',level:100},
 ] as const;
 export type BackgroundId=typeof BACKGROUNDS[number]['id'];
 export const isUnlocked=(id:BackgroundId,level:number)=>level>=(BACKGROUNDS.find(b=>b.id===id)?.level??1);

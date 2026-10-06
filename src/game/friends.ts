@@ -1,5 +1,5 @@
-// Friend tech tree: family (tier 1) → element (tier 2) → form (tier 3) → aura (tier 4).
-// 8 families × (1 + 4 + 4·3 + 4·3·2) = 328 friends. Each level grants one pick.
+// Friend tech tree: family (tier 1) → element (tier 2) → form (tier 3) → aura (tier 4) → myth (tier 5).
+// 12 families × (1 + 4 + 4·3 + 4·3·2 + 4·3·2·2) = 1068 friends. Each level grants one pick.
 export type Palette=readonly [light:string,base:string,shade:string];
 type Family={readonly id:string;readonly name:string;readonly blurb:string;readonly palette:Palette;readonly half:readonly string[]};
 type Branch={readonly id:string;readonly name:string;readonly blurb:string};
@@ -20,7 +20,17 @@ export const FAMILIES:readonly Family[]=[
   {id:'mushroom',name:'버섯',blurb:'비 오는 날 쑥쑥 자라요',palette:['#ffb3b3','#ff5b5b','#b8324a'],half:[
     '.....ooo','...ooLLL','..oLgppg','.oLgppgg','.oLggggp','oLppgggg','oGgggggg','oooooooo','...opppp','...opwep','...opeep','...opcpp','...opqqq','....oooo']},
   {id:'turtle',name:'거북이',blurb:'느려도 끝까지 가요',palette:['#a8f0e0','#3cc8a8','#1f8a70'],half:[
-    '.....ooo','....oLLL','....oweg','....oeeg','....oggg','..oooooo','.onnnnnn','onnNnnnN','onNnnnNn','onnnnnnn','oyyyyyyy','.oLgo...','.oooo...']}
+    '.....ooo','....oLLL','....oweg','....oeeg','....oggg','..oooooo','.onnnnnn','onnNnnnN','onNnnnNn','onnnnnnn','oyyyyyyy','.oLgo...','.oooo...']},
+  // Later families: round ears, tentacles, a horn and flippers keep every silhouette distinct,
+  // and chocolate, magenta, lemon and navy are colours no earlier family uses.
+  {id:'bear',name:'곰',blurb:'든든하게 안아 줘요',palette:['#d9a07a','#8d5a3b','#5a3420'],half:[
+    '.ooo....','oLLgo...','oLcgoooo','.ooLLLLL','.oLggggg','oLgggggg','oLgweggg','oLgeeggp','oLggggpp','oLcggppe','oLgggppp','.oLggggg','.oLgpppp','.oLgpppp','..oLgggg','..oLggo.','..ooooo.']},
+  {id:'octopus',name:'문어',blurb:'여덟 팔로 척척 풀어요',palette:['#ffb8ec','#ff5fcf','#b8288c'],half:[
+    '....oooo','..ooLLLL','.oLLgggg','oLgggggg','oLgggggg','oLgweggg','oLgeeggg','oLcggggg','.oLggggg','..oLgggg','.oLgogLg','oLgo.oLg','oLo..oLg','.o...ooo']},
+  {id:'unicorn',name:'유니콘',blurb:'반짝반짝 꿈을 꿔요',palette:['#fff6c2','#ffe066','#d6a514'],half:[
+    '.......o','......op','...o..oq','..oLo.op','.ooLLooL','oroLgggg','ofoLgggg','oyLgwegg','olLgeegg','obLggggg','ovLcgggg','.oLgggpp','..oLgpep','...oLppp','....oooo']},
+  {id:'penguin',name:'펭귄',blurb:'추워도 씩씩해요',palette:['#8a9ad0','#3d4a80','#232a52'],half:[
+    '.....ooo','...ooLLL','..oLgggg','.oLggwww','.oLgwwew','.oLgweew','.oLgwwoo','.oLggwof','o.oLgwwo','ogoLgwww','ogoLgwww','.ooLgwww','..oLgwww','..oLggww','..offooo','..ooo...']}
 ];
 export const ELEMENTS:readonly (Branch&{readonly palette:Palette;readonly tail:readonly string[]})[]=[
   {id:'fire',name:'불꽃',blurb:'뜨거운 열정',palette:['#ffd0a0','#ff7a3c','#c23a1c'],tail:['...o..','..ofo.','.ofyfo','ofyhfo','ofyfo.','offo..','oo....']},
@@ -37,25 +47,34 @@ export const AURAS:readonly (Branch&{readonly tint:string;readonly amount:number
   {id:'star',name:'별빛',blurb:'별처럼 빛나요',tint:'#ffffff',amount:.28,glow:'#ffd23f',spark:['.h.','hyh','.h.']},
   {id:'moon',name:'달빛',blurb:'밤하늘을 닮았어요',tint:'#6a4cff',amount:.18,glow:'#b39bff',spark:['.v.','vVv','.v.']}
 ];
+// Tier 5 adds one more layer on top of a legend: a halo with feathered wings, or a planet ring with moons.
+export const MYTHS:readonly (Branch&{readonly glow:string})[]=[
+  {id:'angel',name:'천사',blurb:'하늘의 고리를 받았어요',glow:'#fffdf3'},
+  {id:'cosmos',name:'우주',blurb:'행성을 거느렸어요',glow:'#7df9ff'}
+];
 export type Friend={
-  readonly id:string;readonly parent:string|null;readonly tier:1|2|3|4;readonly name:string;readonly blurb:string;
+  readonly id:string;readonly parent:string|null;readonly tier:1|2|3|4|5;readonly name:string;readonly blurb:string;
   readonly family:Family;readonly element:(typeof ELEMENTS)[number]|null;readonly form:(typeof FORMS)[number]|null;readonly aura:(typeof AURAS)[number]|null;
+  readonly myth:(typeof MYTHS)[number]|null;
 };
 export const FRIENDS:readonly Friend[]=FAMILIES.flatMap(family=>{
-  const base:Friend={id:family.id,parent:null,tier:1,name:family.name,blurb:family.blurb,family,element:null,form:null,aura:null};
+  const base:Friend={id:family.id,parent:null,tier:1,name:family.name,blurb:family.blurb,family,element:null,form:null,aura:null,myth:null};
   return [base,...ELEMENTS.flatMap(element=>{
     const second:Friend={...base,id:`${family.id}.${element.id}`,parent:family.id,tier:2,name:`${element.name} ${family.name}`,blurb:element.blurb,element};
     return [second,...FORMS.flatMap(form=>{
       const third:Friend={...second,id:`${second.id}.${form.id}`,parent:second.id,tier:3,name:`${form.name} ${second.name}`,blurb:form.blurb,form};
-      return [third,...AURAS.map(aura=>({...third,id:`${third.id}.${aura.id}`,parent:third.id,tier:4 as const,name:`${aura.name} ${third.name}`,blurb:aura.blurb,aura}))];
+      return [third,...AURAS.flatMap(aura=>{
+        const fourth:Friend={...third,id:`${third.id}.${aura.id}`,parent:third.id,tier:4,name:`${aura.name} ${third.name}`,blurb:aura.blurb,aura};
+        return [fourth,...MYTHS.map(myth=>({...fourth,id:`${fourth.id}.${myth.id}`,parent:fourth.id,tier:5 as const,name:`${myth.name} ${fourth.name}`,blurb:myth.blurb,myth}))];
+      })];
     })];
   })];
 });
 const BY_ID=new Map(FRIENDS.map(f=>[f.id,f]));
 export const friendById=(id:string|null|undefined)=>id?BY_ID.get(id)??null:null;
-export const TIER_LABEL={1:'아기',2:'속성',3:'변신',4:'전설'} as const;
-// The part a stage adds, e.g. 불꽃 / 날개 / 별빛; the full name stacks all of them.
-export const stepName=(f:Friend)=>f.aura?.name??f.form?.name??f.element?.name??f.family.name;
+export const TIER_LABEL={1:'아기',2:'속성',3:'변신',4:'전설',5:'신화'} as const;
+// The part a stage adds, e.g. 불꽃 / 날개 / 별빛 / 천사; the full name stacks all of them.
+export const stepName=(f:Friend)=>f.myth?.name??f.aura?.name??f.form?.name??f.element?.name??f.family.name;
 // Only keep ids that exist and whose parent is also kept, so a bad save can't break the tree.
 export function sanitizeOwned(ids:readonly unknown[]):readonly string[]{
   const kept:string[]=[];
