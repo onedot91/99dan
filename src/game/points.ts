@@ -1,0 +1,3 @@
+export const WRONG_PENALTY=30;
+export const VERTICAL_CORRECT_POINTS=200;
+export const VERTICAL_WRONG_PENALTY=10;

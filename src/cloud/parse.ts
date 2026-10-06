@@ -1,6 +1,8 @@
 import type { Duration, Mode, Records, SessionResult } from '../types/game';
 import type { FriendState, SharedProfile } from './types';
 import { friendById, sanitizeOwned } from '../game/friends';
+import { validVerticalDifficulty } from '../game/verticalSets';
+import { parseVerticalMetrics } from '../game/verticalRecommendation';
 export function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('INVALID_RESPONSE');return Object.fromEntries(Object.entries(value));}
 function number(value:unknown):number{if(typeof value!=='number'||!Number.isFinite(value)||value<0)throw new Error('INVALID_NUMBER');return value;}
 function score(value:unknown):number{if(typeof value!=='number'||!Number.isFinite(value))throw new Error('INVALID_SCORE');return value;}
@@ -23,6 +25,8 @@ export function profile(value:unknown,studentNumber:number):SharedProfile{
     const r=object(value);
     return [id,{attempts:number(r.attempts),correct:number(r.correct),wrong:number(r.wrong),totalMs:number(r.totalMs),streak:number(r.streak),fastStreak:number(r.fastStreak),recent:array(r.recent).map(value=>{const a=object(value);return {correct:bool(a.correct),ms:number(a.ms)};}),reviewAt:r.reviewAt===null?null:number(r.reviewAt),interval:number(r.interval),lastSeen:number(r.lastSeen)}];
   }));
-  const sessions:readonly SessionResult[]=array(data.sessions).map(value=>{const s=object(value);return {id:text(s.id),duration:duration(s.duration),mode:mode(s.mode),score:score(s.score),correct:number(s.correct),answered:number(s.answered),bestCombo:number(s.bestCombo),fastest:s.fastest===null?null:number(s.fastest),accuracy:number(s.accuracy),endedEarly:bool(s.endedEarly),scoringVersion:s.scoringVersion===5?5:s.scoringVersion===4?4:s.scoringVersion===3?3:s.scoringVersion===2?2:1};});
-  return {studentNumber,avatar:avatarPath(data.avatar),records,sessions,friends:friends(data),best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:score(b.score),correct:number(b.correct)};})};
+  const sessions:readonly SessionResult[]=array(data.sessions).map(value=>{const s=object(value);return {id:text(s.id),finishedAt:typeof s.finishedAt==='string'&&Number.isFinite(Date.parse(s.finishedAt))?s.finishedAt:null,duration:duration(s.duration),mode:mode(s.mode),score:score(s.score),correct:number(s.correct),answered:number(s.answered),bestCombo:number(s.bestCombo),fastest:s.fastest===null?null:number(s.fastest),accuracy:number(s.accuracy),endedEarly:bool(s.endedEarly),scoringVersion:s.scoringVersion===5?5:s.scoringVersion===4?4:s.scoringVersion===3?3:s.scoringVersion===2?2:1};});
+  if(data.verticalDifficulty!==undefined&&!validVerticalDifficulty(data.verticalDifficulty))throw new Error('INVALID_VERTICAL_DIFFICULTY');
+  if(data.canResetScopes!==undefined&&typeof data.canResetScopes!=='boolean')throw new Error('INVALID_RESET_CAPABILITY');
+  return {studentNumber,canResetScopes:data.canResetScopes===true,verticalMetrics:parseVerticalMetrics(data.verticalMetrics),avatar:avatarPath(data.avatar),records,sessions,friends:friends(data),verticalDifficulty:validVerticalDifficulty(data.verticalDifficulty)?data.verticalDifficulty:null,best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:score(b.score),correct:number(b.correct)};})};
 }

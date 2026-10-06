@@ -1,8 +1,10 @@
-.teacher-screen{min-height:0;min-width:0;width:100%;max-width:var(--frame);margin:0 auto;display:grid;grid-template-columns:minmax(280px,.82fr) minmax(0,1.18fr);gap:var(--s5)}
+.teacher-app{--header:56px;--page-pad:16px;--control:44px}
+.teacher-app .quiet-button{font-size:14px;white-space:nowrap}
+.teacher-screen{min-height:0;min-width:0;width:100%;max-width:var(--frame);margin:0 auto;display:grid;grid-template-columns:minmax(280px,.82fr) minmax(0,1.18fr);align-content:start;align-items:start;gap:var(--s3)}
 .teacher-screen>p,.teacher-message{grid-column:1/-1;align-self:center;justify-self:center}
-.teacher-list,.teacher-detail{min-height:0;min-width:0;overflow:auto;padding:var(--s4);background:var(--panel);border:var(--px) solid var(--outline);box-shadow:inset 0 var(--px) 0 var(--panel-hi)}
-.teacher-section-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s4)}
-.teacher-section-head h1,.teacher-section-head h2{font-size:var(--text-xl)}
+.teacher-list,.teacher-detail{min-height:0;min-width:0;max-height:100%;overflow:auto;padding:var(--s3);background:var(--panel);border:var(--px) solid var(--outline);box-shadow:inset 0 var(--px) 0 var(--panel-hi)}
+.teacher-section-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin-bottom:var(--s3)}
+.teacher-section-head h1,.teacher-section-head h2{font-size:var(--text-lg)}
 .teacher-list-actions{display:flex;align-items:center;gap:var(--s2)}
 .teacher-reset-all,.teacher-reset-all-confirm{color:var(--coral);border-color:var(--coral);white-space:nowrap}
 .teacher-reset-all-confirm:disabled{opacity:.45;cursor:not-allowed}
@@ -12,41 +14,59 @@
 .teacher-number-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s2)}
 .teacher-number{position:relative;min-width:0;min-height:64px;padding:var(--s2);background:var(--panel-raised);border:var(--line) solid var(--outline);font-family:var(--mono);font-size:var(--text-base)}
 .teacher-number:hover{background:var(--border)}
-.teacher-number[aria-pressed=true]{background:var(--mint);border-color:var(--mint);color:var(--ink)}
-.teacher-record-dot{position:absolute;top:var(--s1);right:var(--s1);width:8px;height:8px;background:var(--yellow)}
-.teacher-number[aria-pressed=true] .teacher-record-dot{background:var(--ink)}
-.teacher-level{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--s3);margin-bottom:var(--s4);padding:var(--s3);background:var(--bg)}
-.teacher-level .level-number{min-width:48px;height:48px;line-height:48px;font-size:var(--text-xl)}
+.teacher-number.played-today{background:var(--mint);border-color:var(--mint);color:var(--ink)}
+.teacher-number[aria-pressed=true]{border-color:var(--yellow);box-shadow:inset 0 0 0 var(--line) var(--outline)}
+.teacher-level{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:var(--s2);margin-bottom:var(--s3);padding:var(--s2);background:var(--bg)}
+.teacher-level .level-number{min-width:40px;height:40px;line-height:40px;font-size:var(--text-lg)}
 .teacher-level>div{display:grid;gap:var(--s1);min-width:0}
-.teacher-level small{color:var(--muted);font-size:13pt}
+.teacher-level strong{font-size:14px}
+.teacher-level small{color:var(--muted);font-size:13px}
 .teacher-level .level-number small{color:var(--ink)}
 .teacher-friend{display:flex!important;align-items:center;gap:var(--s2)}
-.teacher-friend .friend-sprite{width:56px;height:56px}
+.teacher-friend .friend-sprite{width:40px;height:40px}
 .teacher-friend span{display:grid;gap:2px}
-.teacher-friend strong{font-size:13pt;word-break:keep-all}
-.teacher-number{display:grid;place-content:center;gap:2px}
+.teacher-friend strong{font-size:14px;word-break:keep-all}
+.teacher-number{display:grid;place-content:center;gap:2px;min-height:68px;padding:20px var(--s1) var(--s1)}
+.teacher-app [data-difficulty="1"]{--difficulty-color:var(--blue)}
+.teacher-app [data-difficulty="2"]{--difficulty-color:var(--yellow)}
+.teacher-app [data-difficulty="3"]{--difficulty-color:var(--coral)}
+.teacher-number .teacher-difficulty-badge{position:absolute;top:2px;right:2px;display:grid;place-items:center;width:18px;height:18px;background:var(--difficulty-color);color:var(--ink);font-family:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:13px;font-weight:900;line-height:1}
 .teacher-number-level{font-size:13px;color:var(--yellow)}
-.teacher-number[aria-pressed=true] .teacher-number-level{color:var(--ink)}
-.teacher-summary{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s4);color:var(--muted);font-size:var(--text-base)}
+.teacher-number.played-today .teacher-number-level{color:var(--ink)}
+.teacher-summary{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s3);color:var(--muted);font-size:14px}
 .teacher-summary strong{color:var(--paper);font-family:var(--mono)}
 .teacher-bests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
-.teacher-bests>div{display:grid;gap:var(--s1);min-width:0;padding:var(--s3);background:var(--bg);text-align:center}
-.teacher-bests span{color:var(--muted);font-size:var(--text-base)}
-.teacher-bests strong{color:var(--yellow);font:900 var(--text-xl) var(--mono);overflow-wrap:anywhere}
-.teacher-detail h3{font-size:var(--text-base);color:var(--mint);margin:var(--s5) 0 var(--s2)}
+.teacher-bests>div{display:grid;gap:var(--s1);min-width:0;padding:var(--s2);background:var(--bg);text-align:center}
+.teacher-bests span{color:var(--muted);font-size:14px}
+.teacher-bests strong{color:var(--yellow);font:900 var(--text-lg) var(--mono);overflow-wrap:anywhere}
+.teacher-detail h3{font-size:16px;color:var(--mint);margin:var(--s3) 0 var(--s2)}
 .teacher-sessions{display:grid;gap:var(--s1)}
-.teacher-sessions>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--s3);padding:var(--s2) var(--s3);background:var(--panel-raised);font-size:var(--text-base)}
+.teacher-sessions>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--s2);padding:var(--s2);background:var(--panel-raised);font-size:14px}
 .teacher-sessions b{color:var(--yellow);font-family:var(--mono)}
+.teacher-session-info{display:grid;gap:var(--s1);min-width:0;overflow-wrap:anywhere}
+.teacher-session-info time,.teacher-session-info small{color:var(--muted);font-size:13px;line-height:1.4}
 .teacher-empty{color:var(--muted)}
 .teacher-reset{white-space:nowrap}
+.teacher-reset-dialog{max-height:calc(100dvh - 24px);overflow:auto}
+.teacher-reset-modes,.teacher-reset-scopes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);min-width:0}
+.teacher-reset-modes [aria-pressed=true]{background:var(--yellow);color:var(--ink)}
+.teacher-reset-scopes{margin:0;padding:0;border:0}
+.teacher-reset-scopes label{display:flex;align-items:center;gap:var(--s2);min-width:0;min-height:44px;padding:var(--s2);background:var(--bg);border:var(--line) solid var(--border);font-size:14px;line-height:1.4;cursor:pointer}
+.teacher-reset-scopes input{flex:none;width:18px;height:18px;margin:0;accent-color:var(--yellow)}
+.teacher-reset-scopes label span{text-align:left;word-break:keep-all;overflow-wrap:normal}
+.teacher-reset-scopes label:has(input:checked){border-color:var(--yellow);color:var(--yellow)}
+.teacher-reset-scopes label:has(input:focus-visible){outline:var(--line) solid var(--yellow);outline-offset:var(--s1)}
+.teacher-reset-dialog .number-confirm-actions{grid-template-columns:auto minmax(0,1fr)}
+.teacher-reset-dialog .number-confirm-actions button{min-width:0;font-size:14px}
+@media(max-width:400px){.teacher-reset-scopes label{padding:var(--s1);font-size:13px}}
 .teacher-message{display:grid;justify-items:center;gap:var(--s4);text-align:center}
 @media(max-width:700px){
- .teacher-app{height:auto;min-height:100dvh}
- .teacher-screen{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s4);overflow:visible}
- .teacher-list,.teacher-detail{overflow:visible}
+ .app.teacher-app{--header:52px;--page-pad:8px;height:auto;min-height:100dvh;grid-template-rows:var(--header) auto;align-content:start}
+ .teacher-screen{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s3);overflow:visible}
+ .teacher-list,.teacher-detail{max-height:none;overflow:visible}
  .teacher-number-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
  .teacher-section-head{align-items:flex-start}
- .teacher-list-actions{flex-direction:column;align-items:stretch}
+ .teacher-list-actions{flex-wrap:wrap}
  .teacher-sessions>div{grid-template-columns:minmax(0,1fr) auto;gap:var(--s1) var(--s3)}
  .teacher-sessions>div span{grid-column:1}
  .teacher-sessions>div b{grid-column:2;grid-row:1/3}
@@ -56,10 +76,27 @@
 @media(max-width:400px){
  .teacher-list,.teacher-detail{padding:var(--s3)}
  .teacher-bests>div{padding:var(--s2) var(--s1)}
- .teacher-bests strong{font-size:var(--text-lg)}
+ .teacher-bests strong{font-size:clamp(14px,4vw,18px);white-space:nowrap}
 }
 @media(max-height:450px) and (min-width:701px){.teacher-screen{gap:var(--s2)}.teacher-list,.teacher-detail{padding:var(--s2)}}
 .teacher-app .header>.quiet-button{grid-column:3;justify-self:end}
 .teacher-section-head{flex-wrap:wrap}
 .teacher-list-actions .quiet-button{white-space:nowrap}
 .teacher-number>span{white-space:nowrap;font-size:15px}
+.teacher-vertical{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--s2);margin-top:var(--s3);padding:var(--s2);background:var(--bg);border:var(--line) solid var(--border)}
+.teacher-vertical h3{margin:0}
+.teacher-vertical-heading{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);min-width:0}
+.teacher-recommendation{min-height:44px;padding:var(--s1) var(--s2);border:var(--line) solid var(--difficulty-color);background:var(--bg);color:var(--difficulty-color);font:700 13px "Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;white-space:nowrap}
+.teacher-recommendation:hover{background:var(--panel)}
+.teacher-recommendation-reason{grid-column:1/-1;color:var(--muted);font-size:13px;text-align:left;text-wrap:pretty}
+.teacher-vertical-select{display:grid;grid-template-columns:auto 72px;align-items:center;gap:var(--s2);font-size:14px}
+.teacher-vertical-select select{width:100%;min-width:0;min-height:44px;padding:var(--s2);border:var(--line) solid var(--outline);background:var(--difficulty-color);color:var(--ink);font:900 18px "Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;color-scheme:dark}
+.teacher-vertical-select option{background:var(--panel);color:var(--paper)}
+.teacher-vertical>[role]{grid-column:1/-1}
+.teacher-vertical-questions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2) var(--s6);padding-left:var(--s6);font-size:var(--text-base)}
+.teacher-vertical-questions li{white-space:nowrap}
+.teacher-vertical-status{font-size:14px;color:var(--muted);word-break:keep-all}
+@media(max-width:540px){.teacher-vertical{grid-template-columns:minmax(0,1fr)}.teacher-vertical-select{grid-template-columns:auto minmax(72px,1fr)}.teacher-list>.teacher-section-head h1{flex-basis:100%}.teacher-list-actions{width:100%}.teacher-list-actions .quiet-button{flex:1;font-size:13px;padding:var(--s2)}}
+@media(max-width:400px){.teacher-vertical{padding:var(--s2)}.teacher-vertical-questions{grid-template-columns:minmax(0,1fr)}}
+.teacher-app .teacher-icon-button{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;min-width:44px;height:44px;padding:0}
+@media(max-width:540px){.teacher-list>.teacher-section-head h1{flex-basis:auto}.teacher-list-actions{width:auto}}
