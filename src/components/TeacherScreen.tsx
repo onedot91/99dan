@@ -67,7 +67,7 @@ function TeacherDetail({profile,onReset,onSaveVertical}:{readonly profile:Shared
   </section>;
 }
 
-export function TeacherScreen({token,onExit}:{readonly token:string;readonly onExit:()=>void}){
+export function TeacherScreen({onExit}:{readonly onExit:()=>void}){
   const [profiles,setProfiles]=useState<readonly SharedProfile[]>([]);
   const [selected,setSelected]=useState(1);
   const [state,setState]=useState<'loading'|'ready'|'error'|'expired'>('loading');
@@ -82,10 +82,10 @@ export function TeacherScreen({token,onExit}:{readonly token:string;readonly onE
   const resetPending=useRef(false);
   const load=async()=>{
     setState('loading');
-    try{setProfiles(await loadTeacherRecords(token));setState('ready');}
+    try{setProfiles(await loadTeacherRecords());setState('ready');}
     catch(cause){setState(cause instanceof Error&&cause.message==='CLOUD_401'?'expired':'error');}
   };
-  useEffect(()=>{void load();},[token]);
+  useEffect(()=>{void load();},[]);
   useEffect(()=>{
     const updateDay=()=>setNow(new Date());
     const timer=window.setInterval(updateDay,60000);
@@ -96,13 +96,13 @@ export function TeacherScreen({token,onExit}:{readonly token:string;readonly onE
     if(resetPending.current||resetTarget!=='all'&&resetMode==='partial'&&(!resetScopes.length||!profiles.find(p=>p.studentNumber===resetTarget)?.canResetScopes))return;
     resetPending.current=true;
     setResetting(true);setError('');
-    try{if(resetTarget==='all')await resetAllStudentRecords(token);else if(resetMode==='partial')await resetStudentRecordScopes(token,resetTarget,resetScopes);else await resetStudentRecords(token,resetTarget);dialog.current?.close();setConfirmation('');await load();}
+    try{if(resetTarget==='all')await resetAllStudentRecords();else if(resetMode==='partial')await resetStudentRecordScopes(resetTarget,resetScopes);else await resetStudentRecords(resetTarget);dialog.current?.close();setConfirmation('');await load();}
     catch(cause){if(cause instanceof Error&&cause.message==='CLOUD_401'){dialog.current?.close();setState('expired');}else setError('초기화하지 못했습니다. 다시 시도해 주세요.');}
     finally{resetPending.current=false;setResetting(false);}
   };
   const active=profiles.find(profile=>profile.studentNumber===selected);
   const saveVertical=async(studentNumber:number,difficulty:Difficulty)=>{
-    try{const saved=await saveVerticalAssignment(token,studentNumber,difficulty);setProfiles(previous=>previous.map(profile=>profile.studentNumber===studentNumber?{...profile,verticalDifficulty:saved}:profile));}
+    try{const saved=await saveVerticalAssignment(studentNumber,difficulty);setProfiles(previous=>previous.map(profile=>profile.studentNumber===studentNumber?{...profile,verticalDifficulty:saved}:profile));}
     catch(cause){if(cause instanceof Error&&cause.message==='CLOUD_401')setState('expired');throw cause;}
   };
   const openReset=(target:number|'all')=>{setResetTarget(target);setResetMode(target==='all'?'full':'partial');setResetScopes([]);setConfirmation('');setError('');dialog.current?.showModal();};

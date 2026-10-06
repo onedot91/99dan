@@ -17,6 +17,7 @@ import type { HallPart } from './components/HallScreen';
 import { useSharedGame } from './cloud/useSharedGame';
 import { StudentNumberScreen } from './components/StudentNumberScreen';
 import { TeacherScreen } from './components/TeacherScreen';
+import { loadTeacherMode, saveTeacherMode } from './game/teacherDevice';
 import './teacher.css';
 import { isSpare, loadStudentNumber, numberLabel } from './game/studentNumber';
 import { cloudConfigured } from './cloud/client';
@@ -37,17 +38,18 @@ import './vertical.css';
 import './mobile.css';
 export function App(){
   const [studentNumber,setStudentNumber]=useState(loadStudentNumber);
-  const [teacherToken,setTeacherToken]=useState<string|null>(null);
+  const [teacher,setTeacher]=useState(loadTeacherMode);
+  const openTeacher=(on:boolean)=>{saveTeacherMode(on);setTeacher(on);};
   useEffect(()=>{
     const handleKeyDown=(event:KeyboardEvent)=>{
-      if(studentNumber===null||teacherToken!==null||event.key!=='Enter'||!event.altKey||!event.metaKey||event.ctrlKey||event.shiftKey)return;
+      if(studentNumber===null||teacher||event.key!=='Enter'||!event.altKey||!event.metaKey||event.ctrlKey||event.shiftKey)return;
       event.preventDefault();
       setStudentNumber(null);
     };
     window.addEventListener('keydown',handleKeyDown);
     return ()=>window.removeEventListener('keydown',handleKeyDown);
-  },[studentNumber,teacherToken]);
-  return teacherToken?<TeacherScreen token={teacherToken} onExit={()=>{setTeacherToken(null);setStudentNumber(null);}}/>:studentNumber===null?<StudentNumberScreen onConfirm={setStudentNumber} onTeacher={setTeacherToken}/>:<GameApp studentNumber={studentNumber} onReselect={()=>setStudentNumber(null)}/>;
+  },[studentNumber,teacher]);
+  return teacher?<TeacherScreen onExit={()=>{openTeacher(false);setStudentNumber(null);}}/>:studentNumber===null?<StudentNumberScreen onConfirm={setStudentNumber} onTeacher={()=>openTeacher(true)}/>:<GameApp studentNumber={studentNumber} onReselect={()=>setStudentNumber(null)}/>;
 }
 function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;readonly onReselect:()=>void}){
   const g=useRushGame(!cloudConfigured||isSpare(studentNumber));

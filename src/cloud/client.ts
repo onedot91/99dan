@@ -8,6 +8,7 @@ import { parseVerticalQuestions } from '../game/vertical';
 import type { VerticalSession, VerticalStart } from '../game/vertical';
 import { validTeacherResetScopes } from '../game/teacherReset';
 import type { TeacherResetScope } from '../game/teacherReset';
+import { forgetTeacherCode, loadTeacherCode, saveTeacherCode } from '../game/teacherDevice';
 const env=import.meta.env;
 const endpoint=env.VITE_GUGUDAN_API_URL;
 const publicKey=env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -92,27 +93,48 @@ export async function finishVerticalRun(studentNumber:number,session:VerticalSes
   if(result.id!==session.id||typeof result.score!=='number'||!Number.isInteger(result.score)||result.score<0||result.score>session.questions.length*200)throw new Error('INVALID_VERTICAL_SCORE');
   return result.score;
 }
-export async function teacherLogin(code:string):Promise<string>{
+async function teacherSignIn(code:string):Promise<string>{
   const data=object(await request('teacherLogin',{code}));
   if(typeof data.token!=='string')throw new Error('INVALID_SESSION');
   return data.token;
 }
-export async function loadTeacherRecords(token:string):Promise<readonly SharedProfile[]>{
-  const data=await request('teacherRecords',{},token);
+let teacherSession:string|null=null;
+// Checks the code and remembers it on this device, so the teacher is never asked again here.
+export async function teacherLogin(code:string):Promise<void>{
+  teacherSession=await teacherSignIn(code);
+  saveTeacherCode(code);
+}
+// Teacher calls sign in again with the stored code whenever the 30-minute session is missing or expired.
+// A stored code the server rejects (e.g. it was changed) is forgotten, so the teacher is asked once more.
+async function teacherRequest(action:string,payload:object={}):Promise<unknown>{
+  for(const fresh of [false,true]){
+    if(fresh||!teacherSession){
+      const code=loadTeacherCode();
+      if(!code)throw new Error('CLOUD_401');
+      try{teacherSession=await teacherSignIn(code);}
+      catch(error){if(error instanceof Error&&error.message==='CLOUD_401')forgetTeacherCode();throw error;}
+    }
+    try{return await request(action,payload,teacherSession??undefined);}
+    catch(error){if(fresh||!(error instanceof Error&&error.message==='CLOUD_401'))throw error;teacherSession=null;}
+  }
+  throw new Error('CLOUD_401');
+}
+export async function loadTeacherRecords():Promise<readonly SharedProfile[]>{
+  const data=await teacherRequest('teacherRecords');
   if(!Array.isArray(data)||data.length!==23)throw new Error('INVALID_TEACHER_RECORDS');
   return data.map((value,index)=>profile(value,index+1));
 }
-export async function resetStudentRecords(token:string,studentNumber:number):Promise<void>{
+export async function resetStudentRecords(studentNumber:number):Promise<void>{
   if(!Number.isInteger(studentNumber)||studentNumber<1||studentNumber>23)throw new Error('INVALID_STUDENT');
-  await request('teacherReset',{studentNumber},token);
+  await teacherRequest('teacherReset',{studentNumber});
 }
-export async function resetAllStudentRecords(token:string):Promise<void>{
-  await request('teacherResetAll',{},token);
+export async function resetAllStudentRecords():Promise<void>{
+  await teacherRequest('teacherResetAll');
 }
-export async function resetStudentRecordScopes(token:string,studentNumber:number,scopes:readonly TeacherResetScope[]):Promise<void>{
+export async function resetStudentRecordScopes(studentNumber:number,scopes:readonly TeacherResetScope[]):Promise<void>{
   if(!Number.isInteger(studentNumber)||studentNumber<1||studentNumber>23)throw new Error('INVALID_STUDENT');
   if(!validTeacherResetScopes(scopes))throw new Error('INVALID_RESET_SCOPES');
-  const result=object(await request('teacherResetScoped',{studentNumber,scopes},token));
+  const result=object(await teacherRequest('teacherResetScoped',{studentNumber,scopes}));
   if(result.ok!==true)throw new Error('INVALID_RESET_RESULT');
 }
 function assignment(value:unknown,studentNumber:number):Difficulty{
@@ -123,7 +145,7 @@ function assignment(value:unknown,studentNumber:number):Difficulty{
 export async function loadVerticalAssignment(studentNumber:number):Promise<Difficulty>{
   return assignment(await authenticated(studentNumber,'verticalAssignment'),studentNumber);
 }
-export async function saveVerticalAssignment(token:string,studentNumber:number,difficulty:Difficulty):Promise<Difficulty>{
+export async function saveVerticalAssignment(studentNumber:number,difficulty:Difficulty):Promise<Difficulty>{
   if(!Number.isInteger(studentNumber)||studentNumber<1||studentNumber>23||!validVerticalDifficulty(difficulty))throw new Error('INVALID_VERTICAL_ASSIGNMENT');
-  return assignment(await request('teacherSetVertical',{studentNumber,difficulty},token),studentNumber);
+  return assignment(await teacherRequest('teacherSetVertical',{studentNumber,difficulty}),studentNumber);
 }
