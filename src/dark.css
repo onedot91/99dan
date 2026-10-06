@@ -1,0 +1,67 @@
+/* Dark mode: the same layout, pixel outlines, bevels and night sky, but every large light fill turns into a deep
+   tinted surface. The accent colour moves to the bevel and the text, so the page reads the same at a glance while
+   staying dark, and browsers have nothing left to auto-darken. Small chips and badges keep their bright fills.
+   Loaded after styles.css, so equal selectors here win. */
+@media(prefers-color-scheme:dark){
+  :root{
+    /* Night paper replaces the cream question/answer paper. */
+    --night-paper:#221e44;--night-paper-hi:#3b3672;--night-paper-shade:#14122b;--night-paper-cell:#2e2a5a;--night-ink:#fff4d6;
+    --deep-gold:#3a2a06;--deep-gold-hi:#5a4210;--deep-gold-lo:#1f1604;
+    --deep-mint:#123d27;--deep-mint-hi:#1f6b45;--deep-mint-lo:#0a2316;
+    --deep-coral:#4a1621;--deep-coral-hi:#7a2a3a;--deep-coral-lo:#2a0b12;
+  }
+
+  /* Question paper */
+  .question-area.arcade-panel,.vertical-paper.arcade-panel{background:var(--night-paper);color:var(--night-ink);box-shadow:inset 0 0 0 var(--px) var(--night-paper-hi),inset 0 calc(-2 * var(--px)) 0 var(--night-paper-shade),inset 0 0 0 calc(2 * var(--px)) var(--night-paper),inset 0 0 0 calc(3 * var(--px)) var(--night-paper-shade),var(--ring),var(--drop)}
+  .vertical-paper{color:var(--night-ink)}
+  .equation>span{color:var(--blue)}
+  .equation .question-blank{background:var(--outline);color:var(--night-ink);box-shadow:inset 0 0 0 var(--line) var(--yellow),var(--ring)}
+  .comparison-fact{background:var(--night-paper-cell);box-shadow:inset 0 var(--px) 0 var(--night-paper-hi),inset 0 calc(-1 * var(--px)) 0 var(--night-paper-shade),var(--ring)}
+  .compare-slot{background:var(--outline);box-shadow:inset 0 0 0 var(--line) var(--yellow),var(--ring)}
+  .combo-milestone .answer-feedback{color:var(--yellow)}
+
+  /* Two-digit board on night paper */
+  .vertical-board{--product-ones:var(--coral);--product-tens:var(--blue);--source-color:var(--night-ink)}
+  .vertical-board .vertical-cell:disabled,.vertical-cell{color:var(--row-color,var(--night-ink))}
+  .vertical-operator{color:var(--night-ink)}
+  .vertical-rule{background:var(--night-ink)}
+  .vertical-columns,.vertical-columns>i+i{border-color:var(--night-paper-hi)}
+  .vertical-cell>span{background:var(--night-paper-shade);box-shadow:inset 0 calc(-1 * var(--line)) 0 var(--night-paper-hi)}
+  .vertical-cell.filled-cell>span{background:transparent;box-shadow:none}
+  .vertical-cell.selectable-cell:not(.current-cell)>span{background:var(--night-paper-cell);box-shadow:inset 0 0 0 var(--line) var(--night-paper-hi)}
+  .vertical-cell.current-cell>span{color:var(--ink)}
+  .vertical-board .vertical-cell.wrong-cell>.vertical-cell-face{outline-color:var(--coral)}
+  .vertical-cell:focus-visible>.vertical-cell-face{outline-color:var(--yellow)}
+  .vertical-fixed-zero{color:var(--row-color,var(--muted))}
+  .problem-complete .vertical-row:last-child .filled-cell>span{background:var(--deep-mint-hi);color:var(--mint-hi)}
+
+  /* Challenge card: deep gold tray, the chosen time stays a bright chip. */
+  .rush-card{background:var(--deep-gold);color:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--gold-shade),inset 0 calc(-1 * var(--px)) 0 var(--deep-gold-lo),var(--ring),var(--drop)}
+  .rush-durations{background:var(--deep-gold-lo);box-shadow:inset 0 var(--px) 0 var(--outline),inset 0 calc(-1 * var(--px)) 0 var(--deep-gold-hi)}
+  .rush-durations button{color:var(--gold-shade)}
+  @media(hover:hover){.rush-durations button:hover:not([aria-pressed=true]){color:var(--yellow)}}
+  .rush-durations button[aria-pressed=true]{background:var(--yellow);color:var(--ink);box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring)}
+  .challenge-error{color:var(--yellow)}
+  .rush-start{background:var(--outline);box-shadow:inset 0 var(--px) 0 var(--deep-gold-hi),inset 0 calc(-1 * var(--px)) 0 #000,var(--ring),var(--drop)}
+
+  /* Big action buttons: deep fill, coloured bevel and label. */
+  .primary-button,.number-pad .submit-key,.sound-button[aria-pressed=true]{background:var(--deep-mint);color:var(--mint)}
+  .primary-button,.sound-button[aria-pressed=true]{box-shadow:inset 0 var(--px) 0 var(--mint-shade),inset 0 calc(-1 * var(--px)) 0 var(--deep-mint-lo),var(--ring),var(--drop)}
+  .number-pad .submit-key{box-shadow:inset var(--px) var(--px) 0 var(--mint-shade),inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--deep-mint-lo),var(--ring),var(--drop)}
+  .primary-button:hover:not(:disabled),.number-pad .submit-key:hover:not(:disabled),.sound-button[aria-pressed=true]:hover:not(:disabled){background:var(--deep-mint-hi)}
+  .primary-button:active:not(:disabled){box-shadow:inset 0 var(--px) 0 var(--deep-mint-lo),var(--ring)}
+  .number-pad .submit-key:active:not(:disabled){box-shadow:inset var(--px) var(--px) 0 var(--deep-mint-lo),var(--ring)}
+  .number-pad .submit-key:disabled{background:var(--deep-mint-lo);color:var(--mint-shade)}
+  .end-button{background:var(--deep-coral);color:var(--coral);box-shadow:inset 0 var(--px) 0 var(--coral-shade),inset 0 calc(-1 * var(--px)) 0 var(--deep-coral-lo),var(--ring),var(--drop)}
+  .end-button:hover:not(:disabled){background:var(--deep-coral-hi)}
+  .end-button:active:not(:disabled){box-shadow:inset 0 var(--px) 0 var(--deep-coral-lo),var(--ring)}
+  .friends-button.has-pick{background:var(--deep-gold);color:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--gold-shade),inset 0 calc(-1 * var(--px)) 0 var(--deep-gold-lo),var(--ring),var(--drop)}
+  .friends-button.has-pick:hover:not(:disabled){background:var(--deep-gold-hi)}
+  .result-actions .friend-cta,.friend-detail .friend-pick-button{background:var(--deep-gold);color:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--gold-shade),inset 0 calc(-1 * var(--px)) 0 var(--deep-gold-lo),var(--ring),var(--drop)}
+  .result-actions .friend-cta:hover:not(:disabled),.friend-detail .friend-pick-button:hover:not(:disabled){background:var(--deep-gold-hi)}
+
+  /* Speech bubble */
+  .pet-bubble,.pet-bubble::after{background:var(--night-paper)}
+  .pet-bubble{color:var(--night-ink)}
+  .pet-bubble-button:hover{background:var(--night-paper-hi)}
+}

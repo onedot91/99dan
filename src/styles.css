@@ -1,7 +1,7 @@
 @font-face{font-family:"Galmuri11";src:url(./assets/fonts/Galmuri11-Bold.woff2) format("woff2");font-weight:100 900;font-display:swap}
 :root{
-  /* The pixel palette is fixed. Declaring dark support (plus the media query below) is what stops Chromium-based
-     browsers, incl. Samsung Internet, from auto-darkening the page; "only light" would trigger the darkening. */
+  /* Declaring dark support is what stops Chromium-based browsers, incl. Samsung Internet, from auto-darkening the
+     page; "only light" would trigger the darkening. The dark-mode design itself lives in dark.css. */
   color-scheme:light dark;
   font-family:"Galmuri11","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   color:var(--paper);background:var(--bg);font-size:var(--text-base);font-weight:700;font-synthesis:none;
@@ -25,8 +25,6 @@
   --drop:0 calc(2 * var(--px)) 0 var(--outline);
   --text-outline:-2px 0 0 var(--outline),2px 0 0 var(--outline),0 -2px 0 var(--outline),0 2px 0 var(--outline),4px 4px 0 var(--outline);
 }
-/* Dark mode looks exactly like light mode. Keep these identical to :root above. */
-@media(prefers-color-scheme:dark){:root{--bg:#14132b;--paper:#fff4d6;--ink:#1c1638}}
 /* Native widgets stay light so dialogs and inputs never turn dark by default. */
 dialog,input,select,textarea,button{color-scheme:light}
 *{box-sizing:border-box}
