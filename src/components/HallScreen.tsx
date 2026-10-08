@@ -21,7 +21,8 @@ export function HallScreen({ready,studentNumber,initialDuration,initialPart='rus
     let active=true;
     const load=async()=>{try{const next=await (part==='vertical'?loadVerticalLeaders(studentNumber,count):loadLeaders(studentNumber,duration));if(active){setRows(next);setState('ready');}}catch{if(active)setState('error');}};
     setState('loading');void load();
-    const poll=window.setInterval(()=>{if(!document.hidden)void load();},15000);
+    // A whole class may sit on this screen; once a minute keeps the shared database free for saves.
+    const poll=window.setInterval(()=>{if(!document.hidden)void load();},60000);
     return()=>{active=false;window.clearInterval(poll);};
   },[part,duration,count,ready,retry,studentNumber]);
   return <main className="hall-screen"><div className="screen-heading"><PixelArt kind="trophy"/><h1>명예의 전당</h1></div>

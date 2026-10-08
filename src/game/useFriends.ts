@@ -27,12 +27,25 @@ export function useFriends(studentNumber:number,totalCorrect:number,cloud:{reado
   const [state,setState]=useState<FriendState>(()=>readLocal(studentNumber));
   const [syncError,setSyncError]=useState(false);
   const inFlight=useRef(0);
+  // Saves go out one at a time and only the newest unsent state is kept, so an older save can never land last.
+  const queued=useRef<FriendState|null>(null);
+  const sending=useRef(false);
+  const flush=async()=>{
+    if(sending.current)return;
+    sending.current=true;
+    try{
+      for(let next=queued.current;next;next=queued.current){
+        queued.current=null;
+        try{await saveFriends(studentNumber,next);}catch{setSyncError(true);}
+      }
+    }finally{sending.current=false;inFlight.current=0;}
+  };
   const level=levelFor(totalCorrect).number;
   const persist=(next:FriendState)=>{
     setState(next);writeLocal(studentNumber,next);
     if(!cloud.friendsSync)return;
     inFlight.current+=1;setSyncError(false);
-    void saveFriends(studentNumber,next).catch(()=>setSyncError(true)).finally(()=>{inFlight.current-=1;});
+    queued.current=next;void flush();
   };
   const server=cloud.friendsSync?cloud.profile?.friends??null:null;
   useEffect(()=>{

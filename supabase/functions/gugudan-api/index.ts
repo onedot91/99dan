@@ -4,7 +4,8 @@ const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'';
 const teacherCode=Deno.env.get('GUGUDAN_TEACHER_CODE')??'';
 const encoder=new TextEncoder();
 const signingKey=crypto.subtle.importKey('raw',encoder.encode(`gugudan-v1:${key}`),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);
-const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'content-type,apikey,x-gugudan-session','Access-Control-Allow-Methods':'POST,OPTIONS'};
+// Max-Age lets browsers reuse the preflight instead of sending an OPTIONS call before every request.
+const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'content-type,apikey,x-gugudan-session','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Max-Age':'86400'};
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
 const validNumber=(n:unknown):n is number=>typeof n==='number'&&Number.isInteger(n)&&n>=1&&n<=23;
 const validDuration=(n:unknown):n is number=>n===1||n===2||n===3;
@@ -40,45 +41,53 @@ async function identity(token:string|null):Promise<number|null>{
   const bytes=Uint8Array.from(signature.match(/../g)??[],s=>Number.parseInt(s,16));
   return await crypto.subtle.verify('HMAC',await signingKey,bytes,encoder.encode(`${student}.${expiry}`))?n:null;
 }
+// A rule the database enforced (raise exception, e.g. RUN_TOO_EARLY): retrying the same request cannot succeed.
+class Rejected extends Error{}
 async function rpc(name:string,args:object,optional=false):Promise<unknown>{
   const response=await fetch(`${url}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(10000)});
-  if(!response.ok){if(optional&&response.status===404&&record(await response.json()).code==='PGRST202')return null;throw new Error('DATABASE_REQUEST_FAILED');}
+  if(!response.ok){
+    const failure:Record<string,unknown>=await response.json().then(value=>value&&typeof value==='object'&&!Array.isArray(value)?Object.fromEntries(Object.entries(value)):{},()=>({}));
+    if(optional&&response.status===404&&failure.code==='PGRST202')return null;
+    if(failure.code==='P0001'&&typeof failure.message==='string')throw new Rejected(failure.message);
+    throw new Error(`DATABASE_REQUEST_FAILED ${name} ${response.status} ${String(failure.code??'')} ${String(failure.message??'')}`.trim());
+  }
   const text=await response.text();return text?JSON.parse(text):null;
 }
 function record(value:unknown):Record<string,unknown>{
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('INVALID_DATABASE_RESPONSE');
   return Object.fromEntries(Object.entries(value));
 }
+async function rows(table:string,query:URLSearchParams):Promise<unknown[]>{
+  const response=await fetch(`${url}/rest/v1/${table}?${query}`,{headers:{apikey:key,Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw new Error(`DATABASE_REQUEST_FAILED ${table} ${response.status}`);
+  const data:unknown=await response.json();
+  if(!Array.isArray(data))throw new Error('INVALID_DATABASE_RESPONSE');
+  return data;
+}
 async function teacherRecords(){
-  const result=await rpc('gugudan_teacher_records',{});
+  // Independent reads go out together so the teacher screen waits for the slowest one, not their sum.
+  const [result,verticalRows,settings,metrics]=await Promise.all([
+    rpc('gugudan_teacher_records',{}),
+    rows('gugudan_vertical_runs',new URLSearchParams({select:'id,student_number,questions,score,mistakes,finished_at',finished_at:'not.is.null',order:'finished_at.desc',limit:'1000'})),
+    rpc('gugudan_teacher_vertical_assignments',{}),
+    rpc('gugudan_teacher_vertical_metrics',{},true)
+  ]);
   if(!Array.isArray(result))throw new Error('INVALID_DATABASE_RESPONSE');
   const profiles=result.map(record);
   const ids=profiles.flatMap(profile=>Array.isArray(profile.sessions)?profile.sessions.slice(-5).map(session=>record(session).id).filter(validId):[]);
   const dates=new Map<string,string>();
-  for(let offset=0;offset<ids.length;offset+=60){
-    const query=new URLSearchParams({select:'id,finished_at',id:`in.(${ids.slice(offset,offset+60).join(',')})`,finished_at:'not.is.null'});
-    const response=await fetch(`${url}/rest/v1/gugudan_runs?${query}`,{headers:{apikey:key,Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10000)});
-    if(!response.ok)throw new Error('DATABASE_REQUEST_FAILED');
-    const rows:unknown=await response.json();
-    if(!Array.isArray(rows))throw new Error('INVALID_DATABASE_RESPONSE');
-    for(const value of rows){const row=record(value);if(validId(row.id)&&typeof row.finished_at==='string')dates.set(row.id,row.finished_at);}
-  }
+  const chunks=[];for(let offset=0;offset<ids.length;offset+=60)chunks.push(ids.slice(offset,offset+60));
+  for(const found of await Promise.all(chunks.map(chunk=>rows('gugudan_runs',new URLSearchParams({select:'id,finished_at',id:`in.(${chunk.join(',')})`,finished_at:'not.is.null'})))))
+    for(const value of found){const row=record(value);if(validId(row.id)&&typeof row.finished_at==='string')dates.set(row.id,row.finished_at);}
   // Finished two-digit runs live in their own table; keep each student's latest five for 최근 도전.
-  const verticalQuery=new URLSearchParams({select:'id,student_number,questions,score,mistakes,finished_at',finished_at:'not.is.null',order:'finished_at.desc',limit:'1000'});
-  const verticalResponse=await fetch(`${url}/rest/v1/gugudan_vertical_runs?${verticalQuery}`,{headers:{apikey:key,Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10000)});
-  if(!verticalResponse.ok)throw new Error('DATABASE_REQUEST_FAILED');
-  const verticalRows:unknown=await verticalResponse.json();
-  if(!Array.isArray(verticalRows))throw new Error('INVALID_DATABASE_RESPONSE');
   const verticalSessions=new Map<number,unknown[]>();
   for(const value of verticalRows){
     const row=record(value),list=verticalSessions.get(Number(row.student_number))??[];
     if(!validNumber(row.student_number)||!validId(row.id)||typeof row.finished_at!=='string'||!Array.isArray(row.questions)||list.length>=5)continue;
     list.push({id:row.id,finishedAt:row.finished_at,count:row.questions.length,score:row.score,mistakes:row.mistakes});verticalSessions.set(row.student_number,list);
   }
-  const settings=await rpc('gugudan_teacher_vertical_assignments',{});
   if(!Array.isArray(settings))throw new Error('INVALID_DATABASE_RESPONSE');
   const difficulties=new Map(settings.map(value=>{const row=record(value);if(!validNumber(row.studentNumber)||!validDuration(row.difficulty))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.difficulty];}));
-  const metrics=await rpc('gugudan_teacher_vertical_metrics',{},true);
   if(metrics!==null&&!Array.isArray(metrics))throw new Error('INVALID_DATABASE_RESPONSE');
   const summaries=new Map((metrics??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.stats];}));
   return profiles.map(profile=>({...profile,canResetScopes:true,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
@@ -87,11 +96,13 @@ Deno.serve(async request=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
   if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
   if(!url||!key)return json({error:'UNAVAILABLE'},503);
+  let action='';
   try{
     const text=await request.text();if(encoder.encode(text).length>160000)return json({error:'TOO_LARGE'},413);
     let body:unknown;try{body=JSON.parse(text);}catch{return json({error:'INVALID_JSON'},400);}
     if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'INVALID_BODY'},400);
     const data=Object.fromEntries(Object.entries(body));
+    action=String(data.action);
     if(data.action==='register')return validNumber(data.studentNumber)?json({token:await issue(data.studentNumber)}):json({error:'INVALID_STUDENT'},400);
     if(data.action==='teacherLogin'){
       const address=request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()??'unknown';
@@ -124,13 +135,9 @@ Deno.serve(async request=>{
     if(data.action==='verticalAssignment')return json(await rpc('gugudan_vertical_assignment',{p_student:student}));
     // A student's own two-digit records for 내 기록: best cell-scored score (as the hall of fame ranks it) and finished runs, per 5/10 questions.
     if(data.action==='verticalRecords'){
-      const query=new URLSearchParams({select:'questions,score,cell_scoring',student_number:`eq.${student}`,finished_at:'not.is.null',limit:'5000'});
-      const response=await fetch(`${url}/rest/v1/gugudan_vertical_runs?${query}`,{headers:{apikey:key,Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10000)});
-      if(!response.ok)throw new Error('DATABASE_REQUEST_FAILED');
-      const rows:unknown=await response.json();
-      if(!Array.isArray(rows))throw new Error('INVALID_DATABASE_RESPONSE');
+      const found=await rows('gugudan_vertical_runs',new URLSearchParams({select:'questions,score,cell_scoring',student_number:`eq.${student}`,finished_at:'not.is.null',limit:'5000'}));
       const totals=[5,10].map(count=>({count,best:null as number|null,runs:0}));
-      for(const value of rows){
+      for(const value of found){
         const row=record(value),total=totals.find(t=>Array.isArray(row.questions)&&t.count===row.questions.length);
         if(!total)continue;
         total.runs+=1;
@@ -176,8 +183,18 @@ Deno.serve(async request=>{
     }
     if(data.action==='profile')return json(await rpc('gugudan_profile',{p_student:student}));
     if(data.action==='leaders')return validDuration(data.duration)?json(await rpc('gugudan_leaders',{p_duration:data.duration})):json({error:'INVALID_DURATION'},400);
-    if(data.action==='begin'&&validId(data.id)&&validDuration(data.duration)&&['rush','practice','weak'].includes(String(data.mode))){await rpc('gugudan_begin',{p_student:student,p_id:data.id,p_mode:data.mode,p_duration:data.duration});return json({ok:true});}
+    // elapsedMs: how long the run had been playing when the client sent this start (absent from older clients).
+    if(data.action==='begin'&&validId(data.id)&&validDuration(data.duration)&&['rush','practice','weak'].includes(String(data.mode))){
+      const elapsed=data.elapsedMs;
+      if(elapsed!==undefined&&(typeof elapsed!=='number'||!Number.isInteger(elapsed)||elapsed<0||elapsed>3600000))return json({error:'INVALID_RUN'},400);
+      await rpc('gugudan_begin',{p_student:student,p_id:data.id,p_mode:data.mode,p_duration:data.duration,p_elapsed_ms:elapsed??null});return json({ok:true});
+    }
     if(data.action==='finish'&&validId(data.id)&&typeof data.endedEarly==='boolean'&&Array.isArray(data.events)&&data.events.length<=1200){await rpc('gugudan_finish',{p_student:student,p_id:data.id,p_ended_early:data.endedEarly,p_events:data.events});return json({ok:true});}
     return json({error:'INVALID_ACTION'},400);
-  }catch{return json({error:'REQUEST_FAILED'},503);}
+  }catch(error){
+    // Rejections are final (409, never retried); anything else is a transient failure worth a retry.
+    if(error instanceof Rejected)return json({error:error.message},409);
+    console.error('gugudan-api',action,error instanceof Error?`${error.name}: ${error.message}`:String(error));
+    return json({error:'REQUEST_FAILED'},503);
+  }
 });

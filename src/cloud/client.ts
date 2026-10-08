@@ -15,11 +15,21 @@ const publicKey=env.VITE_SUPABASE_PUBLISHABLE_KEY;
 export const cloudConfigured=Boolean(endpoint&&publicKey);
 const tokens=new Map<number,string>();
 const registrations=new Map<number,Promise<string>>();
+// Every action is safe to repeat (runs are keyed by id and finishes by payload hash), so a busy database
+// (503), a network drop or a timeout gets one more try after a short, jittered pause. 4xx answers are final.
+const transient=(error:unknown)=>!(error instanceof Error&&/^CLOUD_4\d\d$/.test(error.message));
 async function request(action:string,payload:object={},token?:string):Promise<unknown>{
   if(!endpoint||!publicKey)throw new Error('NOT_CONFIGURED');
-  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey,...(token?{'X-Gugudan-Session':token}:{})},body:JSON.stringify({action,...payload}),signal:AbortSignal.timeout(12000)});
-  if(!response.ok)throw new Error(`CLOUD_${response.status}`);
-  return response.json();
+  for(let attempt=0;;attempt++){
+    try{
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey,...(token?{'X-Gugudan-Session':token}:{})},body:JSON.stringify({action,...payload}),signal:AbortSignal.timeout(12000)});
+      if(!response.ok)throw new Error(`CLOUD_${response.status}`);
+      return await response.json();
+    }catch(error){
+      if(attempt>=1||!transient(error))throw error;
+      await new Promise(resolve=>setTimeout(resolve,800+Math.random()*1200));
+    }
+  }
 }
 async function connect(studentNumber:number):Promise<string>{
   const token=tokens.get(studentNumber);
@@ -58,7 +68,9 @@ export async function loadCapabilities(studentNumber:number):Promise<Capabilitie
 export async function saveFriends(studentNumber:number,state:FriendState):Promise<void>{
   await authenticated(studentNumber,'saveFriends',{friends:state.owned,partner:state.partner});
 }
-export async function beginRun(studentNumber:number,run:Run):Promise<void>{await authenticated(studentNumber,'begin',{id:run.id,mode:run.mode,duration:run.duration});}
+// elapsedMs tells the server how long the run had been playing when this start was sent, so a start that
+// reaches it late (busy database, or re-sent at save time after a failed start) still dates the run correctly.
+export async function beginRun(studentNumber:number,run:Run,elapsedMs:number):Promise<void>{await authenticated(studentNumber,'begin',{id:run.id,mode:run.mode,duration:run.duration,elapsedMs:Math.min(3600000,Math.max(0,Math.round(elapsedMs)))});}
 export async function finishRun(studentNumber:number,run:Run):Promise<void>{await authenticated(studentNumber,'finish',{id:run.id,endedEarly:run.endedEarly,events:run.events});}
 export async function loadLeaders(studentNumber:number,duration:Duration):Promise<readonly Standing[]>{
   return standings(await authenticated(studentNumber,'leaders',{duration}));

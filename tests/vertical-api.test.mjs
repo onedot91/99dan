@@ -9,8 +9,12 @@ const rpcCalls=[];
 let handler;
 let metricsResponse=[];
 globalThis.Deno={env:{get:name=>({SUPABASE_URL:'https://unit-test.invalid',SUPABASE_SERVICE_ROLE_KEY:'unit-test-signing-key',GUGUDAN_TEACHER_CODE:'1234'})[name]},serve:callback=>{handler=callback;}};
+let rejection=null;
 globalThis.fetch=async(url,options)=>{
+  // Teacher records also read two tables directly; this mock has no rows for them.
+  if(!options?.body)return Response.json([]);
   const name=new URL(url).pathname.split('/').at(-1),args=JSON.parse(options.body);
+  if(rejection)return Response.json({code:'P0001',message:rejection},{status:400});
   rpcCalls.push({name,args});
   const assignment=studentNumber=>({studentNumber,difficulty:assignments.get(studentNumber)??1});
   let result;
@@ -23,6 +27,7 @@ globalThis.fetch=async(url,options)=>{
   else if(name==='gugudan_vertical_begin_variety'){const assigned=assignment(args.p_student),questions=withVerticalPuzzles(chooseMixedVerticalQuestions(assigned.difficulty,Math.random,args.p_count),assigned.difficulty,Math.random,true);result={...assigned,id:args.p_id,questions,timeScoring:args.p_timed,manualZero:true,puzzles:true,puzzleOperands:true};}
   else if(name==='gugudan_vertical_begin'||name==='gugudan_vertical_begin_timed'||name==='gugudan_vertical_begin_count'||name==='gugudan_vertical_begin_manual'||name==='gugudan_vertical_begin_puzzles'){const assigned=assignment(args.p_student),questions=chooseMixedVerticalQuestions(assigned.difficulty,Math.random,args.p_count??5);result={...assigned,id:args.p_id,questions:name.endsWith('_puzzles')?withVerticalPuzzles(questions,assigned.difficulty):questions,...(name.endsWith('_timed')||args.p_timed?{timeScoring:true}:{}),...(name.endsWith('_manual')||name.endsWith('_puzzles')?{manualZero:true}:{}),...(name.endsWith('_puzzles')?{puzzles:true}:{})};}
   else if(name==='gugudan_vertical_finish')result={id:args.p_id,score:970};
+  else if(name==='gugudan_begin')return new Response(null,{status:204});
   else if(name==='gugudan_teacher_reset_scoped'||name==='gugudan_teacher_reset'||name==='gugudan_teacher_reset_all')result=null;
   else if(name==='gugudan_vertical_leaders'||name==='gugudan_vertical_leaders_count'||name==='gugudan_vertical_leaders_tight'||name==='gugudan_vertical_leaders_cells')result=[];
   else throw new Error('Unexpected RPC');
@@ -247,4 +252,26 @@ test('single-row zero products opt in, require manual/puzzle flags and preserve 
  for(const payload of [{directZero:'true',puzzleOperands:true,puzzles:true,manualZero:true},{directZero:true,puzzles:true,manualZero:true},{directZero:true,puzzleOperands:true,manualZero:true},{directZero:true,puzzleOperands:true,puzzles:true}]){
    const before=rpcCalls.length;assert.equal((await call('verticalBegin',{id,...payload},token)).status,400);assert.equal(rpcCalls.length,before);
  }
+});
+
+test('rush starts forward the elapsed time and old clients still start',async()=>{
+  const token=(await (await call('register',{studentNumber:4})).json()).token,id=crypto.randomUUID();
+  assert.equal((await call('begin',{id,mode:'rush',duration:1,elapsedMs:61500},token)).status,200);
+  assert.deepEqual(rpcCalls.at(-1),{name:'gugudan_begin',args:{p_student:4,p_id:id,p_mode:'rush',p_duration:1,p_elapsed_ms:61500}});
+  assert.equal((await call('begin',{id,mode:'rush',duration:1},token)).status,200);
+  assert.equal(rpcCalls.at(-1).args.p_elapsed_ms,null);
+  for(const elapsedMs of [-1,1.5,3600001,'100',null]){
+    const before=rpcCalls.length;
+    assert.equal((await call('begin',{id,mode:'rush',duration:1,elapsedMs},token)).status,400);
+    assert.equal(rpcCalls.length,before);
+  }
+});
+
+test('database rule rejections are final 409s while other failures stay retryable 503s',async()=>{
+  const token=(await (await call('register',{studentNumber:4})).json()).token;
+  rejection='RUN_TOO_EARLY';
+  try{
+    const response=await call('finish',{id:crypto.randomUUID(),endedEarly:false,events:[]},token);
+    assert.equal(response.status,409);assert.deepEqual(await response.json(),{error:'RUN_TOO_EARLY'});
+  }finally{rejection=null;}
 });

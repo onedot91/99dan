@@ -4,6 +4,8 @@ import { beginRun, cloudConfigured as configured, finishRun, loadCapabilities, l
 import { isSpare } from '../game/studentNumber';
 import type { SharedProfile, SyncState } from './types';
 import type { Run } from '../types/game';
+// How long a run has been playing, from its client deadline (practice runs have none and are never timed by the server).
+const elapsed=(run:Run)=>run.deadline===null?0:run.duration*60000-(run.deadline-performance.now());
 export function useSharedGame(studentNumber:number,game:RushGame){
   const cloudConfigured=configured&&!isSpare(studentNumber);
   const [state,setState]=useState<SyncState>(cloudConfigured?'loading':'unconfigured');
@@ -23,7 +25,7 @@ export function useSharedGame(studentNumber:number,game:RushGame){
   useEffect(()=>{
     if(!cloudConfigured||game.screen!=='play'||!game.run||pending.current.has(game.run.id))return;
     const id=game.run.id;
-    const promise=beginRun(studentNumber,game.run);
+    const promise=beginRun(studentNumber,game.run,elapsed(game.run));
     pending.current.set(id,promise);
     void promise.catch(()=>{pending.current.delete(id);setState('error');});
   },[game.screen,game.run?.id]);
@@ -36,7 +38,7 @@ export function useSharedGame(studentNumber:number,game:RushGame){
     try{
       do{
         for(const [id,completed] of outbox.current){
-          await (pending.current.get(id)??beginRun(studentNumber,completed));
+          await (pending.current.get(id)??beginRun(studentNumber,completed,elapsed(completed)));
           await finishRun(studentNumber,completed);saved.current.add(id);outbox.current.delete(id);pending.current.delete(id);
         }
         const next=await loadProfile(studentNumber);
