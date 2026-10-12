@@ -18,7 +18,7 @@ assert.equal(registered.status,200);checks++;
 const token=registered.data.token;
 assert.equal((await call({action:'capabilities'},token)).data.blocks,true);checks++;
 assert.equal((await call({action:'blockBegin',id:'bad'},token)).status,400);checks++;
-for(const payload of [{ended:'won'},{answers:[{answer:10}]},{answers:[{answer:1,ms:-1}]},{moves:[{piece:3,row:0,col:0}]},{moves:[{piece:0,row:8,col:0}]},{answers:'[]'},{id:'bad'}]){
+for(const payload of [{ended:'won'},{answers:[{answer:1000}]},{answers:[{answer:1,ms:-1}]},{moves:[{piece:3,row:0,col:0}]},{moves:[{piece:0,row:8,col:0}]},{answers:'[]'},{id:'bad'}]){
  assert.equal((await call({action:'blockFinish',id,ended:'stopped',answers:[],moves:[],...payload},token)).status,400);checks++;
 }
 // 서버가 발급하지 않은 ID는 재생 전에 거부된다(시드 조회 RPC 경로).

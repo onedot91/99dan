@@ -135,6 +135,8 @@
 
 2026-10-12 운영 반영: 사용자가 대시보드 SQL Editor에서 이 마이그레이션을 직접 실행했다(Supabase 마이그레이션 이력에는 없음, 원본은 이 파일). 이어서 `gugudan-api` version 20 ACTIVE를 배포했다(`verify_jwt=false`, `index.ts`와 `block/` 4개 파일). 적용 후 블록 함수 7개, RLS, 공개 역할의 테이블·함수 접근 차단, `gugudan_profile`·초기화 함수 교체를 확인했다. 플레이어 23명, 구구단 풀이 1205개, 주간 기록 66개, 두 자리 수 풀이 126개의 개수와 해시는 적용 전과 같았다. `node tests/block-http.mjs`로 인증·입력 검증·시드 조회·순위·기록·프로필 HTTP 검사 20개가 통과했고, 기존 `vertical-tight-time-http.mjs`도 통과했다. 운영에 블록 풀이 기록은 만들지 않았다.
 
+2026-10-12 `gugudan-api` version 21 ACTIVE(마이그레이션 변경 없음): 검산 칸은 수 전체를 한 칸에 입력하므로 `answers[].answer`를 0~999로 받고, 재생은 답을 한 글자씩 입력한다. 블록 출제에 초반 도우미(`BLOCK_HELP`·`clearPotential`)를 넣었다. 같은 시드로 나오는 블록이 v20과 달라졌지만 운영 블록 기록이 0개일 때 배포했다. 배포 후 `tests/block-http.mjs` 20개 통과, 발급되지 않은 ID에 `answer:85`가 형식 거부(400)가 아닌 409 `RUN_NOT_FOUND`로 처리되는 것을 확인했다. 기존 데이터 개수와 해시는 배포 전과 같다.
+
 `migrations/20261012120000_gugudan_block_runs.sql`은 `gugudan_block_runs`와 블록 RPC를 추가하고 `gugudan_profile`·`gugudan_save_friends`·교사 초기화 3종을 블록까지 포함하도록 교체한다. 적용 순서: 마이그레이션 → `gugudan-api` 재배포(`verify_jwt=false` 유지, `block/` 폴더 포함).
 
 - `blockBegin {id}` → `gugudan_block_begin`: 서버가 32비트 시드를 발급해 ID별로 저장한다. 같은 ID 재시도는 같은 시드, 다른 학생의 ID는 `RUN_CONFLICT`.
