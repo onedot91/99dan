@@ -8,6 +8,7 @@ import { parseVerticalQuestions } from '../game/vertical';
 import type { VerticalSession, VerticalStart } from '../game/vertical';
 import { validTeacherResetScopes } from '../game/teacherReset';
 import type { TeacherResetScope } from '../game/teacherReset';
+import type { BlockAnswer, BlockMove } from '../game/blockRun';
 import { forgetTeacherCode, loadTeacherCode, saveTeacherCode } from '../game/teacherDevice';
 const env=import.meta.env;
 const endpoint=env.VITE_GUGUDAN_API_URL;
@@ -104,6 +105,27 @@ export async function finishVerticalRun(studentNumber:number,session:VerticalSes
   const result=object(await authenticated(studentNumber,'verticalFinish',{id:session.id,events:session.events}));
   if(result.id!==session.id||typeof result.score!=='number'||!Number.isInteger(result.score)||result.score<0||result.score>session.questions.length*200)throw new Error('INVALID_VERTICAL_SCORE');
   return result.score;
+}
+// 블록: 서버가 시드를 발급하고, 끝나면 입력 기록을 받아 같은 시드로 재생해 점수를 다시 매긴다.
+export async function beginBlockRun(studentNumber:number,id:string):Promise<number>{
+  const data=object(await authenticated(studentNumber,'blockBegin',{id}));
+  if(data.id!==id||typeof data.seed!=='number'||!Number.isInteger(data.seed)||data.seed<0||data.seed>0xffffffff)throw new Error('INVALID_BLOCK_RUN');
+  return data.seed;
+}
+export type BlockFinish={readonly id:string;readonly ended:'stuck'|'stopped';readonly answers:readonly BlockAnswer[];readonly moves:readonly BlockMove[]};
+export async function finishBlockRun(studentNumber:number,finish:BlockFinish):Promise<number>{
+  const result=object(await authenticated(studentNumber,'blockFinish',finish));
+  if(result.id!==finish.id||typeof result.score!=='number'||!Number.isInteger(result.score)||result.score<0)throw new Error('INVALID_BLOCK_SCORE');
+  return result.score;
+}
+export async function loadBlockLeaders(studentNumber:number):Promise<readonly Standing[]>{
+  return standings(await authenticated(studentNumber,'blockLeaders'));
+}
+export type BlockRecord={readonly best:number|null;readonly runs:number};
+export async function loadBlockRecords(studentNumber:number):Promise<BlockRecord>{
+  const data=object(await authenticated(studentNumber,'blockRecords'));
+  if((data.best!==null&&typeof data.best!=='number')||typeof data.runs!=='number')throw new Error('INVALID_BLOCK_RECORDS');
+  return {best:data.best,runs:data.runs};
 }
 async function teacherSignIn(code:string):Promise<string>{
   const data=object(await request('teacherLogin',{code}));

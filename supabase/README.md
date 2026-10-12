@@ -130,3 +130,19 @@
 로컬 검증: `PGHOST=127.0.0.1 PGPORT=55432 PGDATABASE=99dan_vertical_score_zero_20261003 PSQL=/opt/homebrew/bin/psql node --experimental-strip-types tests/vertical-zero.pg.mjs`. 8,100개 숫자·통계 분류 순서, 기존/수동 0 × 5/10문제 × 난이도 × 시간 여부의 24개 세트, 건너뛰기·오답·재시도·통계·직접 접근 차단을 검증했다. 프론트엔드 빌드와 38개 테스트, Edge strict TypeScript 검사도 통과했다.
 
 운영 검증: 배포 소스가 로컬과 같고 version 10 ACTIVE, 기존 custom auth/verify_jwt=false가 유지됨을 확인했다. 5/10문제 순위 요청은 200, 인증 없는 요청과 학생의 교사 조회는 401, 잘못된 ID·문제 수·플래그·시간 요청은 400이다. 5/10문제 시작·전체 제출·재시도 RPC는 운영 트랜잭션에서 검사 후 롤백했다. 적용 전후 플레이어 23명·구구단 풀이 667개·주간 기록 65개·설정 1개·두 자리 수 풀이 10개의 개수와 기존 필드 해시가 같다. 기존 두 자리 수 기록은 모두 scoring_version=1/manual_zero=false다. 공개 역할의 새 RPC 접근을 차단했고 service_role만 허용했다. 보안 advisor의 RLS 정책 없음 INFO는 service_role 전용 접근 설계와 관련되며 구구단 공개 역할 테이블 접근 차단을 유지했다. 관련 근거: [RLS Enabled No Policy](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
+
+## 블록 기록·명예의 전당·경험치
+
+2026-10-12 운영 반영: 사용자가 대시보드 SQL Editor에서 이 마이그레이션을 직접 실행했다(Supabase 마이그레이션 이력에는 없음, 원본은 이 파일). 이어서 `gugudan-api` version 20 ACTIVE를 배포했다(`verify_jwt=false`, `index.ts`와 `block/` 4개 파일). 적용 후 블록 함수 7개, RLS, 공개 역할의 테이블·함수 접근 차단, `gugudan_profile`·초기화 함수 교체를 확인했다. 플레이어 23명, 구구단 풀이 1205개, 주간 기록 66개, 두 자리 수 풀이 126개의 개수와 해시는 적용 전과 같았다. `node tests/block-http.mjs`로 인증·입력 검증·시드 조회·순위·기록·프로필 HTTP 검사 20개가 통과했고, 기존 `vertical-tight-time-http.mjs`도 통과했다. 운영에 블록 풀이 기록은 만들지 않았다.
+
+`migrations/20261012120000_gugudan_block_runs.sql`은 `gugudan_block_runs`와 블록 RPC를 추가하고 `gugudan_profile`·`gugudan_save_friends`·교사 초기화 3종을 블록까지 포함하도록 교체한다. 적용 순서: 마이그레이션 → `gugudan-api` 재배포(`verify_jwt=false` 유지, `block/` 폴더 포함).
+
+- `blockBegin {id}` → `gugudan_block_begin`: 서버가 32비트 시드를 발급해 ID별로 저장한다. 같은 ID 재시도는 같은 시드, 다른 학생의 ID는 `RUN_CONFLICT`.
+- `blockFinish {id, ended, answers, moves}`: Edge가 기록을 정해진 모양으로 다시 만들고(`answers` ≤ 6000개 `{answer 0~9, ms?}`, `moves` ≤ 3000개 `{piece 0~2, row·col 0~7}`), `gugudan_block_seed`로 시드를 읽어 `replayBlockRun`으로 재생한다. 효과 없는 입력·남는 기록·끝난 방식 불일치는 400 `INVALID_REPLAY`. 재생한 점수·푼 문제·오답·지운 줄과 기록, SHA-256 해시를 `gugudan_block_finish`에 넘긴다. 같은 해시 재전송은 저장된 결과, 다른 해시는 `RUN_ALREADY_FINISHED`, 시드가 다르면 `RUN_SEED_MISMATCH`.
+- `blockLeaders`: 학생별 최근 7일 최고 점수 상위 5명(같은 점수는 먼저 달성한 순). `blockRecords`: 본인 최고 점수와 판 수.
+- 경험치: 끝낸 판의 푼 문제당 20(`gugudan_block_exp`, 두 자리 수와 같은 값). 프로필 `blockExp`, 펫 한도에도 반영.
+- 교사: `gugudan_teacher_block_records`가 학생별 최근 5판·`blockExp`·전체 기록 기준 `verticalExp`를 준다(RPC가 없으면 생략되고 `canResetBlock:false`). 초기화 범위 `block`은 끝낸 판만 지운다.
+
+재생 엔진의 원본은 `src/game`이다. 바꾼 뒤 `node scripts/sync-edge-block.mjs`로 `supabase/functions/gugudan-api/block/`에 복사한다(`tests/block-replay.test.mjs`가 두 곳이 같은지 검사). 시드는 시작 때 학생 기기에 전달되므로 반응시간·풀이 과정의 부정 조작까지 막는 시험용 검증은 아니다.
+
+로컬 검증: 격리된 PostgreSQL에 `psql -f tests/block-bootstrap.sql` 후 `PGHOST=127.0.0.1 PGPORT=55436 PGDATABASE=99dan_block_20261012 PSQL=/opt/homebrew/bin/psql node --experimental-strip-types tests/block.pg.mjs`. 시드 발급·재시도, 재생 점수 저장·재시도, 충돌·거부, 7일 순위, 경험치·펫 한도, 교사 기록, 범위/개인/전체 초기화, 공개 역할 차단을 검사한다. 같은 스키마에서 `tests/teacher-reset.pg.mjs` 회귀도 통과했다.

@@ -1,4 +1,4 @@
-export type Cue='tap'|'correct'|'wrong'|'combo'|'finish'|'record'|'levelup'|'friend'|'enable';
+export type Cue='tap'|'correct'|'wrong'|'combo'|'finish'|'record'|'levelup'|'friend'|'enable'|'pickup'|'place'|'clear'|'allclear'|'unlock'|'invalid'|'gameover';
 type Wave='pulse'|'square'|'triangle'|'noise';
 type Note={readonly midi:number;readonly at:number;readonly length:number;readonly wave:Wave;readonly gain:number;readonly slide?:number};
 // 16-bit style chiptune: pulse leads, triangle bass, short noise hits. `step` transposes by semitones.
@@ -17,7 +17,15 @@ const cues:Readonly<Record<Cue,(step:number)=>readonly Note[]>>={
   record:()=>[hit(),...arp([72,76,79,84],0,.07,.07),...arp([76,79,84,88],.3,.07,.07),hit(.58,.1),lead(91,.6,.12),lead(88,.72,.12),lead(91,.84,.5,.15),bass(43,.6,.25),bass(48,.84,.5)],
   levelup:()=>[...arp([72,74,76,77,79,81,83],0,.045,.06,.1),hit(.32,.1),lead(84,.32,.18,.14),lead(88,.5,.18,.14),lead(91,.68,.4,.15),bass(48,.32,.36),bass(55,.68,.4)],
   friend:()=>[hit(0,.08),...arp([79,83,86,91],0,.06,.07,.11),lead(95,.24,.32,.12),bass(55,.24,.3),{midi:98,at:.3,length:.2,wave:'square',gain:.03}],
-  enable:()=>[lead(76,0,.07),lead(83,.07,.14)]
+  enable:()=>[lead(76,0,.07),lead(83,.07,.14)],
+  // 블록: 집기는 짧게 올라가는 소리, 놓기는 묵직한 쿵, 줄 지우기는 지운 줄 수·콤보만큼 높아지는 휘몰이 아르페지오.
+  pickup:()=>[{midi:79,at:0,length:.05,wave:'square',gain:.05,slide:7}],
+  place:()=>[hit(0,.13),{midi:50,at:0,length:.09,wave:'triangle',gain:.24,slide:-9},{midi:74,at:0,length:.03,wave:'square',gain:.03}],
+  clear:step=>{const s=Math.min(step,14),notes=[72,76,79,84,88,91,96].slice(0,4+Math.min(3,Math.floor(step/2)));return [hit(0,.15),hit(.05,.1),hit(.1,.07),bass(43+s,0,.12),bass(48+s,.12,.24),...arp(notes.map(m=>m+s),0,.034,.07,.12),{midi:notes.at(-1)!+s+5,at:notes.length*.034,length:.24,wave:'square',gain:.04,slide:7}];},
+  allclear:()=>[hit(),hit(.12,.12),...arp([72,76,79,84,88,91],0,.05,.06,.11),...arp([79,84,88,91,96],.3,.05,.06,.11),lead(100,.6,.5,.13),bass(36,0,.3),bass(48,.3,.3),bass(55,.6,.5),{midi:103,at:.6,length:.4,wave:'square',gain:.035}],
+  unlock:()=>[hit(0,.06),...arp([84,88,91,96],0,.04,.05,.08)],
+  invalid:()=>[{midi:52,at:0,length:.08,wave:'triangle',gain:.14,slide:-2}],
+  gameover:()=>[{midi:72,at:0,length:.16,wave:'triangle',gain:.2},{midi:67,at:.16,length:.16,wave:'triangle',gain:.2},{midi:64,at:.32,length:.16,wave:'triangle',gain:.2},{midi:60,at:.48,length:.5,wave:'triangle',gain:.2,slide:-1},bass(36,.48,.5)]
 };
 const hz=(midi:number)=>440*2**((midi-69)/12);
 export class GameAudio {

@@ -8,10 +8,10 @@ registerHooks({resolve(specifier,context,next){
 }});
 const { profile }=await import('../src/cloud/parse.ts');
 
-test('all 31 nonempty category selections are valid; malformed selections are rejected',()=>{
+test('all 63 nonempty category selections are valid; malformed selections are rejected',()=>{
  const ids=TEACHER_RESET_SCOPES.map(s=>s.id);
- for(let mask=1;mask<32;mask++)assert.equal(validTeacherResetScopes(ids.filter((_,i)=>mask&(1<<i))),true);
- for(const value of [null,undefined,{},'rush-1',[],[1],['rush-4'],['rush-1','rush-1'],Array(6).fill('rush-1')])assert.equal(validTeacherResetScopes(value),false);
+ for(let mask=1;mask<64;mask++)assert.equal(validTeacherResetScopes(ids.filter((_,i)=>mask&(1<<i))),true);
+ for(const value of [null,undefined,{},'rush-1',[],[1],['rush-4'],['rush-1','rush-1'],Array(7).fill('rush-1')])assert.equal(validTeacherResetScopes(value),false);
 });
 
 test('old servers cannot enable scoped resets and malformed capability responses fail closed',()=>{

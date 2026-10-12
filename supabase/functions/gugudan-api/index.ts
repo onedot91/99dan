@@ -1,3 +1,5 @@
+import { BLOCK_REPLAY_LIMITS, blockScore, replayBlockRun } from './block/blockRun.ts';
+import type { BlockAnswer, BlockMove } from './block/blockRun.ts';
 // The service key stays inside Supabase Edge Functions. Browser requests carry a number-bound signed session.
 const url=Deno.env.get('SUPABASE_URL')??'';
 const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'';
@@ -64,13 +66,52 @@ async function rows(table:string,query:URLSearchParams):Promise<unknown[]>{
   if(!Array.isArray(data))throw new Error('INVALID_DATABASE_RESPONSE');
   return data;
 }
+// 블록 끝 요청의 입력 기록을 정해진 모양으로만 다시 만든다(해시가 키 순서·여분 필드에 흔들리지 않게).
+const integerIn=(value:unknown,min:number,max:number):value is number=>typeof value==='number'&&Number.isInteger(value)&&value>=min&&value<=max;
+function blockAnswers(value:unknown):BlockAnswer[]|null{
+  if(!Array.isArray(value)||value.length>BLOCK_REPLAY_LIMITS.answers)return null;
+  const answers:BlockAnswer[]=[];
+  for(const item of value){
+    if(!item||typeof item!=='object'||Array.isArray(item))return null;
+    const event=Object.fromEntries(Object.entries(item));
+    if(!integerIn(event.answer,0,9)||event.ms!==undefined&&!integerIn(event.ms,0,1000000000))return null;
+    answers.push(event.ms===undefined?{answer:event.answer}:{answer:event.answer,ms:event.ms});
+  }
+  return answers;
+}
+function blockMoves(value:unknown):BlockMove[]|null{
+  if(!Array.isArray(value)||value.length>BLOCK_REPLAY_LIMITS.moves)return null;
+  const moves:BlockMove[]=[];
+  for(const item of value){
+    if(!item||typeof item!=='object'||Array.isArray(item))return null;
+    const move=Object.fromEntries(Object.entries(item));
+    if(!integerIn(move.piece,0,2)||!integerIn(move.row,0,7)||!integerIn(move.col,0,7))return null;
+    moves.push({piece:move.piece,row:move.row,col:move.col});
+  }
+  return moves;
+}
+async function sha256(text:string){
+  return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
+}
+// 서버가 발급한 시드로 판을 재생해 점수를 다시 계산한 뒤 저장한다. 같은 입력의 재전송은 저장된 결과를 받는다.
+async function finishBlock(student:number,data:Record<string,unknown>){
+  const answers=blockAnswers(data.answers),moves=blockMoves(data.moves),ended=data.ended;
+  if(!validId(data.id)||!answers||!moves||(ended!=='stuck'&&ended!=='stopped'))return json({error:'INVALID_RUN'},400);
+  const start=record(await rpc('gugudan_block_seed',{p_student:student,p_id:data.id}));
+  if(!integerIn(start.seed,0,0xffffffff))throw new Error('INVALID_DATABASE_RESPONSE');
+  const run=replayBlockRun(start.seed,answers,moves,ended);
+  if(!run)return json({error:'INVALID_REPLAY'},400);
+  const hash=await sha256(JSON.stringify({ended,answers,moves}));
+  return json(await rpc('gugudan_block_finish',{p_student:student,p_id:data.id,p_seed:start.seed,p_hash:hash,p_ended:ended,p_score:blockScore(run),p_solved:run.solved,p_mistakes:run.mistakes,p_lines:run.lines,p_answers:answers,p_moves:moves}));
+}
 async function teacherRecords(){
   // Independent reads go out together so the teacher screen waits for the slowest one, not their sum.
-  const [result,verticalRows,settings,metrics]=await Promise.all([
+  const [result,verticalRows,settings,metrics,blocks]=await Promise.all([
     rpc('gugudan_teacher_records',{}),
     rows('gugudan_vertical_runs',new URLSearchParams({select:'id,student_number,questions,score,mistakes,finished_at',finished_at:'not.is.null',order:'finished_at.desc',limit:'1000'})),
     rpc('gugudan_teacher_vertical_assignments',{}),
-    rpc('gugudan_teacher_vertical_metrics',{},true)
+    rpc('gugudan_teacher_vertical_metrics',{},true),
+    rpc('gugudan_teacher_block_records',{},true)
   ]);
   if(!Array.isArray(result))throw new Error('INVALID_DATABASE_RESPONSE');
   const profiles=result.map(record);
@@ -90,7 +131,10 @@ async function teacherRecords(){
   const difficulties=new Map(settings.map(value=>{const row=record(value);if(!validNumber(row.studentNumber)||!validDuration(row.difficulty))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.difficulty];}));
   if(metrics!==null&&!Array.isArray(metrics))throw new Error('INVALID_DATABASE_RESPONSE');
   const summaries=new Map((metrics??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.stats];}));
-  return profiles.map(profile=>({...profile,canResetScopes:true,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
+  if(blocks!==null&&!Array.isArray(blocks))throw new Error('INVALID_DATABASE_RESPONSE');
+  // 블록 기록·경험치(두 자리 수 경험치도 최근 5판이 아닌 전체 기록으로). 마이그레이션 전이면 빠진다.
+  const blockRecords=new Map((blocks??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,{blockExp:row.blockExp,verticalExp:row.verticalExp,blockSessions:row.blockSessions}];}));
+  return profiles.map(profile=>({...profile,...blockRecords.get(Number(profile.studentNumber)),canResetScopes:true,canResetBlock:blocks!==null,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
 }
 Deno.serve(async request=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
@@ -121,7 +165,7 @@ Deno.serve(async request=>{
       if(!validNumber(data.studentNumber))return json({error:'INVALID_STUDENT'},400);
       if(data.action==='teacherResetScoped'){
         const scopes=data.scopes;
-        if(!Array.isArray(scopes)||scopes.length<1||scopes.length>5||new Set(scopes).size!==scopes.length||!scopes.every(scope=>['rush-1','rush-2','rush-3','vertical-5','vertical-10'].includes(scope)))return json({error:'INVALID_RESET_SCOPES'},400);
+        if(!Array.isArray(scopes)||scopes.length<1||scopes.length>6||new Set(scopes).size!==scopes.length||!scopes.every(scope=>['rush-1','rush-2','rush-3','vertical-5','vertical-10','block'].includes(scope)))return json({error:'INVALID_RESET_SCOPES'},400);
         await rpc('gugudan_teacher_reset_scoped',{p_student:data.studentNumber,p_scopes:scopes});return json({ok:true});
       }
       if(data.action==='teacherSetVertical'){
@@ -175,7 +219,14 @@ Deno.serve(async request=>{
       }))return json({error:'INVALID_EVENTS'},400);
       return json(await rpc('gugudan_vertical_finish',{p_student:student,p_id:data.id,p_events:data.events}));
     }
-    if(data.action==='capabilities')return json({questionTypes:true,friends:true});
+    if(data.action==='blockBegin'){
+      if(!validId(data.id))return json({error:'INVALID_RUN'},400);
+      return json(await rpc('gugudan_block_begin',{p_student:student,p_id:data.id}));
+    }
+    if(data.action==='blockFinish')return await finishBlock(student,data);
+    if(data.action==='blockLeaders')return json(await rpc('gugudan_block_leaders',{}));
+    if(data.action==='blockRecords')return json(await rpc('gugudan_block_records',{p_student:student}));
+    if(data.action==='capabilities')return json({questionTypes:true,friends:true,blocks:true});
     if(data.action==='saveFriends'){
       const friends=data.friends,partner=data.partner;
       if(!Array.isArray(friends)||friends.length>400||!friends.every(id=>typeof id==='string'&&/^[a-z]+(\.[a-z]+){0,4}$/.test(id))||(partner!==null&&typeof partner!=='string'))return json({error:'INVALID_FRIENDS'},400);

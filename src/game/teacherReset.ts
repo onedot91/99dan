@@ -4,6 +4,7 @@ export const TEACHER_RESET_SCOPES=[
   {id:'rush-3',label:'구구단 3분'},
   {id:'vertical-5',label:'두 자리 수 5문제'},
   {id:'vertical-10',label:'두 자리 수 10문제'},
+  {id:'block',label:'블록'},
 ] as const;
 export type TeacherResetScope=typeof TEACHER_RESET_SCOPES[number]['id'];
 export function validTeacherResetScopes(value:unknown):value is readonly TeacherResetScope[]{

@@ -64,4 +64,8 @@
   .pet-bubble,.pet-bubble::after{background:var(--night-paper)}
   .pet-bubble{color:var(--night-ink)}
   .pet-bubble-button:hover{background:var(--night-paper-hi)}
+
+  /* 블록 나눗셈도 밤 종이 위 크림 글자 */
+  .division-board,.division-board .vertical-cell:disabled{color:var(--night-ink)}
+  .division-board .source-digit,.division-board .source-cell,.division-board .vertical-cell.source-cell{color:var(--blue)}
 }

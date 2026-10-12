@@ -1,0 +1,106 @@
+/* 블록: 왼쪽 블록 판과 블록 칸, 가운데 세로셈 나눗셈, 오른쪽 키패드. 휴대폰 배치는 mobile.css. */
+.block-play{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(240px,.7fr);grid-template-rows:minmax(0,1fr);gap:var(--s4) var(--s6);padding:var(--s3) var(--s1) var(--s1)}
+.block-field{container-type:size;display:grid;min-width:0;min-height:0}
+.block-area{--tray-h:112px;--board:min(100cqw,calc(100cqh - var(--tray-h) - var(--s4)));display:grid;grid-template-rows:auto var(--tray-h);gap:var(--s4);place-content:center}
+.block-board{position:relative;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));gap:2px;width:var(--board);height:var(--board);padding:var(--s1);background:var(--outline);box-shadow:var(--ring),var(--drop);touch-action:none;outline:0}
+.block-board:focus-visible{box-shadow:var(--ring),0 0 0 var(--px) var(--yellow)}
+.block-board.choosing{cursor:pointer}
+.block-board>i{background:var(--panel-lo);box-shadow:inset 0 2px 0 var(--panel)}
+/* 블록 색 7가지: 모양마다 하나(shapeColor). 베벨은 흰/검정 반투명으로 어느 색에나 얹힌다. */
+[data-c="1"]{--bc:var(--yellow)}[data-c="2"]{--bc:var(--mint)}[data-c="3"]{--bc:var(--blue)}[data-c="4"]{--bc:var(--coral)}[data-c="5"]{--bc:var(--orange)}[data-c="6"]{--bc:#a98bff}[data-c="7"]{--bc:#ff8fd6}
+.block-board>i.filled{background:var(--bc);box-shadow:inset 0 3px 0 rgb(255 255 255/.45),inset 0 -3px 0 rgb(0 0 0/.3)}
+.block-board>i.preview{background:var(--bc);box-shadow:inset 0 0 0 2px rgb(255 255 255/.7);opacity:.55}
+.block-board>i.will-clear{opacity:1;filter:brightness(1.3);box-shadow:inset 0 0 0 3px #fff}
+.block-board>i.blocked{background:var(--coral);box-shadow:inset 0 0 0 2px var(--coral-shade);opacity:.55}
+.block-tray{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s3);width:var(--board);min-height:0}
+.block-slot{--piece-cell:18px;display:grid;place-items:center;min-width:0;min-height:44px;padding:var(--s1);border:0;background:var(--panel);box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring);touch-action:none;cursor:grab}
+.block-slot.selected{background:var(--panel-raised);box-shadow:inset 0 var(--px) 0 var(--panel-hi),var(--ring),0 0 0 var(--px) var(--yellow)}
+.block-slot.dragging .block-piece{opacity:.25}
+.block-slot.used{background:transparent;box-shadow:inset 0 0 0 2px var(--panel-lo)}
+.block-tray.locked .block-slot{cursor:default}
+.block-tray.locked .block-slot:disabled{opacity:.55}
+.block-piece{display:grid;gap:2px}
+.block-piece>i{width:var(--piece-cell);height:var(--piece-cell);background:var(--bc);box-shadow:inset 0 2px 0 rgb(255 255 255/.45),inset 0 -2px 0 rgb(0 0 0/.3)}
+.block-ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none;will-change:transform}
+.block-ghost .block-piece{gap:var(--piece-gap,2px)}
+.block-ghost .block-piece>i{box-shadow:inset 0 3px 0 rgb(255 255 255/.45),inset 0 -3px 0 rgb(0 0 0/.3),0 6px 0 rgb(0 0 0/.35)}
+.block-ghost.over-valid{opacity:.9}
+.block-progress .block-solved{display:flex;align-items:center;gap:var(--s1);color:var(--mint);font-size:var(--text-lg)}
+
+/* 세로셈 나눗셈 */
+.division-paper{padding:var(--s4)}
+.division-board{--d:clamp(26px,min(calc(100cqh / (var(--division-rows) + 1.5)),calc(100cqw / (var(--division-width) + 2.6))),64px);display:grid;justify-items:center;gap:var(--s3);font-size:calc(var(--d) * .78);font-family:var(--mono);color:var(--ink)}
+.division-grid{display:grid;grid-template-columns:var(--d) calc(var(--d) * .5) repeat(var(--division-width),var(--d));grid-auto-rows:auto;align-items:center}
+.division-grid>span{display:grid;place-items:center;min-height:0}
+.division-slot,.division-given{width:var(--d);height:var(--d)}
+.division-given{display:grid;place-items:center}
+.division-dividend{box-shadow:inset 0 var(--px) 0 currentColor}
+.division-bracket{position:relative;height:var(--d);width:calc(var(--d) * .5);align-self:stretch}
+.division-bracket::before{content:"";position:absolute;top:0;bottom:8%;left:0;right:35%;border-right:var(--px) solid currentColor;border-radius:0 50% 50% 0/0 50% 50% 0}
+.division-bracket::after{content:"";position:absolute;top:0;left:45%;right:0;height:var(--px);background:currentColor}
+.division-board .source-digit,.division-board .source-cell{color:var(--blue-shade)}
+.division-rule{display:block;height:var(--px);margin:2px 0;background:currentColor}
+.division-board .vertical-cell{width:var(--d);height:var(--d);min-width:0;min-height:0}
+.division-board .vertical-cell:disabled{opacity:1;cursor:default;color:var(--ink)}
+.division-board .vertical-cell.source-cell{color:var(--blue-shade)}
+.division-check{display:grid;gap:var(--s1);font-size:.7em}
+.division-check>div{display:flex;align-items:center;gap:var(--s1);white-space:nowrap}
+.division-check>div>span:first-child{padding-right:var(--s1)}
+.block-play.placing .division-paper{opacity:.6}
+.block-play.placing .vertical-pad-keys{opacity:.15;pointer-events:none}
+
+.block-result-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s3)}
+.block-result-stats>div{animation:slot-in 260ms steps(5,end) both}.block-result-stats>div:nth-child(2){animation-delay:120ms}.block-result-stats>div:nth-child(3){animation-delay:240ms}
+.block-result .counted{animation:block-place 260ms steps(4,end)}
+.block-record{color:var(--yellow);animation:slot-unlock 420ms steps(6,end)}
+.block-result-stats>div{display:grid;gap:var(--s1);justify-items:center;padding:var(--s3);background:var(--panel);box-shadow:inset 0 var(--px) 0 var(--panel-hi),var(--ring)}
+.block-result-stats span{color:var(--muted);font-size:var(--text-base)}
+.block-result-stats strong{font-size:var(--text-title);color:var(--yellow)}
+
+/* 연출: 모두 transform/opacity와 steps() 프레임. 판 밖 화면은 흔들지 않는다. */
+.block-board>i.placed{animation:block-place 220ms steps(4,end)}
+@keyframes block-place{0%{transform:scale(1.28);filter:brightness(1.7)}60%{transform:scale(.94)}100%{transform:none}}
+.block-board.danger{box-shadow:var(--ring),var(--drop),0 0 0 var(--px) var(--coral)}
+.block-board.danger>i:not(.filled):not(.preview){background:color-mix(in srgb,var(--panel-lo) 82%,var(--coral))}
+.block-board.game-over>i.filled{animation:block-over 360ms steps(4,end) calc((7 - var(--row,0)) * 110ms) both}
+@keyframes block-over{0%{transform:scale(1)}50%{transform:scale(1.12);filter:brightness(1.6)}100%{transform:scale(.92);background:#575472;box-shadow:inset 0 3px 0 #7b7898,inset 0 -3px 0 #34324a}}
+.block-fx{position:absolute;inset:var(--s1);z-index:2;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));gap:2px;pointer-events:none}
+.block-fx>b{position:relative;z-index:2}
+.block-fx>b>i{position:absolute;inset:0;background:var(--bc);box-shadow:inset 0 3px 0 rgb(255 255 255/.45),inset 0 -3px 0 rgb(0 0 0/.3);animation:fx-cell 380ms steps(6,end) var(--delay) both}
+@keyframes fx-cell{0%{background:#fff;transform:scale(1)}35%{background:#fff;transform:scale(1.18)}100%{transform:scale(0) rotate(45deg);opacity:0}}
+.block-fx>b>s{position:absolute;left:30%;top:30%;width:40%;height:40%;background:var(--bc);box-shadow:0 0 0 2px rgb(255 255 255/.5);opacity:0;animation:fx-shard 620ms steps(9,end) calc(var(--delay) + 90ms) both}
+@keyframes fx-shard{0%{opacity:1;transform:none}45%{opacity:1;transform:translate(calc(var(--dx) * .7),calc(var(--dy) * .9)) rotate(calc(var(--spin) * .5))}100%{opacity:0;transform:translate(var(--dx),calc(var(--dy) + 60px)) rotate(var(--spin))}}
+.fx-beam{display:block;z-index:1;background:#fff;box-shadow:0 0 0 3px rgb(255 255 255/.4);transform-origin:center;animation:fx-beam 360ms steps(6,end) both}
+.fx-beam:not(.vertical){animation-name:fx-beam-h}
+@keyframes fx-beam-h{0%{transform:scaleX(0);opacity:1}40%{transform:scaleX(1.04);opacity:.95}100%{transform:scaleX(1) scaleY(.15);opacity:0}}
+@keyframes fx-beam{0%{transform:scaleY(0);opacity:1}40%{transform:scaleY(1.04);opacity:.95}100%{transform:scaleY(1) scaleX(.15);opacity:0}}
+.fx-points{position:absolute;z-index:4;padding:var(--s1) var(--s2);background:var(--mint-hi);color:var(--ink);box-shadow:var(--ring);font-size:var(--text-xl);font-style:normal;white-space:nowrap;opacity:0;animation:fx-points 820ms steps(10,end) 120ms both}
+.block-fx[data-lines="2"] .fx-points,.block-fx[data-lines="3"] .fx-points{background:var(--yellow);font-size:28px}
+.block-fx[data-lines="4"] .fx-points{background:var(--orange);font-size:var(--text-title)}
+@keyframes fx-points{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}35%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-160%) scale(1)}}
+.fx-banner{position:absolute;left:50%;top:42%;z-index:5;display:grid;justify-items:center;gap:var(--s2);opacity:0;animation:fx-banner 1000ms steps(12,end) 60ms both}
+.fx-banner strong{color:var(--yellow);font-size:clamp(28px,9cqw,52px);white-space:nowrap;text-shadow:4px 0 0 var(--outline),-4px 0 0 var(--outline),0 4px 0 var(--outline),0 -4px 0 var(--outline),4px 4px 0 var(--outline),6px 8px 0 rgb(0 0 0/.35)}
+.fx-banner span{padding:var(--s1) var(--s3);background:var(--coral);color:var(--ink);font-size:var(--text-lg);white-space:nowrap;box-shadow:inset 0 var(--px) 0 #ffc0c8,var(--ring)}
+.fx-banner.all-clear strong{color:var(--mint-hi);font-size:clamp(32px,11cqw,64px)}
+@keyframes fx-banner{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}14%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}24%{transform:translate(-50%,-50%) scale(.95)}32%,78%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(1)}}
+.block-tray.locked .block-slot:not(.used){animation:slot-in 260ms steps(5,end) both}
+.block-tray.unlocked .block-slot:not(.used){animation:slot-unlock 380ms steps(6,end) both}
+.block-tray .block-slot:nth-child(2){animation-delay:70ms}.block-tray .block-slot:nth-child(3){animation-delay:140ms}
+@keyframes slot-in{0%{opacity:0;transform:translateY(16px) scale(.85)}100%{opacity:1;transform:none}}
+@keyframes slot-unlock{0%{transform:scale(.9);filter:brightness(1.8)}55%{transform:translateY(-6px) scale(1.06)}100%{transform:none}}
+.block-ghost .block-piece{animation:ghost-lift 120ms steps(3,end)}
+@keyframes ghost-lift{0%{transform:scale(.55)}100%{transform:none}}
+.division-paper{position:relative}
+.block-stamp{position:absolute;left:50%;top:50%;z-index:3;translate:-50% -50%;color:var(--ink);pointer-events:none;animation:block-stamp 650ms steps(8,end) both}
+@keyframes block-stamp{0%{opacity:0;transform:scale(1.8)}25%{opacity:1;transform:scale(.9)}35%,80%{opacity:1;transform:none}100%{opacity:0;transform:scale(.9)}}
+.block-play.handoff .vertical-pad-keys{opacity:.15;pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+  .block-board>i.placed,.block-board.game-over>i.filled,.block-tray .block-slot,.block-ghost .block-piece{animation-duration:1ms!important;animation-delay:0s!important}
+  .block-fx>b>s,.fx-beam,.fx-banner,.fx-points{display:none}
+  .block-fx>b>i{animation:none;opacity:0}
+  .block-stamp{animation:none}
+}
+.block-slot.hidden-piece{cursor:default;background:var(--panel-lo);box-shadow:inset 0 var(--px) 0 var(--panel),var(--ring)}
+.block-slot.hidden-piece b{color:var(--muted);font-size:var(--text-title);font-weight:inherit}
+.block-tray.unlocked .block-slot:not(.used){animation:slot-reveal 420ms steps(7,end) both}
+@keyframes slot-reveal{0%{transform:scaleX(0) scaleY(1.1);filter:brightness(2)}45%{transform:scaleX(1.1) scaleY(.95);filter:brightness(1.5)}70%{transform:translateY(-6px) scale(1.04)}100%{transform:none}}

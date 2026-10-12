@@ -38,5 +38,5 @@ export function useGameAudio(run:Run|null,screen:Screen,resultCue:Cue='finish'){
     const active=engine.current;engine.current=null;
     if(active)void active.dispose();
   },[]);
-  return {enabled,available,pending,toggle,tap:()=>engine.current?.play('tap'),cue:(cue:Cue)=>engine.current?.play(cue)};
+  return {enabled,available,pending,toggle,tap:()=>engine.current?.play('tap'),cue:(cue:Cue,step=0)=>engine.current?.play(cue,step)};
 }
