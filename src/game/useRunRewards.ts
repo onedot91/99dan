@@ -19,19 +19,19 @@ export function bestBefore(g:RushGame,shared:readonly Best[]|undefined):number|n
   return all.length?Math.max(...all):null;
 }
 // Snapshots progress when a run starts so the result screen can show what this run changed.
-export function useRunRewards(g:RushGame,sharedBest:readonly Best[]|undefined):RunRewards|null{
+export function useRunRewards(g:RushGame,sharedBest:readonly Best[]|undefined,verticalExp=0):RunRewards|null{
   const snapshot=useRef<Snapshot|null>(null);
   const runId=g.run?.id;
   useLayoutEffect(()=>{
     if(g.screen!=='play'||!runId||snapshot.current?.runId===runId)return;
-    snapshot.current={runId,best:bestBefore(g,sharedBest),totalCorrect:g.totalCorrect,mastered:masteredIds(g.records)};
+    snapshot.current={runId,best:bestBefore(g,sharedBest),totalCorrect:g.totalCorrect+verticalExp,mastered:masteredIds(g.records)};
   },[g.screen,runId]);
   const run=g.run,before=snapshot.current;
   if(g.screen!=='result'||!run||before?.runId!==run.id)return null;
   const completedRush=run.mode==='rush'&&!run.endedEarly;
   const newRecord=completedRush&&run.score>0&&(before.best===null||run.score>before.best);
   const now=masteredIds(g.records);
-  const expAfter=Math.max(g.totalCorrect,before.totalCorrect+run.correct);
+  const expAfter=Math.max(g.totalCorrect+verticalExp,before.totalCorrect+run.correct);
   const levelBefore=levelFor(before.totalCorrect),levelAfter=levelFor(expAfter);
   return {
     newRecord,firstRecord:newRecord&&before.best===null,

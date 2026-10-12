@@ -54,12 +54,16 @@ export function App(){
 function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;readonly onReselect:()=>void}){
   const g=useRushGame(!cloudConfigured||isSpare(studentNumber));
   const cloud=useSharedGame(studentNumber,g);
-  const rewards=useRunRewards(g,cloud.profile?.best);
-  const friends=useFriends(studentNumber,g.totalCorrect,cloud);
+  const exp=g.totalCorrect+(cloud.profile?.verticalExp??0);
+  const rewards=useRunRewards(g,cloud.profile?.best,cloud.profile?.verticalExp??0);
+  const friends=useFriends(studentNumber,exp,cloud);
   const audio=useGameAudio(g.run,g.screen,rewards?.newRecord?'record':rewards?.levelUp?'levelup':'finish');
   const vertical=useVerticalGame(studentNumber);
   const assignment=useVerticalAssignment(studentNumber);
   const verticalSync=useVerticalSync(studentNumber,vertical.session);
+  // A saved two-digit run adds experience on the server; reload the profile so the level catches up.
+  const reloadProfile=cloud.reload;
+  useEffect(()=>{if(verticalSync.state==='saved')void reloadProfile();},[verticalSync.state,reloadProfile]);
   const [hallPart,setHallPart]=useState<HallPart>('rush');
   useEffect(()=>{if(g.screen==='play')setHallPart('rush');},[g.screen]);
   const verticalPlaying=g.screen==='vertical-play';
@@ -81,7 +85,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   const exitVertical=()=>{vertical.exit();g.setScreen('home');};
   const [savedBackground,setBackground]=useState(()=>loadBackground(studentNumber));
   // The spare number has every background unlocked.
-  const level=isSpare(studentNumber)?Infinity:levelFor(g.totalCorrect).number;
+  const level=isSpare(studentNumber)?Infinity:levelFor(exp).number;
   // A background above the current level (e.g. after a teacher reset) falls back to night.
   const background=isUnlocked(savedBackground,level)?savedBackground:'night';
   const changeBackground=(id:typeof background)=>{setBackground(id);saveBackground(studentNumber,id);};
@@ -116,7 +120,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       </div>
     </header>
     <div className="screen-content" ref={content} tabIndex={-1} key={g.screen}>
-      {g.screen==='home'&&(cloud.blocking?<main className="connection-screen">{cloud.state==='loading'?<p role="status">불러오는 중</p>:<button className="primary-button" onClick={()=>void cloud.reload()}>연결 재시도</button>}</main>:<HomeScreen game={g} friends={friends} studentNumber={studentNumber} onVertical={count=>void startVertical(count)} verticalStarting={verticalStarting} verticalBlocked={verticalSync.blocked} verticalSaving={verticalSync.state==='saving'} verticalError={assignment.state==='error'||verticalSync.state==='error'} onVerticalRetry={()=>void verticalSync.retry()} onHall={()=>{setHallPart('rush');g.setScreen('hall');}}/>)}
+      {g.screen==='home'&&(cloud.blocking?<main className="connection-screen">{cloud.state==='loading'?<p role="status">불러오는 중</p>:<button className="primary-button" onClick={()=>void cloud.reload()}>연결 재시도</button>}</main>:<HomeScreen game={g} exp={exp} friends={friends} studentNumber={studentNumber} onVertical={count=>void startVertical(count)} verticalStarting={verticalStarting} verticalBlocked={verticalSync.blocked} verticalSaving={verticalSync.state==='saving'} verticalError={assignment.state==='error'||verticalSync.state==='error'} onVerticalRetry={()=>void verticalSync.retry()} onHall={()=>{setHallPart('rush');g.setScreen('hall');}}/>)}
       {g.screen==='vertical-setup'&&<VerticalSetup sync={verticalSync} assignmentState={assignment.state} onRetry={()=>void assignment.reload()} onStart={()=>void startVertical()}/>}
       {g.screen==='vertical-play'&&<VerticalPlay game={vertical} onExit={exitVertical} onComplete={()=>{audio.cue('finish');g.setScreen('vertical-result');}} onCue={correct=>audio.cue(correct?'correct':'wrong')}/>}
       {g.screen==='vertical-result'&&<VerticalResult game={vertical} sync={verticalSync} assignmentState={assignment.state} onHome={()=>g.setScreen('home')} onAgain={()=>{const count=vertical.session?.questions.length;void startVertical(validVerticalCount(count)?count:5);}} onHall={()=>{setHallPart('vertical');g.setScreen('hall');}}/>}
@@ -125,7 +129,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       {(g.screen==='tables'||g.screen==='weak')&&<SetupScreen game={g}/>}
       {g.screen==='result'&&<ResultScreen game={g} rewards={rewards} friends={friends} syncState={cloud.state} retrySave={cloud.retrySave} unlocked={unlockedNow} onUseBackground={changeBackground}/>}
       {g.screen==='friends'&&<FriendsScreen friends={friends} onCelebrate={()=>audio.cue('friend')}/>}
-      {g.screen==='records'&&<RecordsScreen game={g} best={cloud.profile?.best} studentNumber={studentNumber}/>}
+      {g.screen==='records'&&<RecordsScreen game={g} exp={exp} best={cloud.profile?.best} studentNumber={studentNumber}/>}
     </div>
   </div>;
 }

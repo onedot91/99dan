@@ -54,6 +54,9 @@ export function masteredIds(records:Records):ReadonlySet<string>{
 // answers, then a flat 50 per level with no cap. Each level grants one friend pick.
 // Keep in sync with supabase/migrations/20260929000000_slower_levels.sql.
 export const LEVEL_STEP=50;
+// Experience per finished two-digit question; a times-table answer is worth 1. Keep in sync with
+// supabase/migrations/20261012000000_vertical_exp.sql.
+export const VERTICAL_EXP_PER_QUESTION=20;
 const EARLY_STEPS=[10,20,30,40] as const;
 // Lifetime correct answers needed to reach a level.
 export function levelFloor(level:number):number{

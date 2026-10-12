@@ -13,7 +13,7 @@ import type { VerticalCount } from '../game/verticalSets';
 import { isSpare } from '../game/studentNumber';
 const VERTICAL_COUNTS:readonly VerticalCount[]=[5,10];
 
-export function RecordsScreen({game:g,best:sharedBest,studentNumber}:{readonly game:RushGame;readonly best:readonly Best[]|undefined;readonly studentNumber:number}){
+export function RecordsScreen({game:g,exp,best:sharedBest,studentNumber}:{readonly game:RushGame;readonly exp:number;readonly best:readonly Best[]|undefined;readonly studentNumber:number}){
   const [duration,setDuration]=useState<Duration>(1);
   // Two-digit runs are only on the server; until they load (or offline) their tabs show dashes.
   const [count,setCount]=useState<VerticalCount|null>(null);
@@ -37,7 +37,7 @@ export function RecordsScreen({game:g,best:sharedBest,studentNumber}:{readonly g
     </div>
     <section className="records-summary">
     <div className="screen-heading wide-only"><h1>나의 플레이 기록</h1></div>
-    <LevelCard level={levelFor(g.totalCorrect)} exp={g.totalCorrect}/>
+    <LevelCard level={levelFor(exp)} exp={exp}/>
     <div className="duration-tabs records-challenge-tabs" role="group" aria-label="도전 종목">
       {DURATIONS.map(n=><button key={n} aria-pressed={count===null&&duration===n} onClick={()=>{setCount(null);setDuration(n);}}>{n}분</button>)}
       {VERTICAL_COUNTS.map(n=><button key={n} aria-pressed={count===n} aria-label={`두 자리 수 ${n}문제`} onClick={()=>setCount(n)}>{n}문제</button>)}

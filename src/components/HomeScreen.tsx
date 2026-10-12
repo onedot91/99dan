@@ -16,7 +16,7 @@ const greetKey=(n:number)=>`gugudan-rush.greeted.${n}`;
 const today=()=>new Date().toLocaleDateString('sv');
 function greetedToday(n:number):boolean{try{return localStorage.getItem(greetKey(n))===today();}catch{return true;}}
 type Mood='sleep'|'wake'|null;
-export function HomeScreen({game:g,friends,studentNumber,onVertical,onHall,verticalStarting,verticalBlocked,verticalSaving,verticalError,onVerticalRetry}:{readonly game:RushGame;readonly friends:Friends;readonly studentNumber:number;readonly onVertical:(count:VerticalCount)=>void;readonly onHall:()=>void;readonly verticalStarting:boolean;readonly verticalBlocked:boolean;readonly verticalSaving:boolean;readonly verticalError:boolean;readonly onVerticalRetry:()=>void}){
+export function HomeScreen({game:g,exp,friends,studentNumber,onVertical,onHall,verticalStarting,verticalBlocked,verticalSaving,verticalError,onVerticalRetry}:{readonly game:RushGame;readonly exp:number;readonly friends:Friends;readonly studentNumber:number;readonly onVertical:(count:VerticalCount)=>void;readonly onHall:()=>void;readonly verticalStarting:boolean;readonly verticalBlocked:boolean;readonly verticalSaving:boolean;readonly verticalError:boolean;readonly onVerticalRetry:()=>void}){
   const [mood,setMood]=useState<Mood>(null);
   const [verticalChallenge,setVerticalChallenge]=useState<VerticalCount|null>(null);
   // The partner can arrive after the first render when it loads from the server.
@@ -33,7 +33,7 @@ export function HomeScreen({game:g,friends,studentNumber,onVertical,onHall,verti
     <section className="home-stage">
       <h1><span className="title-line">곱셈</span> <span className="title-line title-accent">게임</span></h1>
       <div className="hero-scene">{friends.partner?<div className={`hero-friend tier-${friendById(friends.partner)?.tier??4} family-${friendById(friends.partner)?.family.id??''}${state?` mood-${state}`:''}`} onClick={state==='excited'?()=>g.setScreen('friends'):undefined}><FriendSprite id={friends.partner} fill/>{bubble&&<span className="pet-bubble" key={bubble} aria-hidden="true">{bubble}</span>}{state==='excited'&&<button className="pet-bubble pet-bubble-button" onClick={()=>g.setScreen('friends')}>새 펫!</button>}</div>:<p className="hero-empty">첫 펫을 기다리고 있어요</p>}<div className="pixel-ground"/></div>
-      <LevelCard level={levelFor(g.totalCorrect)} exp={g.totalCorrect}/>
+      <LevelCard level={levelFor(exp)} exp={exp}/>
     </section>
     <nav className="mode-menu" aria-label="게임 선택">
       <div className="rush-card">

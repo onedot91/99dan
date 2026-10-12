@@ -15,7 +15,7 @@ export function LevelCard({level,exp}:{readonly level:Level;readonly exp:number}
     <div className="level-copy">
       <div className="level-line"><strong>{level.label}</strong></div>
       <ExpBar to={expRatio(level,exp)} label="다음 레벨까지 경험치"/>
-      <small>{level.next===null?'최고 레벨 달성!':`다음 레벨까지 ${level.next-exp}문제`}</small>
+      <small>{level.next===null?'최고 레벨 달성!':`다음 레벨까지 ${level.next-exp}점`}</small>
     </div>
   </div>;
 }
