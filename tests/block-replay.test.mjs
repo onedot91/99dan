@@ -9,7 +9,7 @@ test('every answer check is logged across problems, with its time',()=>{
   const run=playBlockRun(77,{stopAfter:9});
   const perProblem=run.answers.filter(a=>a.ms===700).length;
   assert.equal(perProblem,run.mistakes);
-  assert.ok(run.answers.every(a=>Number.isInteger(a.answer)&&a.answer>=0&&a.answer<=9&&Number.isInteger(a.ms)));
+  assert.ok(run.answers.every(a=>Number.isInteger(a.answer)&&a.answer>=0&&a.answer<=999&&Number.isInteger(a.ms)));
 });
 
 test('replaying the same seed and logs reproduces stuck and stopped runs exactly',()=>{

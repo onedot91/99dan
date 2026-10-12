@@ -16,7 +16,7 @@
 .brand-mark img{width:100%;height:100%;object-fit:contain}
 .sync-status{text-align:center;font-size:var(--text-base);color:var(--muted)}
 .connection-screen{display:grid;place-items:center}.connection-screen button{max-width:320px}
-.hall-part-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
+.hall-part-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--s3)}
 .hall-part-tabs button{min-height:44px;padding:var(--s2);background:var(--panel);color:var(--muted);box-shadow:var(--ring);font-size:var(--text-base);white-space:nowrap}
 .hall-part-tabs button[aria-pressed=true]{background:var(--yellow);color:var(--ink)}
 .hall-rule{text-align:center;color:var(--muted);font-size:var(--text-base)}

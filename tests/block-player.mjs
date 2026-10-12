@@ -10,7 +10,8 @@ export function playBlockRun(seed,{wrongEvery=7,stopAfter=Infinity,stopWhileSolv
       if(stopWhileSolving&&run.moves.length>=stopAfter&&run.problem.stepIndex>0)return reduceBlockRun(run,{type:'stop'});
       const step=divisionSteps(run.problem.fact)[run.problem.stepIndex];
       if(++inputs%wrongEvery===0)run=reduceBlockRun(reduceBlockRun(run,{type:'input',key:String((step.expected+1)%10)}),{type:'input',key:'Enter',ms:700});
-      run=reduceBlockRun(reduceBlockRun(run,{type:'input',key:String(step.expected)}),{type:'input',key:'Enter',ms:1500+inputs});
+      for(const key of String(step.expected))run=reduceBlockRun(run,{type:'input',key});
+      run=reduceBlockRun(run,{type:'input',key:'Enter',ms:1500+inputs});
     }else{
       if(run.moves.length>=stopAfter)return reduceBlockRun(run,{type:'stop'});
       const index=blockPieces(run).findIndex(p=>p&&Array.from({length:64}).some((_,i)=>fits(run.board,p,Math.floor(i/8),i%8)));

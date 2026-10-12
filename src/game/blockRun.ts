@@ -73,8 +73,9 @@ export function replayBlockRun(seed:number,answers:readonly BlockAnswer[],moves:
   while(run.phase!=='over'){
     if(run.phase==='solve'){
       const next=answers[answered];if(!next)break;answered++;
-      if(!Number.isInteger(next.answer)||next.answer<0||next.answer>9)return null;
-      const typed=reduceBlockRun(run,{type:'input',key:String(next.answer)});
+      if(!Number.isInteger(next.answer)||next.answer<0||next.answer>999)return null;
+      // 검산 칸의 답은 여러 자리이므로 한 글자씩 친다.
+      let typed=run;for(const key of String(next.answer))typed=reduceBlockRun(typed,{type:'input',key});
       const checked=reduceBlockRun(typed,{type:'input',key:'Enter',...(next.ms!==undefined?{ms:next.ms}:{})});
       if(checked===typed)return null;
       run=checked;

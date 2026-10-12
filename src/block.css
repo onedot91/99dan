@@ -60,8 +60,6 @@
 /* 연출: 모두 transform/opacity와 steps() 프레임. 판 밖 화면은 흔들지 않는다. */
 .block-board>i.placed{animation:block-place 220ms steps(4,end)}
 @keyframes block-place{0%{transform:scale(1.28);filter:brightness(1.7)}60%{transform:scale(.94)}100%{transform:none}}
-.block-board.danger{box-shadow:var(--ring),var(--drop),0 0 0 var(--px) var(--coral)}
-.block-board.danger>i:not(.filled):not(.preview){background:color-mix(in srgb,var(--panel-lo) 82%,var(--coral))}
 .block-board.game-over>i.filled{animation:block-over 360ms steps(4,end) calc((7 - var(--row,0)) * 110ms) both}
 @keyframes block-over{0%{transform:scale(1)}50%{transform:scale(1.12);filter:brightness(1.6)}100%{transform:scale(.92);background:#575472;box-shadow:inset 0 3px 0 #7b7898,inset 0 -3px 0 #34324a}}
 .block-fx{position:absolute;inset:var(--s1);z-index:2;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));gap:2px;pointer-events:none}
@@ -104,3 +102,48 @@
 .block-slot.hidden-piece b{color:var(--muted);font-size:var(--text-title);font-weight:inherit}
 .block-tray.unlocked .block-slot:not(.used){animation:slot-reveal 420ms steps(7,end) both}
 @keyframes slot-reveal{0%{transform:scaleX(0) scaleY(1.1);filter:brightness(2)}45%{transform:scaleX(1.1) scaleY(.95);filter:brightness(1.5)}70%{transform:translateY(-6px) scale(1.04)}100%{transform:none}}
+
+/* 여러 줄 연출(data-lines 2~4). 판 안에서만 번쩍이고, 판 밖 화면은 그대로 둔다. */
+.block-fx[data-lines="2"] .fx-beam{box-shadow:0 0 0 4px rgb(255 255 255/.5),0 0 0 8px rgb(255 210 63/.35)}
+.block-fx[data-lines="3"] .fx-beam,.block-fx[data-lines="4"] .fx-beam{box-shadow:0 0 0 4px rgb(255 255 255/.6),0 0 0 9px rgb(94 224 138/.4),0 0 0 14px rgb(76 201 255/.25);animation-duration:460ms}
+.block-fx[data-lines="3"]>b>s,.block-fx[data-lines="4"]>b>s{width:50%;height:50%;animation-duration:760ms}
+.fx-flash{position:absolute;inset:calc(-1 * var(--s1));z-index:1;background:#fff;opacity:0;animation:fx-flash 300ms steps(4,end) both}
+.block-fx[data-lines="3"] .fx-flash,.block-fx[data-lines="4"] .fx-flash{animation:fx-flash-strong 420ms steps(6,end) both}
+@keyframes fx-flash{0%{opacity:.45}100%{opacity:0}}
+@keyframes fx-flash-strong{0%{opacity:.7}30%{opacity:.15}45%{opacity:.5}100%{opacity:0}}
+.fx-ring{position:absolute;z-index:3;width:40px;height:40px;margin:-20px 0 0 -20px;border:var(--px) solid #fff;box-shadow:0 0 0 var(--px) var(--yellow),inset 0 0 0 var(--px) var(--yellow);opacity:0;animation:fx-ring 560ms steps(9,end) var(--ring-delay) both}
+@keyframes fx-ring{0%{opacity:1;transform:scale(.3) rotate(45deg)}100%{opacity:0;transform:scale(9) rotate(45deg)}}
+.fx-frame{position:absolute;inset:calc(-2 * var(--s1));z-index:1;box-shadow:0 0 0 var(--px) var(--yellow),0 0 0 calc(2 * var(--px)) var(--coral);animation:fx-frame 900ms steps(9,end) both}
+@keyframes fx-frame{0%,100%{opacity:0}10%{opacity:1;box-shadow:0 0 0 var(--px) var(--yellow),0 0 0 calc(2 * var(--px)) var(--coral)}30%{box-shadow:0 0 0 var(--px) var(--mint),0 0 0 calc(2 * var(--px)) var(--blue)}50%{box-shadow:0 0 0 var(--px) #a98bff,0 0 0 calc(2 * var(--px)) #ff8fd6}70%{opacity:1;box-shadow:0 0 0 var(--px) var(--orange),0 0 0 calc(2 * var(--px)) var(--yellow)}}
+.fx-star{position:absolute;z-index:4;width:14px;height:14px;margin:-7px 0 0 -7px;background:var(--bc);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);opacity:0;animation:fx-star 700ms steps(8,end) var(--star-delay) both}
+@keyframes fx-star{0%{opacity:0;transform:scale(0) rotate(0)}30%{opacity:1;transform:scale(1.6) rotate(45deg)}60%{opacity:1;transform:scale(.8) rotate(90deg)}100%{opacity:0;transform:translateY(-30px) scale(.2) rotate(180deg)}}
+.fx-confetti{position:absolute;top:-6%;z-index:4;width:8px;height:12px;background:var(--bc);opacity:0;animation:fx-confetti 1300ms steps(16,end) var(--fall-delay) both}
+@keyframes fx-confetti{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--sway),calc(var(--board) * 1.05)) rotate(var(--fall-spin))}}
+.fx-banner[data-lines="3"] strong{font-size:clamp(34px,11cqw,60px)}
+.fx-banner[data-lines="4"] strong{font-size:clamp(40px,13cqw,72px)}
+.fx-banner.rainbow strong{animation:fx-rainbow 480ms steps(6,end) 3}
+@keyframes fx-rainbow{0%{color:var(--yellow)}17%{color:var(--orange)}33%{color:#ff8fd6}50%{color:#a98bff}67%{color:var(--blue)}83%{color:var(--mint)}100%{color:var(--yellow)}}
+.fx-banner[data-lines="4"]{animation-duration:1400ms}
+.fx-banner span.hot{background:var(--orange);box-shadow:inset 0 var(--px) 0 var(--gold-hi),var(--ring),0 0 0 calc(2 * var(--px)) var(--coral)}
+@media(prefers-reduced-motion:reduce){.fx-flash,.fx-ring,.fx-frame,.fx-star,.fx-confetti{display:none}.fx-banner.rainbow strong{animation:none}}
+.division-check .division-slot{width:auto;min-width:calc(var(--d) * 1.6)}
+.division-check .vertical-cell{width:auto;min-width:calc(var(--d) * 1.6)}
+.division-check .vertical-cell>span{width:auto;min-width:2.2em;padding:0 .15em}
+
+/* 블록 디자인(올 클리어마다 바뀜). [data-skin]은 판·블록 칸(.block-area)과 끄는 블록(.block-ghost)에 붙는다. */
+[data-skin=candy] [data-c="1"]{--bc:#ffe08a}[data-skin=candy] [data-c="2"]{--bc:#a8f0c0}[data-skin=candy] [data-c="3"]{--bc:#a8e4ff}[data-skin=candy] [data-c="4"]{--bc:#ffb3be}[data-skin=candy] [data-c="5"]{--bc:#ffc98a}[data-skin=candy] [data-c="6"]{--bc:#d2c2ff}[data-skin=candy] [data-c="7"]{--bc:#ffc2ea}
+[data-skin=candy] .block-board>i.filled,[data-skin=candy] .block-piece>i,[data-skin=candy] .block-fx>b>i{background:repeating-linear-gradient(135deg,var(--bc) 0 6px,rgb(255 255 255/.6) 6px 9px);box-shadow:inset 0 3px 0 rgb(255 255 255/.7),inset 0 -3px 0 rgb(0 0 0/.18)}
+[data-skin=neon] [data-c="1"]{--bc:#fff35c}[data-skin=neon] [data-c="2"]{--bc:#39ff88}[data-skin=neon] [data-c="3"]{--bc:#2ee6ff}[data-skin=neon] [data-c="4"]{--bc:#ff4d7d}[data-skin=neon] [data-c="5"]{--bc:#ff9a1f}[data-skin=neon] [data-c="6"]{--bc:#b26bff}[data-skin=neon] [data-c="7"]{--bc:#ff5ce1}
+[data-skin=neon] .block-board>i.filled,[data-skin=neon] .block-piece>i,[data-skin=neon] .block-fx>b>i{background:#120f2e;box-shadow:inset 0 0 0 3px var(--bc),inset 0 0 0 6px rgb(0 0 0/.4),0 0 8px var(--bc)}
+[data-skin=gem] [data-c="1"]{--bc:#ffd23f}[data-skin=gem] [data-c="2"]{--bc:#3fe08a}[data-skin=gem] [data-c="3"]{--bc:#3fb4ff}[data-skin=gem] [data-c="4"]{--bc:#ff5470}[data-skin=gem] [data-c="5"]{--bc:#ff8a1c}[data-skin=gem] [data-c="6"]{--bc:#9b6bff}[data-skin=gem] [data-c="7"]{--bc:#ff6fd0}
+[data-skin=gem] .block-board>i.filled,[data-skin=gem] .block-piece>i,[data-skin=gem] .block-fx>b>i{background:linear-gradient(135deg,rgb(255 255 255/.85) 0 16%,var(--bc) 16% 55%,color-mix(in srgb,var(--bc) 65%,#000) 55% 100%);box-shadow:inset 0 0 0 2px rgb(255 255 255/.4),inset 0 -3px 0 rgb(0 0 0/.25)}
+[data-skin=gold] [data-c="1"]{--bc:#ffd23f}[data-skin=gold] [data-c="2"]{--bc:#f5b82e}[data-skin=gold] [data-c="3"]{--bc:#ffe27a}[data-skin=gold] [data-c="4"]{--bc:#e8a521}[data-skin=gold] [data-c="5"]{--bc:#ffcf4d}[data-skin=gold] [data-c="6"]{--bc:#f7c948}[data-skin=gold] [data-c="7"]{--bc:#ffdc6b}
+[data-skin=gold] .block-board>i.filled,[data-skin=gold] .block-piece>i,[data-skin=gold] .block-fx>b>i{background:linear-gradient(160deg,#fff6c4 0 22%,var(--bc) 22% 68%,#b07a0c 68% 100%);box-shadow:inset 0 0 0 2px #fff3a3,inset 0 -3px 0 #8a5a06}
+[data-skin=galaxy] [data-c="1"]{--bc:#6b5cff}[data-skin=galaxy] [data-c="2"]{--bc:#2fb88a}[data-skin=galaxy] [data-c="3"]{--bc:#2a7fff}[data-skin=galaxy] [data-c="4"]{--bc:#d63a6e}[data-skin=galaxy] [data-c="5"]{--bc:#e0702a}[data-skin=galaxy] [data-c="6"]{--bc:#8e3bff}[data-skin=galaxy] [data-c="7"]{--bc:#c43bc8}
+[data-skin=galaxy] .block-board>i.filled,[data-skin=galaxy] .block-piece>i,[data-skin=galaxy] .block-fx>b>i{background:radial-gradient(circle at 28% 30%,#fff 0 1.5px,transparent 2px),radial-gradient(circle at 70% 64%,rgb(255 255 255/.8) 0 1px,transparent 1.6px),radial-gradient(circle at 55% 22%,rgb(255 255 255/.6) 0 1px,transparent 1.4px),linear-gradient(135deg,var(--bc),#1b1440);box-shadow:inset 0 0 0 2px rgb(255 255 255/.25),0 0 6px color-mix(in srgb,var(--bc) 70%,transparent)}
+/* 올 클리어: 판 전체에 대각선 무지개 물결이 지나간 뒤 새 디자인으로 바뀐다. */
+.fx-wave{z-index:3;background:var(--bc);opacity:0;animation:fx-wave 520ms steps(7,end) var(--wave) both}
+@keyframes fx-wave{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.1)}65%{opacity:.9;transform:none}100%{opacity:0;transform:scale(.6)}}
+.fx-skin-name{padding:var(--s1) var(--s3);background:var(--mint);color:var(--ink);font-size:var(--text-lg);font-style:normal;white-space:nowrap;box-shadow:inset 0 var(--px) 0 var(--mint-hi),var(--ring)}
+.fx-banner.all-clear{animation-duration:1800ms}
+@media(prefers-reduced-motion:reduce){.fx-wave{display:none}}

@@ -74,7 +74,8 @@ function blockAnswers(value:unknown):BlockAnswer[]|null{
   for(const item of value){
     if(!item||typeof item!=='object'||Array.isArray(item))return null;
     const event=Object.fromEntries(Object.entries(item));
-    if(!integerIn(event.answer,0,9)||event.ms!==undefined&&!integerIn(event.ms,0,1000000000))return null;
+    // 세로셈 칸은 0~9, 검산 칸은 수 전체(최대 세 자리)다.
+    if(!integerIn(event.answer,0,999)||event.ms!==undefined&&!integerIn(event.ms,0,1000000000))return null;
     answers.push(event.ms===undefined?{answer:event.answer}:{answer:event.answer,ms:event.ms});
   }
   return answers;

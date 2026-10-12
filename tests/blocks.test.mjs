@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ALL_SHAPES, BLOCK_COLORS, BOARD_SIZE, shapeColor, SHAPES, blockTier, drawPieces, emptyBoard, fits, fitsAnywhere, place, shapeById } from '../src/game/blocks.ts';
+import { ALL_SHAPES, BLOCK_COLORS, BLOCK_HELP, clearPotential, BOARD_SIZE, shapeColor, SHAPES, blockTier, drawPieces, emptyBoard, fits, fitsAnywhere, place, shapeById } from '../src/game/blocks.ts';
 import { blockScore, createBlockRun, reduceBlockRun, blockPieces } from '../src/game/blockRun.ts';
 import { divisionSteps, seededRandom } from '../src/game/division.ts';
 
@@ -51,7 +51,7 @@ test('early draws always fit; a crowded board falls back to single cells',()=>{
   assert.ok(pieces.some(p=>p.id==='dot'));
 });
 
-const solve=run=>{for(const step of divisionSteps(run.problem.fact)){run=reduceBlockRun(run,{type:'input',key:String(step.expected)});run=reduceBlockRun(run,{type:'input',key:'Enter'});}return run;};
+const solve=run=>{for(const step of divisionSteps(run.problem.fact)){for(const key of String(step.expected))run=reduceBlockRun(run,{type:'input',key});run=reduceBlockRun(run,{type:'input',key:'Enter'});}return run;};
 const placeAll=run=>{
   for(let i=0;i<3&&run.phase==='place';i++){
     const piece=blockPieces(run)[i];if(!piece)continue;
@@ -107,4 +107,16 @@ test('placing reports the placed cells and the colors of cleared cells for the e
   assert.deepEqual(result.cleared.map(c=>c.index),[0,1,2,3,4,5,6,7]);
   assert.equal(result.cleared[7].color,shapeColor(shapeById('v2')));
   assert.equal(result.board[15],shapeColor(shapeById('v2')));
+});
+
+test('early rounds quietly offer a line-clearing piece more often, later rounds do not',()=>{
+  // 맨 아래 줄 7칸과 오른쪽 열 일부가 찬 판: h2·v2 같은 블록이면 줄을 지운다.
+  const cells=[];for(let c=0;c<6;c++)cells.push([7,c]);for(let r=3;r<7;r++)cells.push([r,7]);
+  const board=boardWith(cells);
+  const rate=(solved,seed)=>{const random=seededRandom(seed);let hits=0;for(let i=0;i<400;i++)if(drawPieces(random,board,solved).some(p=>clearPotential(board,p)>=100))hits++;return hits/400;};
+  const early=rate(0,11),late=rate(BLOCK_HELP.length,11);
+  assert.ok(early>late+.2,`${early} vs ${late}`);
+  assert.ok(early<1,'not every draw is helped, so it does not look rigged');
+  // 거의 찬 줄이 없는 빈 판에서는 돕지 않는다(초반이어도 난수를 더 쓰지 않아 일반 뽑기와 같다).
+  assert.deepEqual(drawPieces(seededRandom(5),emptyBoard(),0).map(p=>p.id),drawPieces(seededRandom(5),emptyBoard(),1).map(p=>p.id));
 });

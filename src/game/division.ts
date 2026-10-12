@@ -4,6 +4,7 @@ export const DIVISION_LESSONS:readonly DivisionLesson[]=[2,3,4,5,6,7,8,9,10];
 export type DivisionFact={readonly dividend:number;readonly divisor:number;readonly lesson:DivisionLesson};
 // quotient: 몫, product: 몫 한 자리×나누는 수, rest: 뺄셈의 차와 내려 쓴 숫자(마지막 rest는 나머지), check-*: 검산 두 줄.
 export type DivisionRow='quotient'|'product'|'rest'|'check-product'|'check-sum';
+// expected는 세로셈 칸이면 한 자리(0~9), 검산 칸이면 수 전체다.
 export type DivisionStep={readonly id:string;readonly row:DivisionRow;readonly stage:number;readonly place:number;readonly expected:number;readonly bringDown?:true};
 
 const digitsOf=(value:number)=>String(value).split('').map(Number);
@@ -33,7 +34,8 @@ export function divisionSteps(fact:DivisionFact):readonly DivisionStep[]{
     // 중간 차의 0은 쓰지 않고, 마지막 차(나머지)는 0이어도 쓴다.
     if(index===last||current>0)add('rest',stage,place,current);
   });
-  if(lesson===8){const product=divisor*divisionQuotient(fact);addNumber('check-product',0,product);addNumber('check-sum',0,product+divisionRemainder(fact));}
+  // 검산은 가로식이라 자리별로 나누지 않고 수 하나로 한 번에 입력한다(5×17=85, 85+2=87).
+  if(lesson===8){const product=divisor*divisionQuotient(fact);add('check-product',0,0,product);add('check-sum',0,0,product+divisionRemainder(fact));}
   return steps;
 }
 
@@ -99,7 +101,10 @@ export function reduceDivision(problem:DivisionProblem,action:DivisionAction):Di
     const events=[...problem.events,{step:problem.stepIndex,answer,...(action.ms!==undefined?{ms}:{})}];
     return answer===step.expected?{...problem,events,stepIndex:problem.stepIndex+1,entry:''}:{...problem,events,mistakes:problem.mistakes+1,entry:''};
   }
-  if(action.key==='Backspace'||action.key==='Delete')return {...problem,entry:''};
-  if(/^\d$/.test(action.key))return {...problem,entry:action.key};
+  // 세로셈 칸은 숫자 하나(새로 누르면 바뀜), 검산 칸은 세 자리까지 이어 쓴다.
+  const whole=step.row==='check-product'||step.row==='check-sum';
+  if(action.key==='Backspace')return {...problem,entry:whole?problem.entry.slice(0,-1):''};
+  if(action.key==='Delete')return {...problem,entry:''};
+  if(/^\d$/.test(action.key))return {...problem,entry:whole?(problem.entry+action.key).slice(0,3):action.key};
   return problem;
 }

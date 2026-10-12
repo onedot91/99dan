@@ -15,7 +15,7 @@ test('textbook examples follow the reference order',()=>{
   assert.equal(sequence({dividend:61,divisor:3,lesson:6}),'2 6 1 0');
   assert.equal(sequence({dividend:612,divisor:3,lesson:9}),'2 6 1 0 2 4 1 2 0');
   assert.equal(sequence({dividend:252,divisor:6,lesson:10}),'4 2 4 1 2 2 1 2 0');
-  assert.equal(sequence({dividend:55,divisor:4,lesson:8}),'1 4 1 5 3 1 2 3 5 2 5 5');
+  assert.equal(sequence({dividend:55,divisor:4,lesson:8}),'1 4 1 5 3 1 2 3 52 55');
 });
 
 test('42 ÷ 2 skips the zero difference and marks the brought-down digit',()=>{
@@ -31,7 +31,7 @@ test('every pooled problem rebuilds its quotient, products, remainder and check'
     for(const fact of pool){
       const steps=divisionSteps(fact),q=Math.floor(fact.dividend/fact.divisor),r=fact.dividend%fact.divisor;
       assert.equal(new Set(steps.map(s=>s.id)).size,steps.length);
-      assert.ok(steps.every(s=>Number.isInteger(s.expected)&&s.expected>=0&&s.expected<=9));
+      assert.ok(steps.every(s=>Number.isInteger(s.expected)&&s.expected>=0&&s.expected<=(s.row.startsWith('check')?999:9)));
       assert.equal(read(steps,'quotient'),q);
       if(lesson===2){assert.ok(steps.every(s=>s.row==='quotient'));continue;}
       const stages=Math.max(...steps.filter(s=>s.row==='product').map(s=>s.stage));
@@ -97,4 +97,16 @@ test('a problem accepts one digit at a time and counts wrong answers without mov
   assert.equal(problem.mistakes,1);
   assert.deepEqual(problem.events.map(e=>[e.step,e.answer]),[[0,3],[0,2],[1,4],[2,2],[3,1],[4,2],[5,0]]);
   press('5');assert.equal(problem.entry,'');
+});
+
+test('the check rows take the whole number at once (5 × 17 = 85, 85 + 2 = 87)',()=>{
+  let problem=createDivisionProblem({dividend:87,divisor:5,lesson:8});
+  const steps=divisionSteps(problem.fact),press=key=>{problem=reduceDivision(problem,{type:'input',key});};
+  assert.deepEqual(steps.slice(-2).map(s=>[s.row,s.expected]),[['check-product',85],['check-sum',87]]);
+  for(const s of steps.slice(0,-2)){press(String(s.expected));press('Enter');}
+  press('8');press('6');press('Backspace');press('5');assert.equal(problem.entry,'85');
+  press('Enter');assert.equal(problem.stepIndex,steps.length-1);
+  press('8');press('7');press('1');press('2');assert.equal(problem.entry,'871');
+  press('Enter');assert.equal(problem.mistakes,1);
+  press('8');press('7');press('Enter');assert.ok(divisionSolved(problem));
 });

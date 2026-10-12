@@ -87,31 +87,49 @@ const pieceSize=(piece:Shape)=>({rows:Math.max(...piece.cells.map(c=>c[0]))+1,co
 
 // 줄 지우기 연출: 지워진 칸이 줄을 따라 차례로 번쩍이고 조각나 흩어진다. 줄마다 빛줄기, 가운데 점수·칭찬·콤보 배너.
 const PRAISE=['','','좋아요!','멋져요!','대단해요!','최고예요!'] as const;
-function ClearEffect({clear}:{readonly clear:BlockClear}){
+// 올 클리어마다 블록 디자인이 다음 테마로 바뀐다(블록 블라스트처럼). 한 판 안에서만 바뀌고 점수와는 무관하다.
+export const BLOCK_SKINS=[{id:'classic',name:'기본'},{id:'candy',name:'사탕'},{id:'neon',name:'네온'},{id:'gem',name:'보석'},{id:'gold',name:'황금'},{id:'galaxy',name:'우주'}] as const;
+export type BlockSkin=typeof BLOCK_SKINS[number];
+// 연출 단계: 지운 줄 수(올 클리어는 최고 단계)만큼 화려해진다.
+// 1 파편·빛줄기 → 2 파편 증가·판 섬광·충격파 → 3 충격파 2겹·반짝이 별·무지개 테두리 → 4 이상 폭죽 비·큰 무지개 배너.
+export function ClearEffect({clear,nextSkin}:{readonly clear:BlockClear;readonly nextSkin?:BlockSkin}){
+  // 연출 도중 디자인이 바뀌어도 배너의 새 디자인 이름은 처음 값을 유지한 채 끝까지 보여 준다.
+  const [skinName]=useState(nextSkin?.name);
   const lines=clear.rows.length+clear.cols.length;
+  const tier=clear.allClear?4:Math.min(lines,4);
   const rows=clear.cells.map(c=>Math.floor(c.index/BOARD_SIZE)),cols=clear.cells.map(c=>c.index%BOARD_SIZE);
   const midRow=rows.reduce((a,b)=>a+b,0)/rows.length,midCol=cols.reduce((a,b)=>a+b,0)/cols.length;
+  const center={top:`${(midRow+.5)/BOARD_SIZE*100}%`,left:`${(midCol+.5)/BOARD_SIZE*100}%`};
   const banner=clear.allClear?'올 클리어!':PRAISE[Math.min(lines,5)]||null;
-  return <div className="block-fx" aria-hidden="true" data-lines={Math.min(lines,4)}>
+  const shards=tier>=3?5:tier===2?4:3,spread=tier>=3?1.6:tier===2?1.3:1;
+  // 같은 판이면 같은 모양이 나오도록 위치 난수는 key에서 만든다.
+  const rand=(n:number)=>{const x=Math.sin((clear.key+1)*9301+n*49297)*233280;return x-Math.floor(x);};
+  return <div className="block-fx" aria-hidden="true" data-lines={tier}>
+    {tier>=2&&<i className="fx-flash"/>}
+    {tier>=3&&<i className="fx-frame"/>}
     {clear.rows.map(r=><u key={`r${r}`} className="fx-beam" style={{gridRow:r+1,gridColumn:'1 / -1'}}/>)}
     {clear.cols.map(c=><u key={`c${c}`} className="fx-beam vertical" style={{gridColumn:c+1,gridRow:'1 / -1'}}/>)}
     {clear.cells.map(({index,color})=>{
-      const r=Math.floor(index/BOARD_SIZE),c=index%BOARD_SIZE,delay=Math.round(Math.hypot(r-midRow,c-midCol)*22);
+      const r=Math.floor(index/BOARD_SIZE),c=index%BOARD_SIZE,delay=Math.round(Math.hypot(r-midRow,c-midCol)*(tier>=3?16:22));
       const angle=Math.atan2(r-midRow+.01,c-midCol+.01);
       return <b key={index} data-c={color} style={{gridRow:r+1,gridColumn:c+1,'--delay':`${delay}ms`} as CSSProperties}>
         <i/>
-        {[0,1,2].map(k=>{const a=angle+(k-1)*.9,dist=40+((index*7+k*13)%30);return <s key={k} style={{'--dx':`${Math.cos(a)*dist}px`,'--dy':`${Math.sin(a)*dist-20}px`,'--spin':`${(k-1)*160}deg`} as CSSProperties}/>;})}
+        {Array.from({length:shards},(_,k)=>{const a=angle+(k-(shards-1)/2)*.75,dist=(40+((index*7+k*13)%30))*spread;return <s key={k} style={{'--dx':`${Math.cos(a)*dist}px`,'--dy':`${Math.sin(a)*dist-20*spread}px`,'--spin':`${(k-(shards-1)/2)*170}deg`} as CSSProperties}/>;})}
       </b>;
     })}
-    <em className="fx-points" style={{top:`${(midRow+.5)/BOARD_SIZE*100}%`,left:`${(midCol+.5)/BOARD_SIZE*100}%`}}>+{clear.points}</em>
-    {(banner||clear.combo>=2)&&<div className={`fx-banner${clear.allClear?' all-clear':''}`}>{banner&&<strong>{banner}</strong>}{clear.combo>=2&&<span>콤보 ×{clear.combo}</span>}</div>}
+    {tier>=2&&Array.from({length:tier-1},(_,k)=><i key={`ring${k}`} className="fx-ring" style={{...center,'--ring-delay':`${k*120}ms`} as CSSProperties}/>)}
+    {tier>=3&&Array.from({length:tier>=4?22:14},(_,k)=><i key={`star${k}`} className="fx-star" data-c={1+k%7} style={{top:`${8+rand(k)*84}%`,left:`${6+rand(k+50)*88}%`,'--star-delay':`${120+Math.round(rand(k+99)*420)}ms`} as CSSProperties}/>)}
+    {tier>=4&&Array.from({length:36},(_,k)=><i key={`conf${k}`} className="fx-confetti" data-c={1+k%7} style={{left:`${rand(k+200)*100}%`,'--fall-delay':`${Math.round(rand(k+300)*500)}ms`,'--sway':`${Math.round((rand(k+400)-.5)*80)}px`,'--fall-spin':`${Math.round((rand(k+500)-.5)*720)}deg`} as CSSProperties}/>)}
+    {clear.allClear&&Array.from({length:BOARD_SIZE*BOARD_SIZE},(_,i)=>{const r=Math.floor(i/BOARD_SIZE),c=i%BOARD_SIZE;return <i key={`wave${i}`} className="fx-wave" data-c={1+(r+c)%7} style={{gridRow:r+1,gridColumn:c+1,'--wave':`${(r+c)*45}ms`} as CSSProperties}/>;})}
+    <em className="fx-points" style={center}>+{clear.points}</em>
+    {(banner||clear.combo>=2)&&<div className={`fx-banner${tier>=3?' rainbow':''}${clear.allClear?' all-clear':''}`} data-lines={tier}>{banner&&<strong>{banner}</strong>}{clear.allClear&&skinName&&<em className="fx-skin-name">새 블록 · {skinName}</em>}{clear.combo>=2&&<span className={clear.combo>=4?'hot':''}>콤보 ×{clear.combo}</span>}</div>}
   </div>;
 }
 
 // 끌기는 다시 그리지 않고 ref로만 따라간다. 잡은 지점(블록 안의 비율)을 유지하고, 터치는 손가락 위로 띄운다.
 type Drag={readonly index:number;readonly startX:number;readonly startY:number;readonly grabX:number;readonly grabY:number;readonly lift:number;moved:boolean};
 type Spot={readonly row:number;readonly col:number};
-function BlockBoard({run,onPlace,selected,setSelected,onCue}:{readonly run:BlockRun;readonly onPlace:(piece:number,row:number,col:number)=>boolean;readonly selected:number|null;readonly setSelected:(index:number|null)=>void;readonly onCue:(cue:Cue)=>void}){
+function BlockBoard({run,onPlace,selected,setSelected,onCue,skin,nextSkin}:{readonly skin:BlockSkin;readonly nextSkin:BlockSkin;readonly run:BlockRun;readonly onPlace:(piece:number,row:number,col:number)=>boolean;readonly selected:number|null;readonly setSelected:(index:number|null)=>void;readonly onCue:(cue:Cue)=>void}){
   const boardRef=useRef<HTMLDivElement>(null);
   const ghostRef=useRef<HTMLDivElement>(null);
   const dragRef=useRef<Drag|null>(null);
@@ -210,20 +228,18 @@ function BlockBoard({run,onPlace,selected,setSelected,onCue}:{readonly run:Block
   // 줄을 지우면 판만 흔들린다(지운 줄 수만큼 세게). 화면 전체는 흔들지 않는다.
   useEffect(()=>{
     const clear=run.lastClear;if(!clear||clear.key!==run.lastPlace?.key||reducedMotion())return;
-    const n=clear.rows.length+clear.cols.length,amp=Math.min(10,3+n*2+(clear.allClear?4:0));
-    boardRef.current?.animate([{transform:'none'},{transform:`translate(${-amp}px,${amp/2}px)`},{transform:`translate(${amp}px,${-amp/2}px)`},{transform:`translate(${-amp/2}px,0)`},{transform:'none'}],{duration:260+n*40,easing:'steps(8,end)'});
+    const n=clear.rows.length+clear.cols.length,amp=Math.min(16,3+n*3+(clear.allClear?5:0));
+    boardRef.current?.animate([{transform:'none'},{transform:`translate(${-amp}px,${amp/2}px)`},{transform:`translate(${amp}px,${-amp/2}px)`},{transform:`translate(${-amp/2}px,0)`},{transform:'none'}],{duration:260+n*70,easing:'steps(8,end)'});
   },[run.lastClear?.key]);
   const placed=new Set(run.lastPlace?.cells??[]);
-  const filled=run.board.filter(Boolean).length;
-  const danger=placing&&filled>=BOARD_SIZE*BOARD_SIZE*.6;
   const over=run.ended==='stuck';
   const fresh=run.lastClear&&run.lastClear.key===run.lastPlace?.key?run.lastClear:null;
-  return <div className="block-area">
-    <div ref={boardRef} className={`block-board${selected!==null?' choosing':''}${danger?' danger':''}${over?' game-over':''}`} role="grid" aria-label={`블록 판${selected!==null?', 방향키로 옮기고 Enter로 놓기':''}`} tabIndex={placing?0:-1} onKeyDown={onBoardKey}
+  return <div className="block-area" data-skin={skin.id}>
+    <div ref={boardRef} className={`block-board${selected!==null?' choosing':''}${over?' game-over':''}`} role="grid" aria-label={`블록 판${selected!==null?', 방향키로 옮기고 Enter로 놓기':''}`} tabIndex={placing?0:-1} onKeyDown={onBoardKey}
       onPointerMove={event=>{if(selected!==null&&dragging===null&&event.pointerType==='mouse'){const c=pickCell(event);if(c&&(c.row!==cursor?.row||c.col!==cursor?.col))setCursor(c);}}}
       onClick={event=>{if(selected===null||!placing)return;const c=pickCell(event);if(c&&!tryPlace(selected,c.row,c.col))setCursor(c);}}>
       {run.board.map((value,i)=>{const p=preview.get(i),pop=placed.has(i)&&!!value;return <i key={`${i}:${pop?`p${run.lastPlace?.key}`:''}`} data-c={p===true?color:value||undefined} style={over?{'--row':Math.floor(i/BOARD_SIZE)} as CSSProperties:undefined} className={`${value?'filled':''}${p===true?' preview':p===false?' blocked':''}${willClear.has(i)?' will-clear':''}${pop?' placed':''}`}/>;})}
-      {fresh&&<ClearEffect key={fresh.key} clear={fresh}/>}
+      {fresh&&<ClearEffect key={fresh.key} clear={fresh} nextSkin={nextSkin}/>}
     </div>
     <div className={`block-tray${placing?' unlocked':' locked'}`} role="group" aria-label={placing?'놓을 블록':'문제를 풀면 나오는 블록'}>
       {/* 블록은 문제를 다 풀어야 공개된다. 푸는 동안은 물음표 칸만 보인다. */}
@@ -233,7 +249,7 @@ function BlockBoard({run,onPlace,selected,setSelected,onCue}:{readonly run:Block
         <PieceArt piece={piece}/></button>:<span key={`${run.history.length}:${index}`} className="block-slot used"/>)}
     </div>
     {/* 판 영역은 크기 컨테이너라 position:fixed의 기준이 되므로 끄는 블록은 body에 그린다. */}
-    {dragging!==null&&activePiece&&createPortal(<div ref={ghostRef} className={`block-ghost${target&&valid?' over-valid':''}`} aria-hidden="true"><PieceArt piece={activePiece}/></div>,document.body)}
+    {dragging!==null&&activePiece&&createPortal(<div ref={ghostRef} data-skin={skin.id} className={`block-ghost${target&&valid?' over-valid':''}`} aria-hidden="true"><PieceArt piece={activePiece}/></div>,document.body)}
   </div>;
 }
 
@@ -262,10 +278,18 @@ export function BlockPlay({game,onCue}:{readonly game:BlockGame;readonly onCue:(
     const place=run?.lastPlace;if(!run||!place)return;
     const clear=run.lastClear?.key===place.key?run.lastClear:null;
     if(!clear)onCue('place');
-    else if(clear.allClear)onCue('allclear');
+    else if(clear.allClear||clear.rows.length+clear.cols.length>=4)onCue('allclear');
     else onCue('clear',(clear.rows.length+clear.cols.length-1)*2+(clear.combo-1)*2);
   },[run?.lastPlace?.key]);
   // 문제를 다 풀면 도장을 잠깐 보여 주고(휴대폰은 이때 블록 화면으로 넘어간다) 블록이 열리는 소리.
+  // 올 클리어 횟수만큼 블록 디자인을 바꾼다. 무지개 물결이 판을 덮은 뒤(650ms) 새 디자인으로 바뀐다.
+  const [skinIndex,setSkinIndex]=useState(0);
+  useEffect(()=>{setSkinIndex(0);},[run?.seed]);
+  useEffect(()=>{
+    const clear=run?.lastClear;if(!clear?.allClear||clear.key!==run?.lastPlace?.key)return undefined;
+    const t=window.setTimeout(()=>setSkinIndex(i=>i+1),reducedMotion()?0:650);return()=>window.clearTimeout(t);
+  },[run?.lastClear?.key]);
+  const skin=BLOCK_SKINS[skinIndex%BLOCK_SKINS.length]!,nextSkin=BLOCK_SKINS[(skinIndex+1)%BLOCK_SKINS.length]!;
   const [handoff,setHandoff]=useState(false);
   const solvedBefore=useRef(run?.solved??0);
   useEffect(()=>{
@@ -295,7 +319,7 @@ export function BlockPlay({game,onCue}:{readonly game:BlockGame;readonly onCue:(
   const solving=run.phase==='solve'||handoff&&run.phase==='place';
   return <main className={`block-play${solving?' solving':' placing'}${handoff?' handoff':''}`}>
     <section className="block-field" aria-label="블록">
-      <BlockBoard run={run} onPlace={onPlace} selected={selected} setSelected={setSelected} onCue={onCue}/>
+      <BlockBoard run={run} onPlace={onPlace} selected={selected} setSelected={setSelected} onCue={onCue} skin={skin} nextSkin={nextSkin}/>
     </section>
     <section className="division-paper vertical-paper arcade-panel" key={run.history.length} aria-label="나눗셈">
       <DivisionBoard problem={run.problem} wrong={wrong}/>

@@ -11,6 +11,7 @@ import { Sprite } from './Sprite';
 import { TROPHY } from './PixelArt';
 import type { Friends } from '../game/useFriends';
 import { friendById } from '../game/friends';
+import { isSpare } from '../game/studentNumber';
 // The pet naps until the first home visit of the day on this device, then wakes up to say hi.
 const greetKey=(n:number)=>`gugudan-rush.greeted.${n}`;
 const today=()=>new Date().toLocaleDateString('sv');
@@ -19,6 +20,7 @@ type Mood='sleep'|'wake'|null;
 export function HomeScreen({game:g,exp,friends,studentNumber,onVertical,onBlock,onHall,verticalStarting,verticalBlocked,verticalSaving,verticalError,onVerticalRetry,blockSync}:{readonly game:RushGame;readonly exp:number;readonly friends:Friends;readonly studentNumber:number;readonly onVertical:(count:VerticalCount)=>void;readonly onBlock:()=>void;readonly onHall:()=>void;readonly verticalStarting:boolean;readonly verticalBlocked:boolean;readonly verticalSaving:boolean;readonly verticalError:boolean;readonly onVerticalRetry:()=>void;readonly blockSync:{readonly starting:boolean;readonly blocked:boolean;readonly saving:boolean;readonly error:boolean;readonly retry:()=>void}}){
   const [mood,setMood]=useState<Mood>(null);
   const [verticalChallenge,setVerticalChallenge]=useState<VerticalCount|null>(null);
+  const blockOpen=isSpare(studentNumber);
   const [block,setBlock]=useState(false);
   // The partner can arrive after the first render when it loads from the server.
   useEffect(()=>{if(friends.partner&&!greetedToday(studentNumber))setMood('sleep');},[friends.partner!==null,studentNumber]);
@@ -38,7 +40,7 @@ export function HomeScreen({game:g,exp,friends,studentNumber,onVertical,onBlock,
     </section>
     <nav className="mode-menu" aria-label="게임 선택">
       <div className="rush-card">
-        <div className="rush-durations challenge-options" role="group" aria-label="도전 선택">{DURATIONS.map(n=><button key={n} aria-pressed={verticalChallenge===null&&!block&&g.duration===n} disabled={verticalStarting} onClick={()=>{setVerticalChallenge(null);setBlock(false);g.setDuration(n);}}>{n}분</button>)}{([5,10] as const).map(count=><button key={count} className="vertical-challenge-option" aria-pressed={verticalChallenge===count} disabled={verticalStarting} onClick={()=>{setBlock(false);setVerticalChallenge(count);}}>{count}문제</button>)}<button className="vertical-challenge-option" aria-pressed={block} disabled={verticalStarting} onClick={()=>{setVerticalChallenge(null);setBlock(true);}}>블록</button></div>
+        <div className={`rush-durations challenge-options${blockOpen?' has-block':''}`} role="group" aria-label="도전 선택">{DURATIONS.map(n=><button key={n} aria-pressed={verticalChallenge===null&&!block&&g.duration===n} disabled={verticalStarting} onClick={()=>{setVerticalChallenge(null);setBlock(false);g.setDuration(n);}}>{n}분</button>)}{([5,10] as const).map(count=><button key={count} className="vertical-challenge-option" aria-pressed={verticalChallenge===count} disabled={verticalStarting} onClick={()=>{setBlock(false);setVerticalChallenge(count);}}>{count}문제</button>)}{/* 블록은 아직 시범 운영이라 예비 번호에서만 보인다. */}{blockOpen&&<button className="vertical-challenge-option" aria-pressed={block} disabled={verticalStarting} onClick={()=>{setVerticalChallenge(null);setBlock(true);}}>블록</button>}</div>
         <button className="rush-start" disabled={block?blockSync.starting||blockSync.blocked:verticalStarting||verticalChallenge!==null&&verticalBlocked} onClick={block?onBlock:verticalChallenge!==null?()=>onVertical(verticalChallenge):()=>g.start('rush')}><span className="mode-icon"><Icon name={block?'blocks':verticalChallenge?'book':'bolt'} size={30}/></span><strong>{(block?blockSync.starting:verticalStarting)?'불러오는 중':block?'블록 시작':verticalChallenge!==null?`${verticalChallenge}문제 도전 시작`:`${g.duration}분 도전 시작`}</strong><span className="start-cursor" aria-hidden="true">▶</span></button>
         {verticalChallenge!==null&&verticalBlocked&&(verticalSaving?<p className="challenge-error" role="status">점수 저장 중</p>:<div className="challenge-error" role="alert"><p>점수를 저장하지 못했습니다.</p><button className="quiet-button" disabled={verticalStarting} onClick={onVerticalRetry}>저장 재시도</button></div>)}
         {block&&blockSync.blocked&&(blockSync.saving?<p className="challenge-error" role="status">점수 저장 중</p>:<div className="challenge-error" role="alert"><p>점수를 저장하지 못했습니다.</p><button className="quiet-button" disabled={blockSync.starting} onClick={blockSync.retry}>저장 재시도</button></div>)}

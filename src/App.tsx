@@ -95,7 +95,8 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   const exitVertical=()=>{vertical.exit();g.setScreen('home');};
   const [blockStarting,setBlockStarting]=useState(false);
   const startBlock=async()=>{
-    if(blockStarting)return;
+    // 블록은 시범 운영 중이라 예비 번호에서만 시작한다.
+    if(blockStarting||!isSpare(studentNumber))return;
     setBlockStarting(true);
     const startingScreen=g.screen;
     try{const seed=await blockSync.begin();if(seed===null||currentScreen.current!==startingScreen)return;block.start(seed);g.setScreen('block-play');}

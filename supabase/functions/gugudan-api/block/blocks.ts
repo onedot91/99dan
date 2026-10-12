@@ -57,8 +57,37 @@ export function place(board:Board,piece:Shape,row:number,col:number):Placement|n
   return {board:next,rows,cols,placed:piece.cells.map(([r,c])=>(row+r)*BOARD_SIZE+col+c),cleared,points:piece.cells.length*BLOCK_CELL_POINTS+lineCount*BLOCK_LINE_POINTS+Math.max(0,lineCount-1)*BLOCK_MULTI_LINE_BONUS};
 }
 
+// 초반 도우미: 처음 몇 문제는 확률적으로, 판에 거의 찬 줄이 있을 때만 그 줄을 지울 수 있는 블록이 섞인 묶음을 고른다.
+// 매번 돕지 않고(확률이 문제마다 줄어듦) 묶음의 나머지 블록은 평소처럼 무작위라 학생이 알아채기 어렵다.
+export const BLOCK_HELP=[.8,.75,.65,.55,.45] as const;
+const HELP_CANDIDATES=8;
+// 이 블록을 어디에 놓으면 가장 좋은지: 지우는 줄 수 × 100 + 가장 많이 찬 줄의 칸 수.
+export function clearPotential(board:Board,piece:Shape):number{
+  let best=-1;
+  for(let row=0;row<BOARD_SIZE;row++)for(let col=0;col<BOARD_SIZE;col++){
+    const result=place(board,piece,row,col);if(!result)continue;
+    const lines=result.rows.length+result.cols.length;
+    let fullest=0;
+    if(!lines)for(let i=0;i<BOARD_SIZE;i++){let r=0,c=0;for(let j=0;j<BOARD_SIZE;j++){if(result.board[i*BOARD_SIZE+j])r++;if(result.board[j*BOARD_SIZE+i])c++;}fullest=Math.max(fullest,r,c);}
+    best=Math.max(best,lines*100+(lines?BOARD_SIZE:fullest));
+  }
+  return best;
+}
+const nearlyFullLine=(board:Board)=>{for(let i=0;i<BOARD_SIZE;i++){let r=0,c=0;for(let j=0;j<BOARD_SIZE;j++){if(board[i*BOARD_SIZE+j])r++;if(board[j*BOARD_SIZE+i])c++;}if(r>=4||c>=4)return true;}return false;};
+
 // 블록 3개를 뽑는다. 보장 수만큼은 지금 판 어딘가에 놓을 수 있는 블록이어야 한다.
 export function drawPieces(random:()=>number,board:Board,solved:number):readonly Shape[]{
+  const help=BLOCK_HELP[solved];
+  if(help===undefined||!nearlyFullLine(board)||random()>=help)return drawSet(random,board,solved);
+  let best:readonly Shape[]=[],bestScore=-1;
+  for(let n=0;n<HELP_CANDIDATES;n++){
+    const pieces=drawSet(random,board,solved),score=Math.max(...pieces.map(p=>clearPotential(board,p)));
+    if(score>=100)return pieces;
+    if(score>bestScore){best=pieces;bestScore=score;}
+  }
+  return best;
+}
+function drawSet(random:()=>number,board:Board,solved:number):readonly Shape[]{
   const tier=blockTier(solved),sample=()=>Math.min(1-Number.EPSILON,Math.max(0,random()));
   const draw=()=>{const roll=sample();const group=roll<tier.small?SHAPES.small:roll<tier.small+tier.medium?SHAPES.medium:SHAPES.large;return group[Math.floor(sample()*group.length)]!;};
   let best:Shape[]=[];
@@ -69,7 +98,6 @@ export function drawPieces(random:()=>number,board:Board,solved:number):readonly
     if(!best.length||fitting>best.filter(p=>fitsAnywhere(board,p)).length)best=pieces;
   }
   // 판이 너무 찼으면 보장해야 할 자리를 1칸 블록으로 채운다.
-  const dot=DOT;
   let needed=tier.guarantee-best.filter(p=>fitsAnywhere(board,p)).length;
-  return best.map(p=>needed>0&&!fitsAnywhere(board,p)?(needed--,dot):p);
+  return best.map(p=>needed>0&&!fitsAnywhere(board,p)?(needed--,DOT):p);
 }
