@@ -26,7 +26,7 @@ export function HallScreen({ready,studentNumber,initialDuration,initialPart='rus
     return()=>{active=false;window.clearInterval(poll);};
   },[part,duration,count,ready,retry,studentNumber]);
   return <main className="hall-screen"><div className="screen-heading"><PixelArt kind="trophy"/><h1>명예의 전당</h1></div>
-    <div className="hall-part-tabs" role="group" aria-label="기록 종류"><button aria-pressed={part==='rush'} onClick={()=>setPart('rush')}>구구단</button><button aria-pressed={part==='vertical'} onClick={()=>setPart('vertical')}>두 자리 수</button>{isSpare(studentNumber)&&<button aria-pressed={part==='block'} onClick={()=>setPart('block')}>블록</button>}</div>
+    <div className="hall-part-tabs" role="group" aria-label="기록 종류"><button aria-pressed={part==='rush'} onClick={()=>setPart('rush')}>구구단</button><button aria-pressed={part==='vertical'} onClick={()=>setPart('vertical')}>두 자리 수</button><button aria-pressed={part==='block'} onClick={()=>setPart('block')}>블록</button></div>
     {part==='rush'&&<div className="duration-tabs" role="group" aria-label="기록 단계">{DURATIONS.map(n=><button key={n} aria-pressed={duration===n} onClick={()=>setDuration(n)}>{n}분<span className="wide-only"> 도전</span></button>)}</div>}
     {part==='vertical'&&<><div className="duration-tabs hall-count-tabs" role="group" aria-label="문제 수">{([5,10] as const).map(n=><button key={n} aria-pressed={count===n} onClick={()=>setCount(n)}>{n}문제</button>)}</div><p className="hall-rule">최고 점수 · 최근 7일</p></>}
     {part==='block'&&<p className="hall-rule">최고 점수 · 최근 7일</p>}
