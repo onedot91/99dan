@@ -87,7 +87,7 @@
 .partner-tag{padding:0 var(--s2);background:var(--mint);color:var(--ink);box-shadow:var(--ring)}
 .friend-detail .friend-pick-button{background:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade),var(--ring),var(--drop)}
 .friend-tree{display:grid;gap:var(--s4)}
-.family-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s2)}
+.family-tabs{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:var(--s2)}
 .family-tabs button{position:relative;display:grid;place-items:center;height:calc(var(--cell) + 8px);padding:var(--s2);border:0;background:var(--panel);color:#3a3672;box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring)}
 .family-tabs button[aria-pressed=true]{background:var(--panel-hi);box-shadow:inset 0 0 0 var(--px) var(--yellow),var(--ring)}
 .family-tabs small{position:absolute;right:2px;bottom:0;font-size:13px;color:var(--paper);text-shadow:var(--text-outline)}

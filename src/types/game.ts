@@ -12,5 +12,6 @@ export type SessionResult={readonly id:string;readonly finishedAt?:string|null;r
 export const TABLES=[2,3,4,5,6,7,8,9] as const;
 export const MODE_LABELS={rush:'1분 도전',practice:'단별 연습',weak:'약점 연습'} as const;
 
-export const DURATIONS:readonly Duration[]=[1,2,3];
+// 2분 is no longer offered (2026-10-13); the type keeps 2 so earlier 2-minute records still load.
+export const DURATIONS:readonly Duration[]=[1,3];
 export const modeLabel=(mode:Mode,duration:Duration)=>mode==='rush'?`${duration}분 도전`:MODE_LABELS[mode];

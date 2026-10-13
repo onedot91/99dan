@@ -54,9 +54,9 @@ export function masteredIds(records:Records):ReadonlySet<string>{
 // answers, then a flat 50 per level with no cap. Each level grants one friend pick.
 // Keep in sync with supabase/migrations/20260929000000_slower_levels.sql.
 export const LEVEL_STEP=50;
-// Experience per finished two-digit question; a times-table answer is worth 1. Keep in sync with
-// supabase/migrations/20261012000000_vertical_exp.sql.
-export const VERTICAL_EXP_PER_QUESTION=20;
+// Experience per finished two-digit or Block question for runs started now; a times-table answer is worth 1.
+// Earlier runs keep the 20 they were stored with. Keep in sync with supabase/migrations/20261013000000_halve_run_exp.sql.
+export const VERTICAL_EXP_PER_QUESTION=10;
 const EARLY_STEPS=[10,20,30,40] as const;
 // Lifetime correct answers needed to reach a level.
 export function levelFloor(level:number):number{
@@ -65,7 +65,9 @@ export function levelFloor(level:number):number{
   return floor;
 }
 // Titles only name ranges of levels; they never change how fast levels come.
-export const TITLES=[[1,'초보 모험가'],[3,'숫자 탐험가'],[6,'곱셈 전사'],[10,'룬의 기사'],[15,'숫자 마법사'],[20,'곱셈 영웅'],[30,'별의 수호자'],[40,'전설의 대마법사'],[50,'곱셈 제왕'],[60,'곱셈 황제'],[70,'은하 정복자'],[80,'우주의 수호신'],[90,'불멸의 전설'],[100,'곱셈의 신']] as const;
+export const TITLES=[[1,'초보 모험가'],[3,'숫자 탐험가'],[6,'곱셈 전사'],[10,'룬의 기사'],[15,'숫자 마법사'],[20,'곱셈 영웅'],[30,'별의 수호자'],[40,'전설의 대마법사'],[50,'곱셈 제왕'],[60,'곱셈 황제'],[70,'은하 정복자'],[80,'우주의 수호신'],[90,'불멸의 전설'],[100,'곱셈의 신'],
+  // Past Lv.100 a new title every 10 levels up to Lv.200.
+  [110,'차원의 여행자'],[120,'시간의 마법사'],[130,'은하의 현자'],[140,'별을 빚는 자'],[150,'무한의 탐구자'],[160,'숫자의 창조주'],[170,'영원의 수호자'],[180,'천상의 지배자'],[190,'전설을 넘은 자'],[200,'곱셈 초월자']] as const;
 export type Level={readonly number:number;readonly label:string;readonly floor:number;readonly next:number|null};
 export function titleFor(level:number):string{
   return TITLES.reduce<string>((found,[from,label])=>level>=from?label:found,TITLES[0][1]);

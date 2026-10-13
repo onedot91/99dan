@@ -142,9 +142,17 @@
 - `blockBegin {id}` → `gugudan_block_begin`: 서버가 32비트 시드를 발급해 ID별로 저장한다. 같은 ID 재시도는 같은 시드, 다른 학생의 ID는 `RUN_CONFLICT`.
 - `blockFinish {id, ended, answers, moves}`: Edge가 기록을 정해진 모양으로 다시 만들고(`answers` ≤ 6000개 `{answer 0~9, ms?}`, `moves` ≤ 3000개 `{piece 0~2, row·col 0~7}`), `gugudan_block_seed`로 시드를 읽어 `replayBlockRun`으로 재생한다. 효과 없는 입력·남는 기록·끝난 방식 불일치는 400 `INVALID_REPLAY`. 재생한 점수·푼 문제·오답·지운 줄과 기록, SHA-256 해시를 `gugudan_block_finish`에 넘긴다. 같은 해시 재전송은 저장된 결과, 다른 해시는 `RUN_ALREADY_FINISHED`, 시드가 다르면 `RUN_SEED_MISMATCH`.
 - `blockLeaders`: 학생별 최근 7일 최고 점수 상위 5명(같은 점수는 먼저 달성한 순). `blockRecords`: 본인 최고 점수와 판 수.
-- 경험치: 끝낸 판의 푼 문제당 20(`gugudan_block_exp`, 두 자리 수와 같은 값). 프로필 `blockExp`, 펫 한도에도 반영.
+- 경험치: 끝낸 판의 푼 문제 × 판에 저장된 문제당 경험치(`gugudan_block_exp`, 두 자리 수와 같은 값, 아래 2026-10-13 변경 참고). 프로필 `blockExp`, 펫 한도에도 반영.
 - 교사: `gugudan_teacher_block_records`가 학생별 최근 5판·`blockExp`·전체 기록 기준 `verticalExp`를 준다(RPC가 없으면 생략되고 `canResetBlock:false`). 초기화 범위 `block`은 끝낸 판만 지운다.
 
 재생 엔진의 원본은 `src/game`이다. 바꾼 뒤 `node scripts/sync-edge-block.mjs`로 `supabase/functions/gugudan-api/block/`에 복사한다(`tests/block-replay.test.mjs`가 두 곳이 같은지 검사). 시드는 시작 때 학생 기기에 전달되므로 반응시간·풀이 과정의 부정 조작까지 막는 시험용 검증은 아니다.
 
 로컬 검증: 격리된 PostgreSQL에 `psql -f tests/block-bootstrap.sql` 후 `PGHOST=127.0.0.1 PGPORT=55436 PGDATABASE=99dan_block_20261012 PSQL=/opt/homebrew/bin/psql node --experimental-strip-types tests/block.pg.mjs`. 시드 발급·재시도, 재생 점수 저장·재시도, 충돌·거부, 7일 순위, 경험치·펫 한도, 교사 기록, 범위/개인/전체 초기화, 공개 역할 차단을 검사한다. 같은 스키마에서 `tests/teacher-reset.pg.mjs` 회귀도 통과했다.
+
+## 문제당 경험치 20 → 10 (2026-10-13)
+
+`migrations/20261013000000_halve_run_exp.sql`은 `gugudan_vertical_runs`·`gugudan_block_runs`에 `exp_per_question`을 추가한다. 열을 기본값 20으로 추가해 기존 판(진행 중 포함)은 20을 유지하고, 기본값을 10으로 바꿔 이후 시작하는 판부터 10을 쓴다. 상수 기본값이라 열 추가는 테이블을 다시 쓰지 않는다. `gugudan_vertical_exp`·`gugudan_block_exp`는 판마다 `문제 수 × exp_per_question`을 더한다. 이미 받은 경험치·레벨은 줄지 않는다. Edge Function 재배포는 필요 없다. 클라이언트 `VERTICAL_EXP_PER_QUESTION`(교사 화면의 이전 서버 대비 계산용)도 10으로 바꿨다.
+
+로컬 검증: `tests/block-bootstrap.sql`에 이 마이그레이션을 추가했고 `tests/block.pg.mjs`가 새 판 10, 기존 판 20을 함께 검사해 통과했다. 두 자리 수는 같은 DB에서 20/10 판과 미완료 판을 섞어 `gugudan_vertical_exp`·프로필 `verticalExp`가 150(5×20+5×10)인 것을 확인하고 롤백했다.
+
+2026-10-13 운영 반영: Supabase MCP `apply_migration`(이름 `halve_run_exp`)으로 적용했다. Edge Function 재배포 없음. 적용 전후 플레이어 23명, 두 자리 수 판 129개, 블록 판 7개의 개수와 해시(새 열 제외)가 같았고, 학생별 `verticalExp`·`blockExp`도 그대로였다. 기존 판은 모두 20, 두 테이블의 기본값은 10이다. 두 함수의 공개 역할 실행 차단과 service_role 실행 권한을 확인했다.

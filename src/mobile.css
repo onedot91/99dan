@@ -131,8 +131,6 @@
 }
 /* Narrowest phones: three-letter backgrounds plus "Lv.NN" still fit on one line. */
 @media(max-width:360px){
-  /* 도전 칩 6개가 한 줄에 안 들어가 3칸씩 두 줄로 둔다. */
-  .home .rush-durations.challenge-options.has-block{grid-template-columns:repeat(3,minmax(0,1fr))}
   .background-menu .background-option{gap:var(--s1);padding:var(--s1)}
   .background-menu .background-option i{width:16px;height:16px}
 }

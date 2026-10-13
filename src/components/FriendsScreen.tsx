@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AURAS, ELEMENTS, FAMILIES, FORMS, FRIENDS, MYTHS, TIER_LABEL, friendById, stepName } from '../game/friends';
+import { AURAS, ELEMENTS, FAMILIES, FORMS, FRIENDS, MYTHS, TIER_LABEL, familyOpen, friendById, stepName } from '../game/friends';
 import type { Friend } from '../game/friends';
 import type { Friends } from '../game/useFriends';
 import { FriendSprite } from './FriendSprite';
@@ -36,7 +36,7 @@ function TreeView({friends,onPick}:{readonly friends:Friends;readonly onPick:()=
   // Stage 5 shows the two myths of one legend at a time: the last legend tapped, else the first one.
   const [legend,setLegend]=useState(()=>friends.partner?.split('.').slice(0,4).join('.')??'');
   const branch=legend.split('.').length===4&&legend.startsWith(`${family}.${element}.`)?legend:`${family}.${element}.${FORMS[0]?.id}.${AURAS[0]?.id}`;
-  const open=(f:Friend)=>have.has(f.id)||(f.parent===null||have.has(f.parent));
+  const open=(f:Friend)=>have.has(f.id)||((f.parent===null||have.has(f.parent))&&familyOpen(f,friends.level));
   const node=(id:string)=>{
     const f=friendById(id);if(!f)return null;
     const state=have.has(id)?'owned':open(f)?'open':'locked';
@@ -53,7 +53,7 @@ function TreeView({friends,onPick}:{readonly friends:Friends;readonly onPick:()=
         <div className={`friend-portrait ${currentState}`}><FriendSprite id={current.id} silhouette={currentState!=='owned'}/></div>
         <h2>{currentState==='locked'?'???':current.name}</h2>
         <Stars tier={current.tier}/>
-        <p className="friend-blurb">{currentState==='owned'?current.blurb:currentState==='open'?'레벨 업하면 고를 수 있어요':(p=>p?`${p.name}${objectJosa(p.name)} 먼저 모아요`:'')(friendById(current.parent))}</p>
+        <p className="friend-blurb">{currentState==='owned'?current.blurb:currentState==='open'?'레벨 업하면 고를 수 있어요':!familyOpen(current,friends.level)?`Lv.${current.family.level}부터 만날 수 있어요`:(p=>p?`${p.name}${objectJosa(p.name)} 먼저 모아요`:'')(friendById(current.parent))}</p>
         {currentState==='owned'&&(friends.partner===current.id?<p className="partner-tag">함께 걷는 펫</p>:<button className="quiet-button" onClick={()=>friends.setPartner(current.id)}>함께 걷기</button>)}
       </>}
       {friends.pending>0&&<button className="primary-button friend-pick-button" onClick={onPick}>새 펫 고르기 ({friends.pending})</button>}

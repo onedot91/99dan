@@ -4,7 +4,7 @@ import type { BlockAction, BlockRun } from './blockRun';
 
 // 서버 저장은 useBlockSync가 맡는다. 연결이 없을 때도 결과 화면이 최고 기록을 보여 주도록 이 기기에도 번호별로 남긴다.
 const bestKey=(studentNumber:number)=>`gugudan-rush.block-best.${studentNumber}`;
-function loadBest(studentNumber:number):number|null{
+export function loadBest(studentNumber:number):number|null{
   try{const raw=localStorage.getItem(bestKey(studentNumber));const value=raw===null?NaN:Number(raw);return Number.isSafeInteger(value)&&value>=0?value:null;}
   catch{return null;}
 }

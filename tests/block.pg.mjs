@@ -57,6 +57,9 @@ select jsonb_build_object('teacher',public.gugudan_teacher_block_records());
 -- 학생 21의 판을 8일 전으로 옮기면 순위에서 빠지지만 경험치는 남는다.
 update public.gugudan_block_runs set finished_at=now()-interval '8 days' where student_number=21;
 select jsonb_build_object('weekly',public.gugudan_block_leaders(),'exp21',public.gugudan_block_exp(21));
+-- 마이그레이션 전에 시작한 판은 저장된 문제당 20을 그대로 쓴다.
+update public.gugudan_block_runs set exp_per_question=20 where id='${plan.find(p=>p.student===22&&p.stopAfter===Infinity).id}';
+select jsonb_build_object('exp22',public.gugudan_block_exp(22));
 -- 경험치가 펫 한도에 들어간다: 21번은 구구단 기록이 없어도 블록 경험치만큼 레벨이 오른다.
 select jsonb_build_object('friendsSaved',(select count(*) from (select public.gugudan_save_friends(21,'["cat"]'::jsonb,'cat')) saved));
 do $$ begin ${reject(`perform public.gugudan_teacher_reset_scoped(23,'["block","blocks"]')`,'INVALID_RESET_SCOPES')} ${reject(`perform public.gugudan_teacher_reset_scoped(23,'["block","block"]')`,'INVALID_RESET_SCOPES')} end $$;
@@ -86,14 +89,15 @@ const expected=[21,22,23].map(n=>({n,score:best(n)})).sort((a,b)=>b.score-a.scor
 assert.deepEqual(pick('leaders').map(r=>[r.studentNumber,r.score]),expected.map(e=>[e.n,e.score]));
 assert.deepEqual(pick('records23'),{best:best(23),runs:finished.filter(p=>p.student===23).length});
 assert.deepEqual(pick('records20'),{best:null,runs:0});
-assert.equal(pick('profile').blockExp,solvedOf(23)*20);
+assert.equal(pick('profile').blockExp,solvedOf(23)*10);
 const teacher=pick('teacher');
 assert.equal(teacher.length,23);
-assert.equal(teacher[22].blockExp,solvedOf(23)*20);
+assert.equal(teacher[22].blockExp,solvedOf(23)*10);
 assert.equal(teacher[22].blockSessions.length,finished.filter(p=>p.student===23).length,'only finished runs are listed');
 assert.deepEqual(teacher[19],{studentNumber:20,blockExp:0,verticalExp:0,blockSessions:[]});
 assert.deepEqual(pick('weekly').map(r=>r.studentNumber),expected.filter(e=>e.n!==21).map(e=>e.n));
-assert.equal(pick('exp21'),solvedOf(21)*20);
+assert.equal(pick('exp21'),solvedOf(21)*10);
+assert.equal(pick('exp22'),solvedOf(22)*10+plan.find(p=>p.student===22&&p.stopAfter===Infinity).run.solved*10,'an old run keeps 20 per question');
 assert.equal(pick('friendsSaved'),1);
 assert.deepEqual(pick('afterScoped'),{21:2,22:2,23:1});
 assert.equal(pick('open23'),true,'scoped reset keeps the unfinished run');

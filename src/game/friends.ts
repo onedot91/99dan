@@ -1,7 +1,8 @@
 // Friend tech tree: family (tier 1) → element (tier 2) → form (tier 3) → aura (tier 4) → myth (tier 5).
-// 12 families × (1 + 4 + 4·3 + 4·3·2 + 4·3·2·2) = 1068 friends. Each level grants one pick.
+// 16 families × (1 + 4 + 4·3 + 4·3·2 + 4·3·2·2) = 1424 friends. Each level grants one pick.
 export type Palette=readonly [light:string,base:string,shade:string];
-type Family={readonly id:string;readonly name:string;readonly blurb:string;readonly palette:Palette;readonly half:readonly string[]};
+// `level` holds a family back from offers until the student reaches it (the rest are open from Lv.1).
+type Family={readonly id:string;readonly name:string;readonly blurb:string;readonly palette:Palette;readonly half:readonly string[];readonly level?:number};
 type Branch={readonly id:string;readonly name:string;readonly blurb:string};
 // Bodies are the left 8 columns; the right half is mirrored with highlights (L) turned to shade (G).
 export const FAMILIES:readonly Family[]=[
@@ -30,7 +31,16 @@ export const FAMILIES:readonly Family[]=[
   {id:'unicorn',name:'유니콘',blurb:'반짝반짝 꿈을 꿔요',palette:['#fff6c2','#ffe066','#d6a514'],half:[
     '.......o','......op','...o..oq','..oLo.op','.ooLLooL','oroLgggg','ofoLgggg','oyLgwegg','olLgeegg','obLggggg','ovLcgggg','.oLgggpp','..oLgpep','...oLppp','....oooo']},
   {id:'penguin',name:'펭귄',blurb:'추워도 씩씩해요',palette:['#8a9ad0','#3d4a80','#232a52'],half:[
-    '.....ooo','...ooLLL','..oLgggg','.oLggwww','.oLgwwew','.oLgweew','.oLgwwoo','.oLggwof','o.oLgwwo','ogoLgwww','ogoLgwww','.ooLgwww','..oLgwww','..oLggww','..offooo','..ooo...']}
+    '.....ooo','...ooLLL','..oLgggg','.oLggwww','.oLgwwew','.oLgweew','.oLgwwoo','.oLggwof','o.oLgwwo','ogoLgwww','ogoLgwww','.ooLgwww','..oLgwww','..oLggww','..offooo','..ooo...']},
+  // Lv.100 families: long ears, a spout, antennae and a five-point star, in rose, sea grey, lime and coral.
+  {id:'rabbit',name:'토끼',blurb:'깡총깡총 귀를 쫑긋해요',level:100,palette:['#ffe0e6','#f7a6bd','#c0607e'],half:[
+    '..oo....','.oLco...','.oLco...','.oLco...','.oLco...','..oLoooo','..oLLLLL','.oLggggg','oLgggggg','oLgweggg','oLgeeggg','oLcggggp','.oLgggpp','.oLggppp','..oLgggg','..oLgo..','..oooo..']},
+  {id:'whale',name:'고래',blurb:'푸우! 물을 뿜어요',level:100,palette:['#b8e0e8','#5fa8b8','#2f6a7a'],half:[
+    '.....b.b','......bb','.......b','...ooooo','.ooLLLLL','oLLggggg','oLgggggg','oLwegggg','oLeegggg','oLgcgggg','oLpppppp','oLpqpqpq','.oGppppp','..oooooo']},
+  {id:'alien',name:'외계인',blurb:'먼 별에서 놀러 왔어요',level:100,palette:['#e4ffb0','#a6e83c','#5f9a14'],half:[
+    '..y.....','..o.....','...o....','...ooooo','.ooLLLLL','oLLggggg','oLgggggg','oLgweegg','oLeeeegg','oLgeeggg','.oLggggg','..oLgggg','...ooLgg','..oLgggg','.oLgggvv','.oLgoLgv','..ooo.oo']},
+  {id:'comet',name:'별똥이',blurb:'소원을 들어줄게요',level:100,palette:['#ffc2b0','#ff6f59','#c23b2a'],half:[
+    '.......o','......oL','.....oLg','.....oLg','ooooooLg','oLLLLLgg','.oLggggg','..oLwegg','...oeegg','...oLgcg','..oLgggg','..oLgggg','.oLggo..','oLggo...','oooo....']}
 ];
 export const ELEMENTS:readonly (Branch&{readonly palette:Palette;readonly tail:readonly string[]})[]=[
   {id:'fire',name:'불꽃',blurb:'뜨거운 열정',palette:['#ffd0a0','#ff7a3c','#c23a1c'],tail:['...o..','..ofo.','.ofyfo','ofyhfo','ofyfo.','offo..','oo....']},
@@ -92,10 +102,12 @@ function shuffle<T>(items:readonly T[],next:()=>number):T[]{
 }
 // Three choices, seeded by student and pick count so a refresh can't reroll them:
 // up to two evolutions of different friends plus one new family when possible.
-export function offersFor(owned:readonly string[],studentNumber:number):readonly Friend[]{
+// Families above the student's level never enter the pool, so offers below Lv.100 stay as they were.
+export const familyOpen=(f:Friend,level:number)=>level>=(f.family.level??1);
+export function offersFor(owned:readonly string[],studentNumber:number,level:number):readonly Friend[]{
   const have=new Set(owned);
   const next=rng(studentNumber*7919+owned.length*104729+17);
-  const frontier=FRIENDS.filter(f=>!have.has(f.id)&&(f.parent===null||have.has(f.parent)));
+  const frontier=FRIENDS.filter(f=>!have.has(f.id)&&(f.parent===null||have.has(f.parent))&&familyOpen(f,level));
   const fresh=shuffle(frontier.filter(f=>f.tier===1),next);
   if(!owned.length)return fresh.slice(0,3);
   const evolutions=shuffle(frontier.filter(f=>f.tier>1),next);

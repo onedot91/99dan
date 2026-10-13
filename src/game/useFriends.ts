@@ -56,12 +56,12 @@ export function useFriends(studentNumber:number,totalCorrect:number,cloud:{reado
     setState(server);writeLocal(studentNumber,server);
   },[server]);
   const pending=isSpare(studentNumber)?0:Math.max(0,level-state.owned.length);
-  const offers=useMemo(()=>pending?offersFor(state.owned,studentNumber):[],[pending,state.owned,studentNumber]);
+  const offers=useMemo(()=>pending?offersFor(state.owned,studentNumber,level):[],[pending,state.owned,studentNumber,level]);
   const pick=(id:string)=>{
     if(!offers.some(f=>f.id===id))return;
     persist({owned:[...state.owned,id],partner:id});
   };
   const setPartner=(id:string)=>{if(state.owned.includes(id))persist({...state,partner:id});};
-  return {owned:state.owned,partner:friendById(state.partner)?state.partner:null,pending,offers,pick,setPartner,syncError,shared:cloud.friendsSync};
+  return {level,owned:state.owned,partner:friendById(state.partner)?state.partner:null,pending,offers,pick,setPartner,syncError,shared:cloud.friendsSync};
 }
 export type Friends=ReturnType<typeof useFriends>;
