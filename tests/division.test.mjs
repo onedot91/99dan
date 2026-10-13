@@ -50,7 +50,15 @@ test('every pooled problem rebuilds its quotient, products, remainder and check'
 
 test('rows that would start with a zero (200 ÷ 2, 602 ÷ 3) are never asked',()=>{
   const has=(lesson,dividend,divisor)=>divisionPool(lesson,true).some(f=>f.dividend===dividend&&f.divisor===divisor);
-  assert.ok(!has(9,200,2));assert.ok(!has(9,602,3));assert.ok(has(9,612,3));assert.ok(has(9,840,4));
+  assert.ok(!has(9,200,2));assert.ok(!has(9,602,3));assert.ok(!has(9,800,4));assert.ok(has(9,612,3));assert.ok(has(9,840,4));
+});
+
+test('a zero quotient digit comes right after its bring-down, and a trailing zero goes straight into the quotient',()=>{
+  assert.equal(sequence({dividend:844,divisor:8,lesson:9}),'1 8 4 0 4 5 4 0 4');
+  // 840 ÷ 4: 4 − 4 = 0을 쓰고, 끝자리 0은 내려 쓰지 않고 몫에 0만 쓴다.
+  assert.deepEqual(divisionSteps({dividend:840,divisor:4,lesson:9}).map(s=>[s.row,s.place,s.expected]).slice(-3),[['product',1,4],['rest',1,0],['quotient',0,0]]);
+  assert.equal(sequence({dividend:100,divisor:2,lesson:10}),'5 1 0 0 0');
+  assert.equal(sequence({dividend:61,divisor:3,lesson:6}),'2 6 1 0');
 });
 
 test('lesson classification matches the curriculum rules',()=>{
@@ -109,4 +117,11 @@ test('the check rows take the whole number at once (5 × 17 = 85, 85 + 2 = 87)',
   press('8');press('7');press('1');press('2');assert.equal(problem.entry,'871');
   press('Enter');assert.equal(problem.mistakes,1);
   press('8');press('7');press('Enter');assert.ok(divisionSolved(problem));
+});
+
+test('every row is filled from its leading digit (quotient, products and brought-down rows)',()=>{
+  for(const lesson of DIVISION_LESSONS)for(const variant of [false,true])for(const fact of divisionPool(lesson,variant)){
+    const steps=divisionSteps(fact);
+    steps.forEach((a,i)=>steps.slice(i+1).forEach(b=>{if(a.row===b.row&&(a.row==='quotient'||a.stage===b.stage))assert.ok(a.place>b.place,`${fact.dividend}÷${fact.divisor} ${a.row}`);}));
+  }
 });

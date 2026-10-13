@@ -5,7 +5,7 @@ import { divisionQuotient, divisionRemainder, divisionSteps } from '../game/divi
 import type { DivisionProblem, DivisionStep } from '../game/division';
 import { BOARD_SIZE, fits, place, shapeColor } from '../game/blocks';
 import type { Shape } from '../game/blocks';
-import { blockPieces, blockScore } from '../game/blockRun';
+import { BLOCK_MASH_PENALTY, blockPieces, blockScore } from '../game/blockRun';
 import type { BlockClear, BlockRun } from '../game/blockRun';
 import type { BlockGame } from '../game/useBlockGame';
 import type { BlockSync } from '../cloud/useBlockSync';
@@ -298,6 +298,15 @@ export function BlockPlay({game,onCue}:{readonly game:BlockGame;readonly onCue:(
     const cue=window.setTimeout(()=>onCue('unlock'),220),done=window.setTimeout(()=>setHandoff(false),reducedMotion()?200:650);
     return()=>{window.clearTimeout(cue);window.clearTimeout(done);};
   },[run?.solved]);
+  // 찍기 감점(연타·같은 칸 세 번째 오답부터): 감점이 늘면 세로셈 위에 -30 도장을 찍고 종이를 흔든다(점수가 0이어도 보인다).
+  const [mash,setMash]=useState(0);
+  const mashesBefore=useRef(run?.mashes??0);
+  useEffect(()=>{
+    const now=run?.mashes??0,grew=now>mashesBefore.current;mashesBefore.current=now;
+    if(!grew)return undefined;
+    setMash(now);onCue('invalid');
+    const t=window.setTimeout(()=>setMash(0),reducedMotion()?900:1300);return()=>window.clearTimeout(t);
+  },[run?.mashes]);
   useEffect(()=>{setSelected(null);},[run?.history.length,run?.phase]);
   useEffect(()=>{
     if(run?.phase==='solve'){active.current=document.querySelector<HTMLElement>('.division-board .vertical-cell[aria-current="step"]');active.current?.focus({preventScroll:true});}
@@ -321,9 +330,10 @@ export function BlockPlay({game,onCue}:{readonly game:BlockGame;readonly onCue:(
     <section className="block-field" aria-label="블록">
       <BlockBoard run={run} onPlace={onPlace} selected={selected} setSelected={setSelected} onCue={onCue} skin={skin} nextSkin={nextSkin}/>
     </section>
-    <section className="division-paper vertical-paper arcade-panel" key={run.history.length} aria-label="나눗셈">
+    <section className={`division-paper vertical-paper arcade-panel${mash>0?' mashed':''}`} key={run.history.length} aria-label="나눗셈">
       <DivisionBoard problem={run.problem} wrong={wrong}/>
       {handoff&&<div className="vertical-check-stamp block-stamp" aria-hidden="true"><Icon name="check" size={80}/><Burst/></div>}
+      {mash>0&&<div key={mash} className="block-mash" role="alert"><strong>-{BLOCK_MASH_PENALTY}</strong><span>천천히 생각해요!</span></div>}
     </section>
     <section className="vertical-controls block-controls" aria-label="숫자 입력">
       <span className="vertical-sr-only" role="status" aria-live="polite">{solving?wrong?'이 칸을 다시 풀어 봐요.':'':'블록을 판에 놓아요.'}</span>

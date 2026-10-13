@@ -4,6 +4,9 @@ import { drawPieces, emptyBoard, fitsAnywhere, place, shapeById } from './blocks
 import type { Board, Shape } from './blocks.ts';
 import { VERTICAL_CORRECT_POINTS, WRONG_PENALTY } from './points.ts';
 
+// 빈칸 오답은 감점하지 않는다. 예외로 찍기만 감점한다: 같은 칸에서 직전 오답 뒤 1초 안에 또 틀리거나(번호 연타),
+// 같은 칸에서 세 번째 이후로 틀리면(하나씩 넣어 보기) 그 오답마다 감점한다.
+
 // 한 판: 블록 3개를 먼저 보여 주고, 나눗셈을 풀면 놓을 수 있다. 3개를 다 놓으면 다음 문제.
 // 새로 받은 블록이나 남은 블록을 하나도 놓을 수 없으면 끝난다(무한 모드).
 export type BlockPhase='solve'|'place'|'over';
@@ -16,13 +19,14 @@ export type BlockPlace={readonly key:number;readonly cells:readonly number[];rea
 export type BlockRun={
   readonly seed:number;readonly rng:number;readonly history:readonly DivisionFact[];readonly problem:DivisionProblem;
   readonly board:Board;readonly pieces:readonly (string|null)[];readonly phase:BlockPhase;readonly ended:'stuck'|'stopped'|null;
-  readonly solved:number;readonly mistakes:number;readonly blockScore:number;readonly lines:number;readonly answers:readonly BlockAnswer[];readonly moves:readonly BlockMove[];readonly lastClear:BlockClear|null;
+  readonly solved:number;readonly mistakes:number;readonly mashes:number;readonly blockScore:number;readonly lines:number;readonly answers:readonly BlockAnswer[];readonly moves:readonly BlockMove[];readonly lastClear:BlockClear|null;
   readonly lastPlace:BlockPlace|null;readonly combo:number;readonly sinceClear:number;readonly bestCombo:number;
 };
 export type BlockAction={readonly type:'input';readonly key:string;readonly ms?:number}|{readonly type:'place';readonly piece:number;readonly row:number;readonly col:number}|{readonly type:'stop'};
 
 export const blockPieces=(run:BlockRun):readonly (Shape|null)[]=>run.pieces.map(id=>id===null?null:shapeById(id)??null);
-export const blockCalcScore=(run:BlockRun)=>run.solved*VERTICAL_CORRECT_POINTS-run.mistakes*WRONG_PENALTY;
+export const BLOCK_MASH_MS=1000,BLOCK_FREE_TRIES=2,BLOCK_MASH_PENALTY=WRONG_PENALTY;
+export const blockCalcScore=(run:BlockRun)=>run.solved*VERTICAL_CORRECT_POINTS-run.mashes*BLOCK_MASH_PENALTY;
 export const blockScore=(run:BlockRun)=>Math.max(0,blockCalcScore(run)+run.blockScore);
 
 function nextRound(run:Omit<BlockRun,'problem'|'pieces'|'phase'|'rng'|'history'>&{readonly rng:number;readonly history:readonly DivisionFact[]}):BlockRun{
@@ -33,7 +37,7 @@ function nextRound(run:Omit<BlockRun,'problem'|'pieces'|'phase'|'rng'|'history'>
   return {...run,rng:generator.state,history:[...run.history,fact],problem:createDivisionProblem(fact),pieces:pieces.map(p=>p.id),phase:stuck?'over':'solve',ended:stuck?'stuck':null};
 }
 export function createBlockRun(seed:number=Math.floor(Math.random()*2**32)):BlockRun{
-  return nextRound({seed,rng:seed>>>0,history:[],board:emptyBoard(),ended:null,solved:0,mistakes:0,blockScore:0,lines:0,answers:[],moves:[],lastClear:null,lastPlace:null,combo:0,sinceClear:0,bestCombo:0});
+  return nextRound({seed,rng:seed>>>0,history:[],board:emptyBoard(),ended:null,solved:0,mistakes:0,mashes:0,blockScore:0,lines:0,answers:[],moves:[],lastClear:null,lastPlace:null,combo:0,sinceClear:0,bestCombo:0});
 }
 
 export function reduceBlockRun(run:BlockRun,action:BlockAction):BlockRun{
@@ -46,7 +50,12 @@ export function reduceBlockRun(run:BlockRun,action:BlockAction):BlockRun{
     const mistakes=run.mistakes+problem.mistakes-before.mistakes;
     const submitted=problem.events.length>before.events.length?problem.events.at(-1):undefined;
     const answers=submitted?[...run.answers,{answer:submitted.answer,...(submitted.ms!==undefined?{ms:submitted.ms}:{})}]:run.answers;
-    return divisionSolved(problem)?{...run,problem,mistakes,answers,solved:run.solved+1,phase:'place'}:{...run,problem,mistakes,answers};
+    // 같은 칸의 직전 기록은 늘 오답이다(정답이면 다음 칸으로 넘어가므로). ms는 칸을 시작한 뒤 흐른 시간이다.
+    const previous=before.events.at(-1),triedBefore=submitted?before.events.filter(e=>e.step===submitted.step).length:0;
+    const fast=!!submitted&&!!previous&&previous.step===submitted.step&&submitted.ms!==undefined&&previous.ms!==undefined&&submitted.ms-previous.ms<BLOCK_MASH_MS;
+    const mashed=mistakes>run.mistakes&&(fast||triedBefore>=BLOCK_FREE_TRIES);
+    const mashes=run.mashes+(mashed?1:0);
+    return divisionSolved(problem)?{...run,problem,mistakes,mashes,answers,solved:run.solved+1,phase:'place'}:{...run,problem,mistakes,mashes,answers};
   }
   if(run.phase!=='place')return run;
   const piece=run.pieces[action.piece]?shapeById(run.pieces[action.piece]!):undefined;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ALL_SHAPES, BLOCK_COLORS, BLOCK_HELP, clearPotential, BOARD_SIZE, shapeColor, SHAPES, blockTier, drawPieces, emptyBoard, fits, fitsAnywhere, place, shapeById } from '../src/game/blocks.ts';
-import { blockScore, createBlockRun, reduceBlockRun, blockPieces } from '../src/game/blockRun.ts';
+import { BLOCK_MASH_MS, BLOCK_MASH_PENALTY, blockScore, createBlockRun, reduceBlockRun, blockPieces } from '../src/game/blockRun.ts';
 import { divisionSteps, seededRandom } from '../src/game/division.ts';
 
 const boardWith=cells=>{const b=emptyBoard();for(const [r,c] of cells)b[r*BOARD_SIZE+c]=1;return b;};
@@ -61,7 +61,7 @@ const placeAll=run=>{
   return run;
 };
 
-test('a run alternates solving and placing, and wrong answers cost points',()=>{
+test('a run alternates solving and placing, and a single wrong answer costs nothing',()=>{
   let run=createBlockRun(42);
   assert.equal(run.phase,'solve');
   assert.equal(reduceBlockRun(run,{type:'place',piece:0,row:0,col:0}),run);
@@ -73,7 +73,28 @@ test('a run alternates solving and placing, and wrong answers cost points',()=>{
   const cells=blockPieces(run).reduce((n,p)=>n+p.cells.length,0);
   run=placeAll(run);
   assert.equal(run.phase,'solve');assert.equal(run.history.length,2);
-  assert.equal(blockScore(run),200-30+cells);
+  assert.equal(blockScore(run),200+cells);
+});
+
+test('only guessing costs points: a wrong answer within a second, or the third wrong answer on one cell',()=>{
+  let run=createBlockRun(42);
+  const expected=divisionSteps(run.problem.fact)[0].expected,wrong=String((expected+1)%10),other=String((expected+2)%10);
+  const answer=(key,ms)=>{run=reduceBlockRun(reduceBlockRun(run,{type:'input',key,ms}),{type:'input',key:'Enter',ms});};
+  answer(wrong,3000);
+  assert.deepEqual([run.mistakes,run.mashes],[1,0]);
+  answer(other,3000+BLOCK_MASH_MS);
+  assert.deepEqual([run.mistakes,run.mashes],[2,0],'a second wrong try after a pause is free');
+  answer(wrong,3000+BLOCK_MASH_MS+400);
+  assert.deepEqual([run.mistakes,run.mashes],[3,1]);
+  answer(String(expected),3000+BLOCK_MASH_MS+600);
+  assert.equal(run.mashes,1,'a quick right answer is never a mash');
+  // 천천히 하나씩 넣어 봐도 같은 칸에서 세 번째 오답부터는 감점한다.
+  const cell=divisionSteps(run.problem.fact)[run.problem.stepIndex].expected,guesses=[1,2,3,4].map(n=>String((cell+n)%10));
+  guesses.forEach((g,i)=>answer(g,(i+1)*5000));
+  assert.equal(run.mashes,3,'tries 3 and 4 on one cell cost points');
+  for(const step of divisionSteps(run.problem.fact).slice(run.problem.stepIndex))answer(String(step.expected),60000);
+  assert.equal(run.phase,'place');
+  assert.equal(blockScore(run),200-3*BLOCK_MASH_PENALTY);
 });
 
 test('the same seed replays the same problems and pieces',()=>{

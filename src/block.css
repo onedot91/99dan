@@ -147,3 +147,12 @@
 .fx-skin-name{padding:var(--s1) var(--s3);background:var(--mint);color:var(--ink);font-size:var(--text-lg);font-style:normal;white-space:nowrap;box-shadow:inset 0 var(--px) 0 var(--mint-hi),var(--ring)}
 .fx-banner.all-clear{animation-duration:1800ms}
 @media(prefers-reduced-motion:reduce){.fx-wave{display:none}}
+
+/* 번호 연타 감점: 세로셈 위에 -30 도장, 종이가 짧게 좌우로 흔들린다. */
+.block-mash{position:absolute;left:50%;top:var(--s4);z-index:4;translate:-50% 0;display:flex;align-items:baseline;gap:var(--s2);padding:var(--s2) var(--s4);background:var(--coral);color:var(--ink);box-shadow:var(--ring);font-family:var(--mono);white-space:nowrap;pointer-events:none;animation:block-mash 1300ms steps(10,end) both}
+.block-mash strong{font-size:var(--text-xl);font-weight:inherit}
+.block-mash span{font-size:var(--text-base)}
+.division-paper.mashed{animation:block-mash-shake 360ms steps(6,end)}
+@keyframes block-mash{0%{opacity:0;transform:translateY(var(--s4)) scale(1.4)}15%{opacity:1;transform:scale(.92)}25%,75%{opacity:1;transform:none}100%{opacity:0;transform:translateY(calc(-1 * var(--s4)))}}
+@keyframes block-mash-shake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@media(prefers-reduced-motion:reduce){.block-mash{animation:none}.division-paper.mashed{animation:none}}

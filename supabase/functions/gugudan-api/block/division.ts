@@ -21,6 +21,9 @@ export function divisionSteps(fact:DivisionFact):readonly DivisionStep[]{
   let current=0,stage=-1;
   digits.forEach((digit,index)=>{
     const place=last-index;
+    // 앞에서 나누어떨어지고 마지막 숫자가 0이면 내려 쓰지 않고 몫에 0만 쓴다(220÷2 → 110).
+    if(index===last&&digit===0&&stage>=0&&current===0){add('quotient',stage+1,place,0);return;}
+    // 내려 쓴 숫자로 나눌 수 없으면(844÷8의 4) 내려 쓴 뒤 몫에 0을 쓴다.
     if(stage>=0)add('rest',stage,place,digit,true);
     current=current*10+digit;
     if(stage<0&&current<divisor)return;
@@ -31,8 +34,9 @@ export function divisionSteps(fact:DivisionFact):readonly DivisionStep[]{
     stage++;
     addNumber('product',stage,q*divisor,place);
     current-=q*divisor;
-    // 중간 차의 0은 쓰지 않고, 마지막 차(나머지)는 0이어도 쓴다.
-    if(index===last||current>0)add('rest',stage,place,current);
+    // 중간 차의 0은 쓰지 않고, 마지막 차(나머지)는 0이어도 쓴다. 남은 숫자가 끝자리 0 하나뿐이면 이 차가 마지막 차다.
+    const finalRest=index===last||(index===last-1&&digits[last]===0&&current===0);
+    if(finalRest||current>0)add('rest',stage,place,current);
   });
   // 검산은 가로식이라 자리별로 나누지 않고 수 하나로 한 번에 입력한다(5×17=85, 85+2=87).
   if(lesson===8){const product=divisor*divisionQuotient(fact);add('check-product',0,0,product);add('check-sum',0,0,product+divisionRemainder(fact));}
@@ -52,7 +56,8 @@ export function divisionLessonOf(dividend:number,divisor:number):{readonly lesso
 }
 
 // 내려 쓴 줄이 0으로 시작하는 세로식(200÷2의 00, 602÷3의 02)은 교과서에 나오지 않으므로 내지 않는다.
-const readableRows=(fact:DivisionFact)=>{const rest=divisionSteps(fact).filter(s=>s.row==='rest');return rest.every(s=>s.expected!==0||!rest.some(o=>o.stage===s.stage&&o.place<s.place));};
+// 0만 내려 쓴 줄(200÷2의 0)도 같은 이유로 내지 않는다.
+const readableRows=(fact:DivisionFact)=>{const rest=divisionSteps(fact).filter(s=>s.row==='rest');return rest.every(s=>s.expected!==0||!rest.some(o=>o.stage===s.stage&&o.place<s.place)&&!(s.bringDown&&!rest.some(o=>o.stage===s.stage&&o.place>s.place)));};
 const pools=new Map<string,readonly DivisionFact[]>();
 export function divisionPool(lesson:DivisionLesson,variant=false):readonly DivisionFact[]{
   const key=`${lesson}:${variant}`,previous=pools.get(key);if(previous)return previous;
