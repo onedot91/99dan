@@ -156,3 +156,9 @@
 로컬 검증: `tests/block-bootstrap.sql`에 이 마이그레이션을 추가했고 `tests/block.pg.mjs`가 새 판 10, 기존 판 20을 함께 검사해 통과했다. 두 자리 수는 같은 DB에서 20/10 판과 미완료 판을 섞어 `gugudan_vertical_exp`·프로필 `verticalExp`가 150(5×20+5×10)인 것을 확인하고 롤백했다.
 
 2026-10-13 운영 반영: Supabase MCP `apply_migration`(이름 `halve_run_exp`)으로 적용했다. Edge Function 재배포 없음. 적용 전후 플레이어 23명, 두 자리 수 판 129개, 블록 판 7개의 개수와 해시(새 열 제외)가 같았고, 학생별 `verticalExp`·`blockExp`도 그대로였다. 기존 판은 모두 20, 두 테이블의 기본값은 10이다. 두 함수의 공개 역할 실행 차단과 service_role 실행 권한을 확인했다.
+
+## 교사 화면 종목별 최고 기록 (2026-10-13)
+
+`migrations/20261013120000_teacher_bests.sql`은 `gugudan_teacher_block_records`에 `verticalBest`(`{"5":점수|null,"10":점수|null}`, 학생 내 기록과 같이 칸별 채점 판만)와 `blockBest`(끝낸 판 최고 점수)를 더한다. `gugudan-api`는 이 두 값을 교사 기록에 그대로 넘긴다. 교사 화면은 `1분 · 3분 · 5문제 · 10문제 · 블록` 최고 점수를 보여 주고, 이전 서버면 최근 기록 중 최고로 대신한다.
+
+2026-10-13 운영 반영: MCP `apply_migration`(`teacher_bests`) 후 `gugudan-api` version 23 ACTIVE(`verify_jwt=false`, `index.ts`와 `block/` 4개 파일, `index.ts`는 한 줄 변경)를 배포했다. 함수 결과에서 학생별 최고 점수가 나오는 것을 확인했고, `tests/block-http.mjs` 20개와 `tests/vertical-tight-time-http.mjs` 18개가 통과했다. 교사 기록 HTTP 호출은 교사 코드가 필요해 실행하지 않았다.

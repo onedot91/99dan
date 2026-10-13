@@ -35,7 +35,7 @@
 .teacher-number.played-today .teacher-number-level{color:var(--ink)}
 .teacher-summary{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s3);color:var(--muted);font-size:14px}
 .teacher-summary strong{color:var(--paper);font-family:var(--mono)}
-.teacher-bests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+.teacher-bests{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s2)}
 .teacher-bests>div{display:grid;gap:var(--s1);min-width:0;padding:var(--s2);background:var(--bg);text-align:center}
 .teacher-bests span{color:var(--muted);font-size:14px}
 .teacher-bests strong{color:var(--yellow);font:900 var(--text-lg) var(--mono);overflow-wrap:anywhere}
@@ -77,6 +77,7 @@
  .teacher-list,.teacher-detail{padding:var(--s3)}
  .teacher-bests>div{padding:var(--s2) var(--s1)}
  .teacher-bests strong{font-size:clamp(14px,4vw,18px);white-space:nowrap}
+ .teacher-bests{gap:var(--s1)}.teacher-bests span{font-size:12px;white-space:nowrap}
 }
 @media(max-height:450px) and (min-width:701px){.teacher-screen{gap:var(--s2)}.teacher-list,.teacher-detail{padding:var(--s2)}}
 .teacher-app .header>.quiet-button{grid-column:3;justify-self:end}

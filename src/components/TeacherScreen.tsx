@@ -56,6 +56,15 @@ function TeacherDetail({profile,onReset,onSaveVertical}:{readonly profile:Shared
   const exp=expOf(profile);
   const level=levelFor(exp);
   const partner=friendById(profile.friends?.partner);
+  // All-time bests from the server; an older server only sends recent runs, so their best stands in.
+  const recentBest=(scores:readonly number[])=>scores.length?Math.max(...scores):null;
+  const other=profile.otherBests??{
+    vertical5:recentBest(profile.verticalSessions.filter(s=>s.count===5).map(s=>s.score)),
+    vertical10:recentBest(profile.verticalSessions.filter(s=>s.count===10).map(s=>s.score)),
+    block:recentBest(profile.blockSessions.map(s=>s.score))};
+  const bests:readonly (readonly [string,number|null|undefined])[]=[
+    ...DURATIONS.map(duration=>[`${duration}분`,profile.best.find(best=>best.duration===duration)?.score] as const),
+    ['5문제',other.vertical5],['10문제',other.vertical10],['블록',other.block]];
   return <section className="teacher-detail" aria-label={`${number}번 상세 기록`}>
     <div className="teacher-section-head"><h2>{number}번</h2><button className="quiet-button teacher-reset teacher-icon-button" aria-label="기록 초기화" title={`${number}번 기록 초기화`} onClick={onReset}><Icon name="trash" size={22}/></button></div>
     <div className="teacher-level">
@@ -64,7 +73,7 @@ function TeacherDetail({profile,onReset,onSaveVertical}:{readonly profile:Shared
       <div className="teacher-friend">{partner?<><FriendSprite id={partner.id}/><span><strong>{partner.name}</strong><small>펫 {profile.friends?.owned.length??0} / {FRIENDS.length}</small></span></>:<small>{profile.friends?'아직 고른 펫 없음':'펫은 서버 업데이트 후 표시'}</small>}</div>
     </div>
     <p className="teacher-summary">정답 <strong>{total.correct}</strong><span aria-hidden="true">·</span> 오답 <strong>{total.wrong}</strong></p>
-    <div className="teacher-bests">{DURATIONS.map(duration=><div key={duration}><span>{duration}분 최고</span><strong>{profile.best.find(best=>best.duration===duration)?.score.toLocaleString()??'—'}</strong></div>)}</div>
+    <div className="teacher-bests">{bests.map(([label,value])=><div key={label}><span>{label}</span><strong>{value?.toLocaleString()??'—'}</strong></div>)}</div>
     <TeacherVerticalSettings key={number} profile={profile} onSave={onSaveVertical}/>
     <h3>최근 도전</h3>
     {recent.length?<div className="teacher-sessions">{recent.map(session=><div key={session.id}><div className="teacher-session-info"><strong>{session.label}</strong>{session.finishedAt?<time dateTime={session.finishedAt}>{sessionDate.format(new Date(session.finishedAt))}</time>:<small>날짜 정보 없음</small>}</div><span>{session.detail}</span><b>{session.score.toLocaleString()}점</b></div>)}</div>:<p className="teacher-empty">기록 없음</p>}

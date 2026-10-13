@@ -134,7 +134,7 @@ async function teacherRecords(){
   const summaries=new Map((metrics??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,row.stats];}));
   if(blocks!==null&&!Array.isArray(blocks))throw new Error('INVALID_DATABASE_RESPONSE');
   // 블록 기록·경험치(두 자리 수 경험치도 최근 5판이 아닌 전체 기록으로). 마이그레이션 전이면 빠진다.
-  const blockRecords=new Map((blocks??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,{blockExp:row.blockExp,verticalExp:row.verticalExp,blockSessions:row.blockSessions}];}));
+  const blockRecords=new Map((blocks??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,{blockExp:row.blockExp,verticalExp:row.verticalExp,blockSessions:row.blockSessions,...(row.verticalBest!==undefined?{verticalBest:row.verticalBest,blockBest:row.blockBest}:{})}];}));
   return profiles.map(profile=>({...profile,...blockRecords.get(Number(profile.studentNumber)),canResetScopes:true,canResetBlock:blocks!==null,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
 }
 Deno.serve(async request=>{
