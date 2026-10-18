@@ -163,7 +163,7 @@
 
 2026-10-13 운영 반영: MCP `apply_migration`(`teacher_bests`) 후 `gugudan-api` version 23 ACTIVE(`verify_jwt=false`, `index.ts`와 `block/` 4개 파일, `index.ts`는 한 줄 변경)를 배포했다. 함수 결과에서 학생별 최고 점수가 나오는 것을 확인했고, `tests/block-http.mjs` 20개와 `tests/vertical-tight-time-http.mjs` 18개가 통과했다. 교사 기록 HTTP 호출은 교사 코드가 필요해 실행하지 않았다.
 
-## 쉬는 시간 끝 수업 준비 안내 (2026-10-18, 미적용)
+## 쉬는 시간 끝 수업 준비 안내 (2026-10-18, 운영 SQL/API 반영 완료)
 
 School_Timer 학생 화면과 같은 안내를 구구단 앱에도 띄운다. 쉬는 시간 남은 20%(점심은 2분 전)에 위쪽 띠 "하던 것 마무리하세요", 수업 60초 전에 가운데 반투명 카드 "크롬북을 닫아주세요."(클릭·입력은 아래 화면으로 지나감), 수업 50초 전부터 수업이 끝나거나 교사가 해제할 때까지 "크롬북 닫기" 잠금 화면이다. 마무리·잠금 동안 새 도전·연습 시작만 막고("수업 후에 하세요"), 진행 중인 판과 결과 저장은 막지 않는다. 계산은 School_Timer `src/lib/classPrep.ts`를 그대로 옮긴 `src/game/classPrep.ts`다.
 
@@ -172,3 +172,5 @@ School_Timer 학생 화면과 같은 안내를 구구단 앱에도 띄운다. �
 적용 순서(사용자 확인 후): 마이그레이션 적용 → `gugudan-api` 재배포(`verify_jwt=false` 유지) → 프론트엔드 배포. 어느 단계가 빠져도 앱은 안내 없이 평소처럼 동작한다(함수가 없으면 API가 null, 액션이 없으면 400을 받아 안내를 띄우지 않음). 앱은 평소 60초, 안내가 떠 있는 동안 5초마다 다시 읽고 화면이 숨겨져 있으면 읽지 않는다.
 
 검증: `node --test tests/class-prep.test.mjs`, 격리된 빈 PostgreSQL에서 `psql -v ON_ERROR_STOP=1 -f tests/class-prep.sql`(가짜 시간표로 조립·권한 확인 후 되돌림). 화면은 개발 서버에서 `?classPrepDemo=75`처럼 붙이면(개발 빌드 전용) 75초 뒤 수업이 시작하는 가짜 시간표로 모든 단계를 볼 수 있다.
+
+2026-10-18 사용자 승인 후 migration `20261018000000_gugudan_class_prep`(운영 이력 이름 `gugudan_class_prep`)를 적용하고 `gugudan-api` version 24 ACTIVE(`verify_jwt=false`)를 배포했다. 배포 전 version 23이 main과 같음을 확인하고 `classPrep` 두 줄만 더했다. service_role 실행 가능·anon/authenticated 실행 불가, 세션 없는 `classPrep` 401, 서명 세션의 `classPrep`이 월~금 시간표(55칸)·이번 주 과목·시계 보정 0·해제 null을 돌려줌을 확인했다. 실제 시간표로 계산한 월요일 단계는 예: 9:38 예고 → 9:39 마무리 → 9:39:10 잠금 → 10:20 해제. 학생 기록은 읽거나 바꾸지 않았다. 프론트엔드 배포는 별도다.
