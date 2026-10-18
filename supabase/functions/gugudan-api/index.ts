@@ -227,6 +227,8 @@ Deno.serve(async request=>{
     if(data.action==='blockFinish')return await finishBlock(student,data);
     if(data.action==='blockLeaders')return json(await rpc('gugudan_block_leaders',{}));
     if(data.action==='blockRecords')return json(await rpc('gugudan_block_records',{p_student:student}));
+    // School_Timer 시간표·시계 보정·교사 해제(읽기만). 함수가 아직 없으면 null: 앱은 안내 없이 평소처럼 동작한다.
+    if(data.action==='classPrep')return json(await rpc('gugudan_class_prep',{},true));
     if(data.action==='capabilities')return json({questionTypes:true,friends:true,blocks:true});
     if(data.action==='saveFriends'){
       const friends=data.friends,partner=data.partner;
