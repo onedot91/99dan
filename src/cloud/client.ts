@@ -183,3 +183,12 @@ export async function saveVerticalAssignment(studentNumber:number,difficulty:Dif
   if(!Number.isInteger(studentNumber)||studentNumber<1||studentNumber>23||!validVerticalDifficulty(difficulty))throw new Error('INVALID_VERTICAL_ASSIGNMENT');
   return assignment(await teacherRequest('teacherSetVertical',{studentNumber,difficulty}),studentNumber);
 }
+// 쉬는 시간 끝 수업 준비: School_Timer 시간표·시계 보정·교사 해제. 서버에 아직 없으면(null) 안내하지 않는다.
+export type ClassPrepSource={readonly weeklySchedule:unknown;readonly weeklySubjects:unknown;readonly clockOffsetSeconds:unknown;readonly release:unknown};
+export async function loadClassPrep(studentNumber:number):Promise<ClassPrepSource|null>{
+  const data=await authenticated(studentNumber,'classPrep');
+  if(data===null)return null;
+  const value=object(data);
+  if(value.weeklySchedule===null||value.weeklySchedule===undefined)return null;
+  return {weeklySchedule:value.weeklySchedule,weeklySubjects:value.weeklySubjects??null,clockOffsetSeconds:value.scheduleClockOffsetSeconds??0,release:value.classPrepRelease??null};
+}

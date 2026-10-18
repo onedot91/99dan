@@ -40,6 +40,11 @@ import { BlockPlay, BlockProgress, BlockResult, BlockStopDialog } from './compon
 import './vertical.css';
 import './block.css';
 import './mobile.css';
+import { ClassPrep, ClassPrepHint } from './components/ClassPrep';
+import type { BlockedHint } from './components/ClassPrep';
+import { useClassPrepSource } from './cloud/useClassPrep';
+import { CLASS_PREP_BLOCKED_MESSAGE, isClassPrepBlockingStage } from './game/classPrepGuard';
+import type { ClassPrepStage } from './game/classPrepGuard';
 export function App(){
   const [studentNumber,setStudentNumber]=useState(loadStudentNumber);
   const [teacher,setTeacher]=useState(loadTeacherMode);
@@ -73,6 +78,30 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   useEffect(()=>{if(verticalSync.state==='saved')void reloadProfile();},[verticalSync.state,reloadProfile]);
   const blockSync=useBlockSync(studentNumber);
   useEffect(()=>{if(blockSync.state==='saved')void reloadProfile();},[blockSync.state,reloadProfile]);
+  // 쉬는 시간 끝 수업 준비: 마무리·잠금 동안 새 판만 막는다. 진행 중인 판과 결과 저장은 그대로 둔다.
+  const [prepStage,setPrepStage]=useState<ClassPrepStage>('idle');
+  const prepSource=useClassPrepSource(studentNumber,prepStage);
+  const prepLocked=prepStage==='locked';
+  const prepBlocking=isClassPrepBlockingStage(prepStage);
+  const lastPress=useRef<DOMRect|null>(null);
+  const [blockedHint,setBlockedHint]=useState<BlockedHint|null>(null);
+  useEffect(()=>{if(!blockedHint)return undefined;const t=window.setTimeout(()=>setBlockedHint(null),2200);return()=>window.clearTimeout(t);},[blockedHint]);
+  useEffect(()=>{if(!prepBlocking)setBlockedHint(null);},[prepBlocking]);
+  // Returns true (and shows the hint above the pressed button) when a new run must wait for after class.
+  const prepBlocked=()=>{
+    if(!prepBlocking)return false;
+    const r=lastPress.current;
+    setBlockedHint(h=>({key:(h?.key??0)+1,x:r?r.left+r.width/2:window.innerWidth/2,y:r?r.top:window.innerHeight/2}));
+    return true;
+  };
+  const game={...g,start:(mode:Parameters<typeof g.start>[0])=>{if(!prepBlocked())g.start(mode);}};
+  // While locked the app is inert; window key listeners (keypads) are stopped too. Nothing that saves is touched.
+  useEffect(()=>{
+    if(!prepLocked)return undefined;
+    const stop=(event:KeyboardEvent)=>event.stopImmediatePropagation();
+    window.addEventListener('keydown',stop,true);
+    return ()=>window.removeEventListener('keydown',stop,true);
+  },[prepLocked]);
   const [hallPart,setHallPart]=useState<HallPart>('rush');
   useEffect(()=>{if(g.screen==='play')setHallPart('rush');},[g.screen]);
   const blockPlaying=g.screen==='block-play';
@@ -83,7 +112,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   const [verticalStarting,setVerticalStarting]=useState(false);
   const verticalStartPending=useRef(false);
   const startVertical=async(count:VerticalCount=5)=>{
-    if(verticalStartPending.current||verticalSync.blocked)return;
+    if(verticalStartPending.current||verticalSync.blocked||prepBlocked())return;
     verticalStartPending.current=true;setVerticalStarting(true);
     const startingScreen=g.screen;
     try{
@@ -95,7 +124,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   const exitVertical=()=>{vertical.exit();g.setScreen('home');};
   const [blockStarting,setBlockStarting]=useState(false);
   const startBlock=async()=>{
-    if(blockStarting)return;
+    if(blockStarting||prepBlocked())return;
     setBlockStarting(true);
     const startingScreen=g.screen;
     try{const seed=await blockSync.begin();if(seed===null||currentScreen.current!==startingScreen)return;block.start(seed);g.setScreen('block-play');}
@@ -105,7 +134,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   // 그만하기: 앱 안의 확인 창에서 확인하면 그때까지의 점수로 결과를 보여 준다.
   const [stopAsk,setStopAsk]=useState(false);
   const stopBlock=()=>setStopAsk(true);
-  useEffect(()=>{if(!blockPlaying)setStopAsk(false);},[blockPlaying]);
+  useEffect(()=>{if(!blockPlaying||prepLocked)setStopAsk(false);},[blockPlaying,prepLocked]);
   const blockOver=block.run?.phase==='over';
   // 끝난 판(막힘·그만하기)의 입력 기록을 서버로 보낸다. finish는 판마다 한 번만 보낸다.
   useEffect(()=>{if(blockPlaying&&blockOver&&block.run)blockSync.finish(block.run);},[blockPlaying,blockOver]);
@@ -122,6 +151,9 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
   const numberChangeClickCount=useRef(0);
   useEffect(()=>{if(!verticalPlaying)content.current?.focus({preventScroll:true});},[g.screen]);
   useEffect(()=>{numberChangeClickCount.current=0;},[g.screen]);
+  // Back from the lock screen: return focus to the page (keypads keep listening on window either way).
+  const wasLocked=useRef(false);
+  useEffect(()=>{if(wasLocked.current&&!prepLocked&&!verticalPlaying)content.current?.focus({preventScroll:true});wasLocked.current=prepLocked;},[prepLocked]);
   const timerSeconds=Math.ceil((g.run?.remaining??0)/1000);
   const headerTimer=g.screen==='play'&&g.run?.mode==='rush'?`${Math.floor(timerSeconds/60)}:${String(timerSeconds%60).padStart(2,'0')}`:null;
   const handleBrandClick=()=>{
@@ -132,7 +164,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
     if(next>=20){numberChangeClickCount.current=0;onReselect();return;}
     numberChangeClickCount.current=next;
   };
-  return <div className={`app ${g.screen==='play'||verticalPlaying?'playing':''}${verticalScreen?' vertical-app':''}${verticalPlaying?' vertical-playing':''}`} data-bg={background} onClickCapture={event=>{if(event.target instanceof Element&&event.target.closest('button:not(.sound-button)'))audio.tap();}}>
+  return <><div className={`app ${g.screen==='play'||verticalPlaying?'playing':''}${verticalScreen?' vertical-app':''}${verticalPlaying?' vertical-playing':''}${prepStage==='notice'?' class-prep-notice':''}`} data-bg={background} inert={prepLocked} onClickCapture={event=>{const button=event.target instanceof Element?event.target.closest('button'):null;lastPress.current=button?.getBoundingClientRect()??null;if(button&&!button.classList.contains('sound-button'))audio.tap();}}>
     <header className="header">
       <button className="brand brand-button" aria-label={blockPlaying?'블록 그만하기':verticalPlaying?'두 자리 수에서 나가기':g.screen==='play'?'연습을 마치고 기록 보기':'번호 변경하려면 20번 누르기'} onClick={handleBrandClick}><span className="brand-mark">{cloud.profile?.avatar?<img src={cloud.profile.avatar} alt="" width="40" height="40"/>:<Icon name="bolt" size={24}/>}</span><span className="student-number">{numberLabel(studentNumber)}</span></button>
       {g.screen==='play'&&g.run&&<div className="header-status">
@@ -149,7 +181,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       </div>
     </header>
     <div className="screen-content" ref={content} tabIndex={-1} key={g.screen}>
-      {g.screen==='home'&&(cloud.blocking?<main className="connection-screen">{cloud.state==='loading'?<p role="status">불러오는 중</p>:<button className="primary-button" onClick={()=>void cloud.reload()}>연결 재시도</button>}</main>:<HomeScreen game={g} exp={exp} friends={friends} studentNumber={studentNumber} onVertical={count=>void startVertical(count)} onBlock={()=>void startBlock()} blockSync={{starting:blockStarting||blockSync.state==='starting',blocked:blockSync.blocked,saving:blockSync.state==='saving',error:blockSync.state==='error',retry:()=>void blockSync.retry()}} verticalStarting={verticalStarting} verticalBlocked={verticalSync.blocked} verticalSaving={verticalSync.state==='saving'} verticalError={assignment.state==='error'||verticalSync.state==='error'} onVerticalRetry={()=>void verticalSync.retry()} onHall={()=>{setHallPart('rush');g.setScreen('hall');}}/>)}
+      {g.screen==='home'&&(cloud.blocking?<main className="connection-screen">{cloud.state==='loading'?<p role="status">불러오는 중</p>:<button className="primary-button" onClick={()=>void cloud.reload()}>연결 재시도</button>}</main>:<HomeScreen game={game} exp={exp} friends={friends} studentNumber={studentNumber} onVertical={count=>void startVertical(count)} onBlock={()=>void startBlock()} blockSync={{starting:blockStarting||blockSync.state==='starting',blocked:blockSync.blocked,saving:blockSync.state==='saving',error:blockSync.state==='error',retry:()=>void blockSync.retry()}} verticalStarting={verticalStarting} verticalBlocked={verticalSync.blocked} verticalSaving={verticalSync.state==='saving'} verticalError={assignment.state==='error'||verticalSync.state==='error'} onVerticalRetry={()=>void verticalSync.retry()} onHall={()=>{setHallPart('rush');g.setScreen('hall');}}/>)}
       {g.screen==='vertical-setup'&&<VerticalSetup sync={verticalSync} assignmentState={assignment.state} onRetry={()=>void assignment.reload()} onStart={()=>void startVertical()}/>}
       {g.screen==='vertical-play'&&<VerticalPlay game={vertical} onExit={exitVertical} onComplete={()=>{audio.cue('finish');g.setScreen('vertical-result');}} onCue={correct=>audio.cue(correct?'correct':'wrong')}/>}
       {g.screen==='vertical-result'&&<VerticalResult game={vertical} sync={verticalSync} assignmentState={assignment.state} onHome={()=>g.setScreen('home')} onAgain={()=>{const count=vertical.session?.questions.length;void startVertical(validVerticalCount(count)?count:5);}} onHall={()=>{setHallPart('vertical');g.setScreen('hall');}}/>}
@@ -158,10 +190,13 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       {g.screen==='block-result'&&<BlockResult game={block} sync={blockSync} starting={blockStarting} onHome={()=>{block.exit();g.setScreen('home');}} onAgain={()=>void startBlock()} onHall={()=>{setHallPart('block');g.setScreen('hall');}}/>}
       {g.screen==='hall'&&<HallScreen ready={cloud.ready} studentNumber={studentNumber} initialDuration={g.run?.duration??g.duration} initialPart={hallPart} initialCount={hallPart==='vertical'&&validVerticalCount(vertical.session?.questions.length)?vertical.session.questions.length:5}/>}
       {g.screen==='play'&&<PlayScreen game={g} partner={friends.partner} best={bestBefore(g,cloud.profile?.best)}/>}
-      {(g.screen==='tables'||g.screen==='weak')&&<SetupScreen game={g}/>}
+      {(g.screen==='tables'||g.screen==='weak')&&<SetupScreen game={game}/>}
       {g.screen==='result'&&<ResultScreen game={g} rewards={rewards} friends={friends} syncState={cloud.state} retrySave={cloud.retrySave} unlocked={unlockedNow} onUseBackground={changeBackground}/>}
       {g.screen==='friends'&&<FriendsScreen friends={friends} onCelebrate={()=>audio.cue('friend')}/>}
       {g.screen==='records'&&<RecordsScreen game={g} exp={exp} best={cloud.profile?.best} studentNumber={studentNumber}/>}
     </div>
-  </div>;
+  </div>
+  <ClassPrep source={prepSource} onStageChange={setPrepStage}/>
+  <ClassPrepHint hint={blockedHint} message={CLASS_PREP_BLOCKED_MESSAGE}/>
+  </>;
 }

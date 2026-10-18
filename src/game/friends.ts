@@ -101,7 +101,7 @@ function shuffle<T>(items:readonly T[],next:()=>number):T[]{
   return out;
 }
 // Three choices, seeded by student and pick count so a refresh can't reroll them:
-// up to two evolutions of different friends plus one new family when possible.
+// up to two evolutions of different families plus one new family when possible.
 // Families above the student's level never enter the pool, so offers below Lv.100 stay as they were.
 export const familyOpen=(f:Friend,level:number)=>level>=(f.family.level??1);
 export function offersFor(owned:readonly string[],studentNumber:number,level:number):readonly Friend[]{
@@ -111,9 +111,12 @@ export function offersFor(owned:readonly string[],studentNumber:number,level:num
   const fresh=shuffle(frontier.filter(f=>f.tier===1),next);
   if(!owned.length)return fresh.slice(0,3);
   const evolutions=shuffle(frontier.filter(f=>f.tier>1),next);
+  // Two of one family share a body and read as the same pet, so each card is a different family when possible.
   const picks:Friend[]=[];
-  for(const f of evolutions)if(picks.length<2&&!picks.some(p=>p.parent===f.parent))picks.push(f);
+  const newFamily=(f:Friend)=>!picks.some(p=>p.family.id===f.family.id);
+  for(const f of evolutions)if(picks.length<2&&newFamily(f))picks.push(f);
   if(fresh[0])picks.push(fresh[0]);
+  for(const f of [...fresh,...evolutions])if(picks.length<3&&newFamily(f))picks.push(f);
   for(const f of [...evolutions,...fresh])if(picks.length<3&&!picks.includes(f))picks.push(f);
   return picks;
 }

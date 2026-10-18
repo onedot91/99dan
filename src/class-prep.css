@@ -1,0 +1,78 @@
+/* 쉬는 시간 끝 수업 준비(School_Timer와 같은 단계, 16비트 모양). */
+:root{--prep-band:44px}
+/* 예고 띠: 화면 위에 붙고 앱은 그만큼 아래로 내려 가리지 않는다. */
+:root .app.class-prep-notice{height:calc(100dvh - var(--prep-band));min-height:0;margin-top:var(--prep-band)}
+.class-prep-band{
+  position:fixed;inset:0 0 auto;z-index:70;height:var(--prep-band);display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:var(--s4);
+  padding:0 var(--page-pad);background:var(--panel);
+  box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),0 var(--px) 0 var(--outline);
+}
+.class-prep-band-label{color:var(--yellow);font-size:var(--text-lg);line-height:1;white-space:nowrap;text-shadow:var(--text-outline)}
+.class-prep-track{height:calc(4 * var(--px));background:var(--panel-lo);box-shadow:var(--ring)}
+.class-prep-fill{height:100%;background:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade);transform-origin:left center;transition:transform 1s linear}
+
+/* 마무리 카드: 가운데, 45% 불투명, 클릭·입력은 아래 화면으로 지나간다. */
+.class-prep-wrap-up{
+  position:fixed;top:50%;left:50%;z-index:45;display:grid;justify-items:center;gap:var(--s2);
+  width:min(360px,calc(100vw - 2 * var(--s4)));padding:var(--s5) var(--s6) var(--s6);text-align:center;
+  background:rgba(42,40,86,.45);box-shadow:inset 0 var(--px) 0 rgba(85,82,160,.6),inset 0 calc(-1 * var(--px)) 0 rgba(29,27,64,.6),var(--ring);
+  pointer-events:none;transform:translate(-50%,-50%);animation:class-prep-in 240ms steps(3,end);
+}
+.class-prep-ring{position:relative;display:grid;place-items:center;width:clamp(128px,30dvh,176px);aspect-ratio:1}
+.class-prep-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.class-prep-ring circle{fill:none;stroke-width:12}
+.class-prep-ring-track{stroke:rgba(11,10,31,.55)}
+.class-prep-ring-fill{stroke:var(--yellow);stroke-linecap:butt;stroke-dasharray:1;transition:stroke-dashoffset 1s linear}
+.class-prep-ring-character{
+  width:64%;height:auto;image-rendering:auto;transform:translate(5%,7%);transform-origin:50% 90%;
+  animation:class-prep-cheer 1.4s steps(8,end) infinite;
+}
+/* 들썩이며 좌우로 흔든다(프레임처럼 끊어서). */
+@keyframes class-prep-cheer{
+  0%,100%{transform:translate(5%,7%) rotate(0deg)}
+  25%{transform:translate(5%,1%) rotate(-5deg)}
+  50%{transform:translate(5%,7%) rotate(0deg)}
+  75%{transform:translate(5%,3%) rotate(5deg)}
+}
+.class-prep-wrap-up-label{color:var(--paper-hi);font-size:var(--text-xl);line-height:1.3;text-shadow:var(--text-outline)}
+
+/* 잠금: 전체 화면 밤하늘, 닫을 수 없다. */
+.class-prep-lock{
+  position:fixed;inset:0;z-index:90;display:grid;place-content:center;justify-items:center;gap:var(--s4);padding:var(--s6);text-align:center;outline:none;
+  background:linear-gradient(#14132b 0 34%,#18163a 34% 52%,#1d1a47 52% 66%,#221e54 66% 78%,#282262 78% 88%,#2e2670 88%);
+  animation:class-prep-in 240ms steps(3,end);
+}
+.class-prep-lock::before{content:"";position:absolute;inset:0;z-index:-1;background:url(./assets/stars.svg) 0 0/320px 320px repeat;opacity:.9;pointer-events:none}
+.class-prep-lock-character{width:clamp(104px,22dvh,160px);height:auto;image-rendering:auto}
+.class-prep-lock-title{color:var(--yellow);font-size:var(--text-score);line-height:1.2;text-shadow:var(--text-outline)}
+.class-prep-lock-class{color:var(--paper);font-size:var(--text-xl);text-shadow:var(--text-outline)}
+
+/* 새 판을 막을 때 누른 버튼 위에 잠깐 뜨는 말풍선. */
+.class-prep-hint{
+  position:fixed;z-index:80;padding:var(--s2) var(--s3);background:var(--paper);color:var(--ink);font-size:var(--text-base);line-height:1.2;white-space:nowrap;
+  box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--paper-shade),var(--ring),var(--drop);pointer-events:none;
+  transform:translate(-50%,calc(-100% - var(--s4)));animation:class-prep-hint 300ms steps(3,end) 1900ms forwards;
+}
+@keyframes class-prep-in{from{opacity:0}to{opacity:1}}
+@keyframes class-prep-hint{to{opacity:0}}
+@media(max-width:700px){
+  :root{--prep-band:40px}
+  .class-prep-band{gap:var(--s3);padding:0 var(--s4)}
+  .class-prep-band-label{font-size:var(--text-base)}
+  .class-prep-lock-title{font-size:var(--text-title)}
+}
+@media(prefers-reduced-motion:reduce){
+  .class-prep-fill,.class-prep-ring-fill{transition:none}
+  .class-prep-lock,.class-prep-wrap-up,.class-prep-ring-character{animation:none}
+  .class-prep-hint{animation:none}
+}
+@media(forced-colors:active){
+  .class-prep-band,.class-prep-lock{background:Canvas;color:CanvasText}
+  .class-prep-band-label,.class-prep-lock-title,.class-prep-lock-class,.class-prep-wrap-up-label{color:CanvasText;text-shadow:none}
+  .class-prep-track{border:1px solid CanvasText}
+  .class-prep-fill{background:CanvasText}
+  .class-prep-wrap-up{border:2px solid CanvasText;background:Canvas}
+  .class-prep-ring-track{stroke:GrayText}
+  .class-prep-ring-fill{stroke:CanvasText}
+  .class-prep-hint{border:2px solid CanvasText;background:Canvas;color:CanvasText}
+}
