@@ -165,7 +165,7 @@
 
 ## 쉬는 시간 끝 수업 준비 안내 (2026-10-18, 운영 SQL/API 반영 완료)
 
-School_Timer 학생 화면과 같은 안내를 구구단 앱에도 띄운다. 쉬는 시간 남은 20%(점심은 2분 전)에 위쪽 띠 "하던 것 마무리하세요", 수업 60초 전에 가운데 반투명 카드 "크롬북을 닫아주세요."(클릭·입력은 아래 화면으로 지나감), 수업 50초 전부터 수업이 끝나거나 교사가 해제할 때까지 "크롬북 닫기" 잠금 화면이다. 마무리·잠금 동안 새 도전·연습 시작만 막고("수업 후에 하세요"), 진행 중인 판과 결과 저장은 막지 않는다. 계산은 School_Timer `src/lib/classPrep.ts`를 그대로 옮긴 `src/game/classPrep.ts`다.
+School_Timer 학생 화면과 같은 안내를 구구단 앱에도 띄운다. 쉬는 시간 남은 20%(점심은 2분 전)에 가운데 반투명 링 카드 "하던 것 마무리하세요"(초록 링), 수업 60초 전에 같은 카드가 "크롬북을 닫아주세요."(주황 링)로 바뀐다(클릭·입력은 아래 화면으로 지나감), 수업 50초 전부터 수업이 끝나거나 교사가 해제할 때까지 "크롬북 닫기" 잠금 화면이다. 마무리·잠금 동안 새 도전·연습 시작만 막고("수업 후에 하세요"), 진행 중인 판과 결과 저장은 막지 않는다. 계산은 School_Timer `src/lib/classPrep.ts`를 그대로 옮긴 `src/game/classPrep.ts`다.
 
 `migrations/20261018000000_gugudan_class_prep.sql`은 새 테이블 없이 함수 둘만 더한다. `gugudan_storage_tree(key)`는 School_Timer `storage_resources`의 한 키를 원래 JSON으로 다시 조립하고, `gugudan_class_prep()`은 `/weeklySchedule`, 이번 주(한국 시간 월요일) `/weeklySubjects/<주>`, `/scheduleClockOffsetSeconds`, `/classPrepRelease`를 돌려준다. 읽기만 하며 School_Timer 데이터에는 쓰지 않는다. 둘 다 SECURITY INVOKER·STABLE이고 anon/authenticated 실행 권한을 막고 service_role만 실행한다. `gugudan-api`의 `classPrep` 액션이 학생 서명 세션을 확인한 뒤 호출한다.
 

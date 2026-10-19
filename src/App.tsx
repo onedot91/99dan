@@ -164,7 +164,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
     if(next>=20){numberChangeClickCount.current=0;onReselect();return;}
     numberChangeClickCount.current=next;
   };
-  return <><div className={`app ${g.screen==='play'||verticalPlaying?'playing':''}${verticalScreen?' vertical-app':''}${verticalPlaying?' vertical-playing':''}${prepStage==='notice'?' class-prep-notice':''}`} data-bg={background} inert={prepLocked} onClickCapture={event=>{const button=event.target instanceof Element?event.target.closest('button'):null;lastPress.current=button?.getBoundingClientRect()??null;if(button&&!button.classList.contains('sound-button'))audio.tap();}}>
+  return <><div className={`app ${g.screen==='play'||verticalPlaying?'playing':''}${verticalScreen?' vertical-app':''}${verticalPlaying?' vertical-playing':''}`} data-bg={background} inert={prepLocked} onClickCapture={event=>{const button=event.target instanceof Element?event.target.closest('button'):null;lastPress.current=button?.getBoundingClientRect()??null;if(button&&!button.classList.contains('sound-button'))audio.tap();}}>
     <header className="header">
       <button className="brand brand-button" aria-label={blockPlaying?'블록 그만하기':verticalPlaying?'두 자리 수에서 나가기':g.screen==='play'?'연습을 마치고 기록 보기':'번호 변경하려면 20번 누르기'} onClick={handleBrandClick}><span className="brand-mark">{cloud.profile?.avatar?<img src={cloud.profile.avatar} alt="" width="40" height="40"/>:<Icon name="bolt" size={24}/>}</span><span className="student-number">{numberLabel(studentNumber)}</span></button>
       {g.screen==='play'&&g.run&&<div className="header-status">

@@ -1,18 +1,6 @@
 /* 쉬는 시간 끝 수업 준비(School_Timer와 같은 단계, 16비트 모양). */
-:root{--prep-band:44px}
-/* 예고 띠: 화면 위에 붙고 앱은 그만큼 아래로 내려 가리지 않는다. */
-:root .app.class-prep-notice{height:calc(100dvh - var(--prep-band));min-height:0;margin-top:var(--prep-band)}
-.class-prep-band{
-  position:fixed;inset:0 0 auto;z-index:70;height:var(--prep-band);display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:var(--s4);
-  padding:0 var(--page-pad);background:var(--panel);
-  box-shadow:inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),0 var(--px) 0 var(--outline);
-}
-.class-prep-band-label{color:var(--yellow);font-size:var(--text-lg);line-height:1;white-space:nowrap;text-shadow:var(--text-outline)}
-.class-prep-track{height:calc(4 * var(--px));background:var(--panel-lo);box-shadow:var(--ring)}
-.class-prep-fill{height:100%;background:var(--yellow);box-shadow:inset 0 var(--px) 0 var(--gold-hi),inset 0 calc(-1 * var(--px)) 0 var(--gold-shade);transform-origin:left center;transition:transform 1s linear}
-
-/* 마무리 카드: 가운데, 45% 불투명, 클릭·입력은 아래 화면으로 지나간다. */
-.class-prep-wrap-up{
+/* 예고·마무리 카드: 가운데, 45% 불투명, 클릭·입력은 아래 화면으로 지나간다. 예고는 초록 링, 마무리는 주황 링. */
+.class-prep-card{
   position:fixed;top:50%;left:50%;z-index:45;display:grid;justify-items:center;gap:var(--s2);
   width:min(360px,calc(100vw - 2 * var(--s4)));padding:var(--s5) var(--s6) var(--s6);text-align:center;
   background:rgba(42,40,86,.45);box-shadow:inset 0 var(--px) 0 rgba(85,82,160,.6),inset 0 calc(-1 * var(--px)) 0 rgba(29,27,64,.6),var(--ring);
@@ -22,7 +10,8 @@
 .class-prep-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .class-prep-ring circle{fill:none;stroke-width:12}
 .class-prep-ring-track{stroke:rgba(11,10,31,.55)}
-.class-prep-ring-fill{stroke:var(--yellow);stroke-linecap:butt;stroke-dasharray:1;transition:stroke-dashoffset 1s linear}
+.class-prep-ring-fill{stroke:var(--mint);stroke-linecap:butt;stroke-dasharray:1;transition:stroke-dashoffset 1s linear,stroke 240ms steps(3,end)}
+.class-prep-card[data-stage=wrap-up] .class-prep-ring-fill{stroke:var(--orange)}
 .class-prep-ring-character{
   width:64%;height:auto;image-rendering:auto;transform:translate(5%,7%);transform-origin:50% 90%;
   animation:class-prep-cheer 1.4s steps(8,end) infinite;
@@ -34,7 +23,7 @@
   50%{transform:translate(5%,7%) rotate(0deg)}
   75%{transform:translate(5%,3%) rotate(5deg)}
 }
-.class-prep-wrap-up-label{color:var(--paper-hi);font-size:var(--text-xl);line-height:1.3;text-shadow:var(--text-outline)}
+.class-prep-card-label{color:var(--paper-hi);font-size:var(--text-xl);line-height:1.3;text-shadow:var(--text-outline)}
 
 /* 잠금: 전체 화면 밤하늘, 닫을 수 없다. */
 .class-prep-lock{
@@ -56,23 +45,18 @@
 @keyframes class-prep-in{from{opacity:0}to{opacity:1}}
 @keyframes class-prep-hint{to{opacity:0}}
 @media(max-width:700px){
-  :root{--prep-band:40px}
-  .class-prep-band{gap:var(--s3);padding:0 var(--s4)}
-  .class-prep-band-label{font-size:var(--text-base)}
   .class-prep-lock-title{font-size:var(--text-title)}
 }
 @media(prefers-reduced-motion:reduce){
-  .class-prep-fill,.class-prep-ring-fill{transition:none}
-  .class-prep-lock,.class-prep-wrap-up,.class-prep-ring-character{animation:none}
+  .class-prep-ring-fill{transition:none}
+  .class-prep-lock,.class-prep-card,.class-prep-ring-character{animation:none}
   .class-prep-hint{animation:none}
 }
 @media(forced-colors:active){
-  .class-prep-band,.class-prep-lock{background:Canvas;color:CanvasText}
-  .class-prep-band-label,.class-prep-lock-title,.class-prep-lock-class,.class-prep-wrap-up-label{color:CanvasText;text-shadow:none}
-  .class-prep-track{border:1px solid CanvasText}
-  .class-prep-fill{background:CanvasText}
-  .class-prep-wrap-up{border:2px solid CanvasText;background:Canvas}
+  .class-prep-lock{background:Canvas;color:CanvasText}
+  .class-prep-lock-title,.class-prep-lock-class,.class-prep-card-label{color:CanvasText;text-shadow:none}
+  .class-prep-card{border:2px solid CanvasText;background:Canvas}
   .class-prep-ring-track{stroke:GrayText}
-  .class-prep-ring-fill{stroke:CanvasText}
+  .class-prep-ring-fill,.class-prep-card[data-stage=wrap-up] .class-prep-ring-fill{stroke:CanvasText}
   .class-prep-hint{border:2px solid CanvasText;background:Canvas;color:CanvasText}
 }
