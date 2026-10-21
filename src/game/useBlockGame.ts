@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { blockScore, createBlockRun, reduceBlockRun } from './blockRun';
 import type { BlockAction, BlockRun } from './blockRun';
 
@@ -8,11 +8,20 @@ export function loadBest(studentNumber:number):number|null{
   try{const raw=localStorage.getItem(bestKey(studentNumber));const value=raw===null?NaN:Number(raw);return Number.isSafeInteger(value)&&value>=0?value:null;}
   catch{return null;}
 }
+// 올 클리어로 바뀐 블록 디자인은 다음 판에도 이어진다. 번호별로 이 기기에만 남기고, 잃으면 기본 디자인부터 다시 간다.
+const skinKey=(studentNumber:number)=>`gugudan-rush.block-skin.${studentNumber}`;
+function loadSkin(studentNumber:number):number{
+  try{const value=Number(localStorage.getItem(skinKey(studentNumber)));return Number.isSafeInteger(value)&&value>=0?value:0;}
+  catch{return 0;}
+}
 export function useBlockGame(studentNumber:number){
   const [run,setRun]=useState<BlockRun|null>(null);
   const current=useRef(run);
   const [best,setBest]=useState(()=>loadBest(studentNumber));
   const [bestBefore,setBestBefore]=useState<number|null>(null);
+  const [skin,setSkin]=useState(()=>loadSkin(studentNumber));
+  useEffect(()=>{setSkin(loadSkin(studentNumber));},[studentNumber]);
+  const nextSkin=()=>setSkin(i=>{const next=i+1;try{localStorage.setItem(skinKey(studentNumber),String(next));}catch{/* 이번 방문 동안만 이어진다 */}return next;});
   const cellStarted=useRef(performance.now());
   const finish=(next:BlockRun)=>{
     const score=blockScore(next),previous=loadBest(studentNumber);
@@ -37,6 +46,6 @@ export function useBlockGame(studentNumber:number){
   const placePiece=(piece:number,row:number,col:number)=>{const before=current.current,next=dispatch({type:'place',piece,row,col});if(next!==before)cellStarted.current=performance.now();return next!==before;};
   const stop=()=>dispatch({type:'stop'});
   const exit=()=>{current.current=null;setRun(null);};
-  return {run,best,bestBefore,start,input,placePiece,stop,exit};
+  return {run,best,bestBefore,skin,nextSkin,start,input,placePiece,stop,exit};
 }
 export type BlockGame=ReturnType<typeof useBlockGame>;

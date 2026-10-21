@@ -87,7 +87,7 @@ const pieceSize=(piece:Shape)=>({rows:Math.max(...piece.cells.map(c=>c[0]))+1,co
 
 // 줄 지우기 연출: 지워진 칸이 줄을 따라 차례로 번쩍이고 조각나 흩어진다. 줄마다 빛줄기, 가운데 점수·칭찬·콤보 배너.
 const PRAISE=['','','좋아요!','멋져요!','대단해요!','최고예요!'] as const;
-// 올 클리어마다 블록 디자인이 다음 테마로 바뀐다(블록 블라스트처럼). 한 판 안에서만 바뀌고 점수와는 무관하다.
+// 올 클리어마다 블록 디자인이 다음 테마로 바뀐다(블록 블라스트처럼). 다음 판에도 이어지고 점수와는 무관하다.
 export const BLOCK_SKINS=[{id:'classic',name:'기본'},{id:'candy',name:'사탕'},{id:'neon',name:'네온'},{id:'gem',name:'보석'},{id:'gold',name:'황금'},{id:'galaxy',name:'우주'}] as const;
 export type BlockSkin=typeof BLOCK_SKINS[number];
 // 연출 단계: 지운 줄 수(올 클리어는 최고 단계)만큼 화려해진다.
@@ -283,11 +283,11 @@ export function BlockPlay({game,onCue}:{readonly game:BlockGame;readonly onCue:(
   },[run?.lastPlace?.key]);
   // 문제를 다 풀면 도장을 잠깐 보여 주고(휴대폰은 이때 블록 화면으로 넘어간다) 블록이 열리는 소리.
   // 올 클리어 횟수만큼 블록 디자인을 바꾼다. 무지개 물결이 판을 덮은 뒤(650ms) 새 디자인으로 바뀐다.
-  const [skinIndex,setSkinIndex]=useState(0);
-  useEffect(()=>{setSkinIndex(0);},[run?.seed]);
+  // 바뀐 디자인은 다음 판에도 이어진다(useBlockGame이 번호별로 기기에 남긴다).
+  const skinIndex=game.skin;
   useEffect(()=>{
     const clear=run?.lastClear;if(!clear?.allClear||clear.key!==run?.lastPlace?.key)return undefined;
-    const t=window.setTimeout(()=>setSkinIndex(i=>i+1),reducedMotion()?0:650);return()=>window.clearTimeout(t);
+    const t=window.setTimeout(game.nextSkin,reducedMotion()?0:650);return()=>window.clearTimeout(t);
   },[run?.lastClear?.key]);
   const skin=BLOCK_SKINS[skinIndex%BLOCK_SKINS.length]!,nextSkin=BLOCK_SKINS[(skinIndex+1)%BLOCK_SKINS.length]!;
   const [handoff,setHandoff]=useState(false);
