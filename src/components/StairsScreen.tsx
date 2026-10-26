@@ -38,7 +38,7 @@ function StairsField({run,partner}:{readonly run:StairsRun;readonly partner:stri
         return <i key={i} className={`stair${gate?' gate':''}${gate&&i<run.height||gate&&i===run.height&&run.phase!=='solve'?' opened':''}${i===run.height?' here':''}`} style={{'--x':xs[i],'--y':i} as CSSProperties}>{gate&&<b>{i<run.height||i===run.height&&run.phase!=='solve'?<Icon name="check" size={16}/>:<Icon name="lock" size={16}/>}</b>}</i>;
       })}
       <span key={slipping?`slip:${run.lastSlip}`:'climber'} className={`stairs-climber${run.facing<0?' left':''}${slipping?' slip':''}`} style={{'--x':here,'--y':run.height} as CSSProperties}>
-        {partner?<FriendSprite id={partner} fill/>:<img src="/character.png" alt=""/>}
+        {partner?<FriendSprite id={partner} fill/>:<img src="character.png" alt=""/>}
       </span>
     </div>
     {slipping&&<strong key={`lost:${run.lastSlip}`} className="stairs-lost">-1 <Icon name="heart" size={22}/></strong>}
