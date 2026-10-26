@@ -1,6 +1,7 @@
 export const TEACHER_RESET_SCOPES=[
   {id:'rush-1',label:'구구단 1분'},
   {id:'rush-3',label:'구구단 3분'},
+  {id:'stairs',label:'계단'},
   {id:'vertical-5',label:'두 자리 수 5문제'},
   {id:'vertical-10',label:'두 자리 수 10문제'},
   {id:'block',label:'블록'},
