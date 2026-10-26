@@ -14,7 +14,7 @@ import { Icon } from './Icon';
 import { PixelArt } from './PixelArt';
 import type { Cue } from '../game/audio';
 
-const reducedMotion=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const reducedMotion=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 function Burst(){return <span className="vertical-burst" aria-hidden="true">{Array.from({length:8},(_,i)=><i key={i}/>)}</span>;}
 
 const ROW_LABEL={quotient:'몫','product':'곱','rest':'뺄셈','check-product':'검산 곱','check-sum':'검산 더하기'} as const;
@@ -343,7 +343,7 @@ export function BlockPlay({game,onCue}:{readonly game:BlockGame;readonly onCue:(
 }
 
 // 결과 점수는 0부터 올라가며 끝나면 도장처럼 찍힌다.
-function useCountUp(target:number,ms=900){
+export function useCountUp(target:number,ms=900){
   const [value,setValue]=useState(()=>reducedMotion()?target:0);
   useEffect(()=>{
     if(reducedMotion()){setValue(target);return undefined;}

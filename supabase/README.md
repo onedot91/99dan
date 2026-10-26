@@ -162,3 +162,30 @@
 `migrations/20261013120000_teacher_bests.sql`은 `gugudan_teacher_block_records`에 `verticalBest`(`{"5":점수|null,"10":점수|null}`, 학생 내 기록과 같이 칸별 채점 판만)와 `blockBest`(끝낸 판 최고 점수)를 더한다. `gugudan-api`는 이 두 값을 교사 기록에 그대로 넘긴다. 교사 화면은 `1분 · 3분 · 5문제 · 10문제 · 블록` 최고 점수를 보여 주고, 이전 서버면 최근 기록 중 최고로 대신한다.
 
 2026-10-13 운영 반영: MCP `apply_migration`(`teacher_bests`) 후 `gugudan-api` version 23 ACTIVE(`verify_jwt=false`, `index.ts`와 `block/` 4개 파일, `index.ts`는 한 줄 변경)를 배포했다. 함수 결과에서 학생별 최고 점수가 나오는 것을 확인했고, `tests/block-http.mjs` 20개와 `tests/vertical-tight-time-http.mjs` 18개가 통과했다. 교사 기록 HTTP 호출은 교사 코드가 필요해 실행하지 않았다.
+
+## 계단 기록·명예의 전당·경험치 (2026-10-26)
+
+2026-10-26 운영 반영: 사용자가 대시보드 SQL Editor에서 이 마이그레이션을 직접 실행했다(MCP `apply_migration`은 확인 응답 시간 초과로 적용되지 않음, Supabase 마이그레이션 이력에는 없음). 적용 후 `gugudan_stairs_runs`·계단 함수 7개, RLS, 공개 역할(anon)의 테이블·함수 접근 차단, `gugudan_profile`의 `stairsExp`, 범위 초기화의 `stairs`를 확인했다. 이어서 `gugudan-api` version 25 ACTIVE를 배포했다(`verify_jwt=false`, `index.ts`·`block/` 4개·`stairs/` 5개 파일). 학생 화면에서는 아직 교사 기기에서만 계단이 보인다(`stairsUnlocked`).
+
+`migrations/20261026000000_gugudan_stairs_runs.sql`은 블록과 같은 방식으로 `gugudan_stairs_runs`와 계단 RPC(`gugudan_stairs_begin/seed/finish/leaders/exp/records`, `gugudan_teacher_stairs_records`)를 추가하고, `gugudan_profile`(`stairsExp`)·`gugudan_save_friends`(펫 한도)·교사 초기화 3종(범위 `stairs`)을 계단까지 포함하도록 교체한다. 문제당 경험치는 10(`exp_per_question` 기본값). 두 자리 수 5·10문제 테이블과 기록은 그대로 둔다. 적용 순서: 마이그레이션 → `gugudan-api` 재배포(`verify_jwt=false` 유지, `block/`·`stairs/` 폴더 포함).
+
+- `stairsBegin {id}`: 서버가 32비트 시드를 발급한다(같은 ID 재시도는 같은 시드, 다른 학생은 `RUN_CONFLICT`).
+- `stairsFinish {id, ended:'fallen'|'stopped', log}`: `log` ≤ 5000개, 각 항목은 `'climb'`·`'turn'` 또는 `{answer 0~9, ms?}`. Edge가 `replayStairsRun`으로 재생해 점수·높이·푼 문제·오답·방향 실수를 저장한다. 재생이 맞지 않으면 400 `INVALID_REPLAY`, 같은 ID에 다른 기록은 `RUN_ALREADY_FINISHED`.
+- `stairsLeaders`: 학생별 최근 7일 최고 점수 상위 5명. `stairsRecords`: 본인 최고 점수와 판 수.
+- 교사: `gugudan_teacher_stairs_records`가 `stairsExp`·`stairsBest`를 준다(RPC가 없으면 생략되고 `canResetStairs:false`).
+
+재생 엔진 원본은 `src/game/stairsRun.ts`(세로셈은 `vertical.ts`)다. 바꾼 뒤 `node scripts/sync-edge-block.mjs`로 `supabase/functions/gugudan-api/stairs/`에 복사한다(`tests/stairs.test.mjs`가 두 곳이 같은지 검사).
+
+로컬 검증: 빈 PostgreSQL 16 DB에 `tests/block-bootstrap.sql`, `20261013120000_teacher_bests.sql`, 이 마이그레이션을 차례로 적용한 뒤 `PGDATABASE=stairs_test node tests/stairs.pg.mjs`가 통과했다(시드 발급·재시도, 재생 점수 저장·재시도, 충돌·시드 불일치, 공개 역할 차단, 7일 순위, 본인 기록, 프로필 경험치, 펫 한도, 교사 기록, 범위·개인 초기화).
+
+## 쉬는 시간 끝 수업 준비 안내 (2026-10-18, 운영 SQL/API 반영 완료)
+
+School_Timer 학생 화면과 같은 안내를 구구단 앱에도 띄운다. 쉬는 시간 남은 20%(점심은 2분 전)에 가운데 반투명 링 카드 "하던 것 마무리하세요"(초록 링), 수업 60초 전에 같은 카드가 "크롬북을 닫아주세요."(주황 링)로 바뀐다(클릭·입력은 아래 화면으로 지나감), 수업 50초 전부터 수업이 끝나거나 교사가 해제할 때까지 "크롬북 닫기" 잠금 화면이다. 마무리·잠금 동안 새 도전·연습 시작만 막고("수업 후에 하세요"), 진행 중인 판과 결과 저장은 막지 않는다. 계산은 School_Timer `src/lib/classPrep.ts`를 그대로 옮긴 `src/game/classPrep.ts`다.
+
+`migrations/20261018000000_gugudan_class_prep.sql`은 새 테이블 없이 함수 둘만 더한다. `gugudan_storage_tree(key)`는 School_Timer `storage_resources`의 한 키를 원래 JSON으로 다시 조립하고, `gugudan_class_prep()`은 `/weeklySchedule`, 이번 주(한국 시간 월요일) `/weeklySubjects/<주>`, `/scheduleClockOffsetSeconds`, `/classPrepRelease`를 돌려준다. 읽기만 하며 School_Timer 데이터에는 쓰지 않는다. 둘 다 SECURITY INVOKER·STABLE이고 anon/authenticated 실행 권한을 막고 service_role만 실행한다. `gugudan-api`의 `classPrep` 액션이 학생 서명 세션을 확인한 뒤 호출한다.
+
+적용 순서(사용자 확인 후): 마이그레이션 적용 → `gugudan-api` 재배포(`verify_jwt=false` 유지) → 프론트엔드 배포. 어느 단계가 빠져도 앱은 안내 없이 평소처럼 동작한다(함수가 없으면 API가 null, 액션이 없으면 400을 받아 안내를 띄우지 않음). 앱은 평소 60초, 안내가 떠 있는 동안 5초마다 다시 읽고 화면이 숨겨져 있으면 읽지 않는다.
+
+검증: `node --test tests/class-prep.test.mjs`, 격리된 빈 PostgreSQL에서 `psql -v ON_ERROR_STOP=1 -f tests/class-prep.sql`(가짜 시간표로 조립·권한 확인 후 되돌림). 화면은 개발 서버에서 `?classPrepDemo=75`처럼 붙이면(개발 빌드 전용) 75초 뒤 수업이 시작하는 가짜 시간표로 모든 단계를 볼 수 있다.
+
+2026-10-18 사용자 승인 후 migration `20261018000000_gugudan_class_prep`(운영 이력 이름 `gugudan_class_prep`)를 적용하고 `gugudan-api` version 24 ACTIVE(`verify_jwt=false`)를 배포했다. 배포 전 version 23이 main과 같음을 확인하고 `classPrep` 두 줄만 더했다. service_role 실행 가능·anon/authenticated 실행 불가, 세션 없는 `classPrep` 401, 서명 세션의 `classPrep`이 월~금 시간표(55칸)·이번 주 과목·시계 보정 0·해제 null을 돌려줌을 확인했다. 실제 시간표로 계산한 월요일 단계는 예: 9:38 예고 → 9:39 마무리 → 9:39:10 잠금 → 10:20 해제. 학생 기록은 읽거나 바꾸지 않았다. 프론트엔드 배포는 별도다.

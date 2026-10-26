@@ -1,5 +1,7 @@
 import { BLOCK_REPLAY_LIMITS, blockScore, replayBlockRun } from './block/blockRun.ts';
 import type { BlockAnswer, BlockMove } from './block/blockRun.ts';
+import { STAIRS_REPLAY_LIMIT, replayStairsRun, stairsScore } from './stairs/stairsRun.ts';
+import type { StairsEntry } from './stairs/stairsRun.ts';
 // The service key stays inside Supabase Edge Functions. Browser requests carry a number-bound signed session.
 const url=Deno.env.get('SUPABASE_URL')??'';
 const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'';
@@ -91,6 +93,19 @@ function blockMoves(value:unknown):BlockMove[]|null{
   }
   return moves;
 }
+// 계단 끝 요청의 기록: 'climb'·'turn' 또는 세로셈 칸의 답(0~9)과 시간.
+function stairsLog(value:unknown):StairsEntry[]|null{
+  if(!Array.isArray(value)||value.length>STAIRS_REPLAY_LIMIT)return null;
+  const log:StairsEntry[]=[];
+  for(const item of value){
+    if(item==='climb'||item==='turn'){log.push(item);continue;}
+    if(!item||typeof item!=='object'||Array.isArray(item))return null;
+    const event=Object.fromEntries(Object.entries(item));
+    if(!integerIn(event.answer,0,9)||event.ms!==undefined&&!integerIn(event.ms,0,1000000000))return null;
+    log.push(event.ms===undefined?{answer:event.answer}:{answer:event.answer,ms:event.ms});
+  }
+  return log;
+}
 async function sha256(text:string){
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
 }
@@ -105,14 +120,25 @@ async function finishBlock(student:number,data:Record<string,unknown>){
   const hash=await sha256(JSON.stringify({ended,answers,moves}));
   return json(await rpc('gugudan_block_finish',{p_student:student,p_id:data.id,p_seed:start.seed,p_hash:hash,p_ended:ended,p_score:blockScore(run),p_solved:run.solved,p_mistakes:run.mistakes,p_lines:run.lines,p_answers:answers,p_moves:moves}));
 }
+async function finishStairs(student:number,data:Record<string,unknown>){
+  const log=stairsLog(data.log),ended=data.ended;
+  if(!validId(data.id)||!log||(ended!=='fallen'&&ended!=='stopped'))return json({error:'INVALID_RUN'},400);
+  const start=record(await rpc('gugudan_stairs_seed',{p_student:student,p_id:data.id}));
+  if(!integerIn(start.seed,0,0xffffffff))throw new Error('INVALID_DATABASE_RESPONSE');
+  const run=replayStairsRun(start.seed,log,ended);
+  if(!run)return json({error:'INVALID_REPLAY'},400);
+  const hash=await sha256(JSON.stringify({ended,log}));
+  return json(await rpc('gugudan_stairs_finish',{p_student:student,p_id:data.id,p_seed:start.seed,p_hash:hash,p_ended:ended,p_score:stairsScore(run),p_height:run.height,p_solved:run.solved,p_mistakes:run.mistakes,p_slips:run.slips,p_log:log}));
+}
 async function teacherRecords(){
   // Independent reads go out together so the teacher screen waits for the slowest one, not their sum.
-  const [result,verticalRows,settings,metrics,blocks]=await Promise.all([
+  const [result,verticalRows,settings,metrics,blocks,stairs]=await Promise.all([
     rpc('gugudan_teacher_records',{}),
     rows('gugudan_vertical_runs',new URLSearchParams({select:'id,student_number,questions,score,mistakes,finished_at',finished_at:'not.is.null',order:'finished_at.desc',limit:'1000'})),
     rpc('gugudan_teacher_vertical_assignments',{}),
     rpc('gugudan_teacher_vertical_metrics',{},true),
-    rpc('gugudan_teacher_block_records',{},true)
+    rpc('gugudan_teacher_block_records',{},true),
+    rpc('gugudan_teacher_stairs_records',{},true)
   ]);
   if(!Array.isArray(result))throw new Error('INVALID_DATABASE_RESPONSE');
   const profiles=result.map(record);
@@ -135,7 +161,10 @@ async function teacherRecords(){
   if(blocks!==null&&!Array.isArray(blocks))throw new Error('INVALID_DATABASE_RESPONSE');
   // 블록 기록·경험치(두 자리 수 경험치도 최근 5판이 아닌 전체 기록으로). 마이그레이션 전이면 빠진다.
   const blockRecords=new Map((blocks??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,{blockExp:row.blockExp,verticalExp:row.verticalExp,blockSessions:row.blockSessions,...(row.verticalBest!==undefined?{verticalBest:row.verticalBest,blockBest:row.blockBest}:{})}];}));
-  return profiles.map(profile=>({...profile,...blockRecords.get(Number(profile.studentNumber)),canResetScopes:true,canResetBlock:blocks!==null,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
+  if(stairs!==null&&!Array.isArray(stairs))throw new Error('INVALID_DATABASE_RESPONSE');
+  // 계단 경험치·최고 점수. 마이그레이션 전이면 빠지고, 초기화 범위에도 계단이 나오지 않는다.
+  const stairsRecords=new Map((stairs??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,{stairsExp:row.stairsExp,stairsBest:row.stairsBest}];}));
+  return profiles.map(profile=>({...profile,...blockRecords.get(Number(profile.studentNumber)),...stairsRecords.get(Number(profile.studentNumber)),canResetScopes:true,canResetBlock:blocks!==null,canResetStairs:stairs!==null,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
 }
 Deno.serve(async request=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
@@ -166,7 +195,7 @@ Deno.serve(async request=>{
       if(!validNumber(data.studentNumber))return json({error:'INVALID_STUDENT'},400);
       if(data.action==='teacherResetScoped'){
         const scopes=data.scopes;
-        if(!Array.isArray(scopes)||scopes.length<1||scopes.length>6||new Set(scopes).size!==scopes.length||!scopes.every(scope=>['rush-1','rush-2','rush-3','vertical-5','vertical-10','block'].includes(scope)))return json({error:'INVALID_RESET_SCOPES'},400);
+        if(!Array.isArray(scopes)||scopes.length<1||scopes.length>7||new Set(scopes).size!==scopes.length||!scopes.every(scope=>['rush-1','rush-2','rush-3','vertical-5','vertical-10','block','stairs'].includes(scope)))return json({error:'INVALID_RESET_SCOPES'},400);
         await rpc('gugudan_teacher_reset_scoped',{p_student:data.studentNumber,p_scopes:scopes});return json({ok:true});
       }
       if(data.action==='teacherSetVertical'){
@@ -227,7 +256,16 @@ Deno.serve(async request=>{
     if(data.action==='blockFinish')return await finishBlock(student,data);
     if(data.action==='blockLeaders')return json(await rpc('gugudan_block_leaders',{}));
     if(data.action==='blockRecords')return json(await rpc('gugudan_block_records',{p_student:student}));
-    if(data.action==='capabilities')return json({questionTypes:true,friends:true,blocks:true});
+    if(data.action==='stairsBegin'){
+      if(!validId(data.id))return json({error:'INVALID_RUN'},400);
+      return json(await rpc('gugudan_stairs_begin',{p_student:student,p_id:data.id}));
+    }
+    if(data.action==='stairsFinish')return await finishStairs(student,data);
+    if(data.action==='stairsLeaders')return json(await rpc('gugudan_stairs_leaders',{}));
+    if(data.action==='stairsRecords')return json(await rpc('gugudan_stairs_records',{p_student:student}));
+    // School_Timer 시간표·시계 보정·교사 해제(읽기만). 함수가 아직 없으면 null: 앱은 안내 없이 평소처럼 동작한다.
+    if(data.action==='classPrep')return json(await rpc('gugudan_class_prep',{},true));
+    if(data.action==='capabilities')return json({questionTypes:true,friends:true,blocks:true,stairs:true});
     if(data.action==='saveFriends'){
       const friends=data.friends,partner=data.partner;
       if(!Array.isArray(friends)||friends.length>400||!friends.every(id=>typeof id==='string'&&/^[a-z]+(\.[a-z]+){0,4}$/.test(id))||(partner!==null&&typeof partner!=='string'))return json({error:'INVALID_FRIENDS'},400);

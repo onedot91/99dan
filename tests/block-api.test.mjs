@@ -37,6 +37,8 @@ globalThis.fetch=async(url,options)=>{
     return Response.json(Array.from({length:23},(_,i)=>({studentNumber:i+1,blockExp:i===4?60:0,verticalExp:i===4?100:0,blockSessions:i===4?[{id:'00000000-0000-4000-8000-000000000005',finishedAt:'2026-10-12T01:00:00Z',score:900,solved:3,lines:2,mistakes:1,ended:'stuck'}]:[]})));
   }
   if(name==='gugudan_teacher_reset_scoped')return Response.json(null);
+  // 계단 마이그레이션 전 서버.
+  if(name==='gugudan_teacher_stairs_records')return Response.json({code:'PGRST202',message:'missing'},{status:404});
   throw new Error(`Unexpected RPC ${name}`);
 };
 await import('../supabase/functions/gugudan-api/index.ts');

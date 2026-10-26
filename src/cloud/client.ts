@@ -9,6 +9,7 @@ import type { VerticalSession, VerticalStart } from '../game/vertical';
 import { validTeacherResetScopes } from '../game/teacherReset';
 import type { TeacherResetScope } from '../game/teacherReset';
 import type { BlockAnswer, BlockMove } from '../game/blockRun';
+import type { StairsEntry } from '../game/stairsRun';
 import { forgetTeacherCode, loadTeacherCode, saveTeacherCode } from '../game/teacherDevice';
 const env=import.meta.env;
 const endpoint=env.VITE_GUGUDAN_API_URL;
@@ -127,6 +128,26 @@ export async function loadBlockRecords(studentNumber:number):Promise<BlockRecord
   if((data.best!==null&&typeof data.best!=='number')||typeof data.runs!=='number')throw new Error('INVALID_BLOCK_RECORDS');
   return {best:data.best,runs:data.runs};
 }
+// 계단: 블록과 같이 서버가 시드를 발급하고, 끝나면 입력 기록을 같은 시드로 재생해 점수를 다시 매긴다.
+export async function beginStairsRun(studentNumber:number,id:string):Promise<number>{
+  const data=object(await authenticated(studentNumber,'stairsBegin',{id}));
+  if(data.id!==id||typeof data.seed!=='number'||!Number.isInteger(data.seed)||data.seed<0||data.seed>0xffffffff)throw new Error('INVALID_STAIRS_RUN');
+  return data.seed;
+}
+export type StairsFinish={readonly id:string;readonly ended:'fallen'|'stopped';readonly log:readonly StairsEntry[]};
+export async function finishStairsRun(studentNumber:number,finish:StairsFinish):Promise<number>{
+  const result=object(await authenticated(studentNumber,'stairsFinish',finish));
+  if(result.id!==finish.id||typeof result.score!=='number'||!Number.isInteger(result.score)||result.score<0)throw new Error('INVALID_STAIRS_SCORE');
+  return result.score;
+}
+export async function loadStairsLeaders(studentNumber:number):Promise<readonly Standing[]>{
+  return standings(await authenticated(studentNumber,'stairsLeaders'));
+}
+export async function loadStairsRecords(studentNumber:number):Promise<BlockRecord>{
+  const data=object(await authenticated(studentNumber,'stairsRecords'));
+  if((data.best!==null&&typeof data.best!=='number')||typeof data.runs!=='number')throw new Error('INVALID_STAIRS_RECORDS');
+  return {best:data.best,runs:data.runs};
+}
 async function teacherSignIn(code:string):Promise<string>{
   const data=object(await request('teacherLogin',{code}));
   if(typeof data.token!=='string')throw new Error('INVALID_SESSION');
@@ -182,4 +203,13 @@ export async function loadVerticalAssignment(studentNumber:number):Promise<Diffi
 export async function saveVerticalAssignment(studentNumber:number,difficulty:Difficulty):Promise<Difficulty>{
   if(!Number.isInteger(studentNumber)||studentNumber<1||studentNumber>23||!validVerticalDifficulty(difficulty))throw new Error('INVALID_VERTICAL_ASSIGNMENT');
   return assignment(await teacherRequest('teacherSetVertical',{studentNumber,difficulty}),studentNumber);
+}
+// 쉬는 시간 끝 수업 준비: School_Timer 시간표·시계 보정·교사 해제. 서버에 아직 없으면(null) 안내하지 않는다.
+export type ClassPrepSource={readonly weeklySchedule:unknown;readonly weeklySubjects:unknown;readonly clockOffsetSeconds:unknown;readonly release:unknown};
+export async function loadClassPrep(studentNumber:number):Promise<ClassPrepSource|null>{
+  const data=await authenticated(studentNumber,'classPrep');
+  if(data===null)return null;
+  const value=object(data);
+  if(value.weeklySchedule===null||value.weeklySchedule===undefined)return null;
+  return {weeklySchedule:value.weeklySchedule,weeklySubjects:value.weeklySubjects??null,clockOffsetSeconds:value.scheduleClockOffsetSeconds??0,release:value.classPrepRelease??null};
 }
