@@ -80,7 +80,7 @@
  .teacher-bests{gap:var(--s1)}.teacher-bests span{font-size:12px;white-space:nowrap}
 }
 @media(max-height:450px) and (min-width:701px){.teacher-screen{gap:var(--s2)}.teacher-list,.teacher-detail{padding:var(--s2)}}
-.teacher-app .header>.quiet-button{grid-column:3;justify-self:end}
+.teacher-header-actions{grid-column:3;justify-self:end;display:flex;gap:var(--s2)}
 .teacher-section-head{flex-wrap:wrap}
 .teacher-list-actions .quiet-button{white-space:nowrap}
 .teacher-number>span{white-space:nowrap;font-size:15px}
@@ -101,3 +101,4 @@
 @media(max-width:400px){.teacher-vertical{padding:var(--s2)}.teacher-vertical-questions{grid-template-columns:minmax(0,1fr)}}
 .teacher-app .teacher-icon-button{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;min-width:44px;height:44px;padding:0}
 @media(max-width:540px){.teacher-list>.teacher-section-head h1{flex-basis:auto}.teacher-list-actions{width:auto}}
+.teacher-app>.hall-screen{overflow:auto}
