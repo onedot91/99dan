@@ -11,6 +11,7 @@ import type { Difficulty } from '../game/vertical';
 import { playedToday } from '../game/teacherActivity';
 import { recommendVertical } from '../game/verticalRecommendation';
 import { TEACHER_RESET_SCOPES } from '../game/teacherReset';
+import { HallScreen } from './HallScreen';
 import type { TeacherResetScope } from '../game/teacherReset';
 
 const difficultyBadges:Readonly<Record<Difficulty,string>>={1:'下',2:'中',3:'上'};
@@ -91,6 +92,7 @@ export function TeacherScreen({onExit}:{readonly onExit:()=>void}){
   const [confirmation,setConfirmation]=useState('');
   const [error,setError]=useState('');
   const [now,setNow]=useState(()=>new Date());
+  const [hall,setHall]=useState(false);
   const dialog=useRef<HTMLDialogElement>(null);
   const resetPending=useRef(false);
   const load=async()=>{
@@ -122,8 +124,8 @@ export function TeacherScreen({onExit}:{readonly onExit:()=>void}){
   const partial=resetTarget!=='all'&&resetMode==='partial';
   const partialSupported=resetTarget!=='all'&&profiles.find(p=>p.studentNumber===resetTarget)?.canResetScopes===true;
   return <div className="app teacher-app">
-    <header className="header"><div className="brand"><span className="brand-mark"><Icon name="chart"/></span><span>교사 기록</span></div><button className="quiet-button" onClick={onExit}>번호 선택</button></header>
-    <main className="teacher-screen">
+    <header className="header"><div className="brand"><span className="brand-mark"><Icon name="chart"/></span><span>{hall?'명예의 전당':'교사 기록'}</span></div><div className="teacher-header-actions"><button className="quiet-button" onClick={()=>setHall(value=>!value)}>{hall?'학생 기록':'명예의 전당'}</button><button className="quiet-button" onClick={onExit}>번호 선택</button></div></header>
+    {hall?<HallScreen ready studentNumber={null} initialDuration={1}/>:<main className="teacher-screen">
       {state==='loading'?<p role="status">불러오는 중</p>:state==='expired'?<div className="teacher-message" role="alert"><p>교사 번호를 다시 입력해 주세요.</p><button className="primary-button" onClick={onExit}>번호 선택</button></div>:state==='error'?<div className="teacher-message" role="alert"><p>기록을 불러오지 못했습니다.</p><button className="primary-button" onClick={()=>void load()}>다시 시도</button></div>:<>
         <section className="teacher-list" aria-label="학생 선택">
           <div className="teacher-section-head"><h1>학생 선택</h1><div className="teacher-list-actions"><button className="quiet-button teacher-icon-button" onClick={()=>void load()} aria-label="기록 새로고침" title="기록 새로고침"><Icon name="refresh" size={22}/></button><button className="quiet-button teacher-reset-all teacher-icon-button" aria-label="전체 기록 초기화" title="전체 기록 초기화" onClick={()=>openReset('all')}><Icon name="trashAll" size={22}/></button></div></div>
@@ -131,7 +133,7 @@ export function TeacherScreen({onExit}:{readonly onExit:()=>void}){
         </section>
         {active&&<TeacherDetail profile={active} onReset={()=>openReset(selected)} onSaveVertical={saveVertical}/>}
       </>}
-    </main>
+    </main>}
     <dialog ref={dialog} className="number-dialog arcade-panel teacher-reset-dialog" aria-labelledby="teacher-reset-title" onCancel={event=>{if(resetting){event.preventDefault();return;}setError('');setConfirmation('');}}>
       <div className="number-confirm-content"><h2 id="teacher-reset-title">{resetTarget==='all'?'전체 학생 기록 초기화':`${resetTarget}번 기록 초기화`}</h2>
         {resetTarget!=='all'&&<div className="teacher-reset-modes" role="group" aria-label="초기화 범위"><button className="quiet-button" disabled={resetting} aria-pressed={partial} onClick={()=>{setResetMode('partial');setError('');}}>종류 선택</button><button className="quiet-button" disabled={resetting} aria-pressed={!partial} onClick={()=>{setResetMode('full');setError('');}}>모든 기록</button></div>}
