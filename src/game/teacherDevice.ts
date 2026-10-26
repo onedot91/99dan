@@ -18,3 +18,5 @@ export const saveTeacherCode=(code:string)=>write(CODE_KEY,code);
 export const forgetTeacherCode=()=>write(CODE_KEY,null);
 export const loadTeacherMode=()=>read(MODE_KEY)==='1'&&loadTeacherCode()!==null;
 export const saveTeacherMode=(on:boolean)=>write(MODE_KEY,on?'1':null);
+// 계단은 시범 운영 중이라 교사 번호를 입력한 기기에서만 보인다. 학생 기기에는 두 자리 수 5·10문제가 그대로 보인다.
+export const stairsUnlocked=()=>loadTeacherCode()!==null;

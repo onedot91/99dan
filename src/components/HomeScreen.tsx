@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { VerticalCount } from '../game/verticalSets';
+import { stairsUnlocked } from '../game/teacherDevice';
 import type { RushGame } from '../game/useRushGame';
 import { WEAK_UNLOCK_THRESHOLD } from '../game/useRushGame';
 import { levelFor } from '../game/learning';
@@ -16,16 +18,17 @@ const today=()=>new Date().toLocaleDateString('sv');
 function greetedToday(n:number):boolean{try{return localStorage.getItem(greetKey(n))===today();}catch{return true;}}
 type Mood='sleep'|'wake'|null;
 type ServerRun={readonly starting:boolean;readonly blocked:boolean;readonly saving:boolean;readonly error:boolean;readonly retry:()=>void};
-// 서버에 판을 저장하는 종목(계단·블록)의 저장 안내.
+// 서버에 판을 저장하는 종목(두 자리 수·계단·블록)의 저장 안내.
 function ServerRunNotice({sync}:{readonly sync:ServerRun}){
   if(sync.blocked)return sync.saving?<p className="challenge-error" role="status">점수 저장 중</p>:<div className="challenge-error" role="alert"><p>점수를 저장하지 못했습니다.</p><button className="quiet-button" disabled={sync.starting} onClick={sync.retry}>저장 재시도</button></div>;
   return sync.error?<p className="challenge-error" role="alert">시작하지 못했습니다. 다시 시도해 주세요.</p>:null;
 }
-export function HomeScreen({game:g,exp,friends,studentNumber,onStairs,onBlock,onHall,stairsSync,blockSync}:{readonly game:RushGame;readonly exp:number;readonly friends:Friends;readonly studentNumber:number;readonly onStairs:()=>void;readonly onBlock:()=>void;readonly onHall:()=>void;readonly stairsSync:ServerRun;readonly blockSync:ServerRun}){
+export function HomeScreen({game:g,exp,friends,studentNumber,onVertical,onStairs,onBlock,onHall,verticalSync,stairsSync,blockSync}:{readonly game:RushGame;readonly exp:number;readonly friends:Friends;readonly studentNumber:number;readonly onVertical:(count:VerticalCount)=>void;readonly onStairs:()=>void;readonly onBlock:()=>void;readonly onHall:()=>void;readonly verticalSync:ServerRun;readonly stairsSync:ServerRun;readonly blockSync:ServerRun}){
   const [mood,setMood]=useState<Mood>(null);
-  // 1분·3분 외에 고른 서버 종목. 두 자리 수 5·10문제는 계단으로 바뀌었다.
-  const [part,setPart]=useState<'stairs'|'block'|null>(null);
-  const sync=part==='stairs'?stairsSync:part==='block'?blockSync:null;
+  // 1분·3분 외에 고른 서버 종목. 교사 기기에서는 두 자리 수 5·10문제 자리에 계단이 보인다.
+  const stairs=stairsUnlocked();
+  const [part,setPart]=useState<VerticalCount|'stairs'|'block'|null>(null);
+  const sync=part==='stairs'?stairsSync:part==='block'?blockSync:part!==null?verticalSync:null;
   // The partner can arrive after the first render when it loads from the server.
   useEffect(()=>{if(friends.partner&&!greetedToday(studentNumber))setMood('sleep');},[friends.partner!==null,studentNumber]);
   useEffect(()=>{
@@ -44,8 +47,8 @@ export function HomeScreen({game:g,exp,friends,studentNumber,onStairs,onBlock,on
     </section>
     <nav className="mode-menu" aria-label="게임 선택">
       <div className="rush-card">
-        <div className="rush-durations challenge-options has-block" role="group" aria-label="도전 선택">{DURATIONS.map(n=><button key={n} aria-pressed={part===null&&g.duration===n} disabled={sync?.starting} onClick={()=>{setPart(null);g.setDuration(n);}}>{n}분</button>)}<button className="vertical-challenge-option" aria-pressed={part==='stairs'} disabled={sync?.starting} onClick={()=>setPart('stairs')}>계단</button><button className="vertical-challenge-option" aria-pressed={part==='block'} disabled={sync?.starting} onClick={()=>setPart('block')}>블록</button></div>
-        <button className="rush-start" disabled={sync?sync.starting||sync.blocked:false} onClick={part==='stairs'?onStairs:part==='block'?onBlock:()=>g.start('rush')}><span className="mode-icon"><Icon name={part==='stairs'?'stairs':part==='block'?'blocks':'bolt'} size={30}/></span><strong>{sync?.starting?'불러오는 중':part==='stairs'?'계단 시작':part==='block'?'블록 시작':`${g.duration}분 도전 시작`}</strong><span className="start-cursor" aria-hidden="true">▶</span></button>
+        <div className={`rush-durations challenge-options has-block${stairs?' with-stairs':''}`} role="group" aria-label="도전 선택">{DURATIONS.map(n=><button key={n} aria-pressed={part===null&&g.duration===n} disabled={sync?.starting} onClick={()=>{setPart(null);g.setDuration(n);}}>{n}분</button>)}{stairs?<button className="vertical-challenge-option" aria-pressed={part==='stairs'} disabled={sync?.starting} onClick={()=>setPart('stairs')}>계단</button>:([5,10] as const).map(count=><button key={count} className="vertical-challenge-option" aria-pressed={part===count} disabled={sync?.starting} onClick={()=>setPart(count)}>{count}문제</button>)}<button className="vertical-challenge-option" aria-pressed={part==='block'} disabled={sync?.starting} onClick={()=>setPart('block')}>블록</button></div>
+        <button className="rush-start" disabled={sync?sync.starting||sync.blocked:false} onClick={part==='stairs'?onStairs:part==='block'?onBlock:part!==null?()=>onVertical(part):()=>g.start('rush')}><span className="mode-icon"><Icon name={part==='stairs'?'stairs':part==='block'?'blocks':part!==null?'book':'bolt'} size={30}/></span><strong>{sync?.starting?'불러오는 중':part==='stairs'?'계단 시작':part==='block'?'블록 시작':part!==null?`${part}문제 도전 시작`:`${g.duration}분 도전 시작`}</strong><span className="start-cursor" aria-hidden="true">▶</span></button>
         {sync&&<ServerRunNotice sync={sync}/>}
       </div>
       <div className="practice-modes">
