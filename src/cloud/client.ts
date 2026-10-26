@@ -9,6 +9,7 @@ import type { VerticalSession, VerticalStart } from '../game/vertical';
 import { validTeacherResetScopes } from '../game/teacherReset';
 import type { TeacherResetScope } from '../game/teacherReset';
 import type { BlockAnswer, BlockMove } from '../game/blockRun';
+import type { StairsEntry } from '../game/stairsRun';
 import { forgetTeacherCode, loadTeacherCode, saveTeacherCode } from '../game/teacherDevice';
 const env=import.meta.env;
 const endpoint=env.VITE_GUGUDAN_API_URL;
@@ -125,6 +126,26 @@ export type BlockRecord={readonly best:number|null;readonly runs:number};
 export async function loadBlockRecords(studentNumber:number):Promise<BlockRecord>{
   const data=object(await authenticated(studentNumber,'blockRecords'));
   if((data.best!==null&&typeof data.best!=='number')||typeof data.runs!=='number')throw new Error('INVALID_BLOCK_RECORDS');
+  return {best:data.best,runs:data.runs};
+}
+// 계단: 블록과 같이 서버가 시드를 발급하고, 끝나면 입력 기록을 같은 시드로 재생해 점수를 다시 매긴다.
+export async function beginStairsRun(studentNumber:number,id:string):Promise<number>{
+  const data=object(await authenticated(studentNumber,'stairsBegin',{id}));
+  if(data.id!==id||typeof data.seed!=='number'||!Number.isInteger(data.seed)||data.seed<0||data.seed>0xffffffff)throw new Error('INVALID_STAIRS_RUN');
+  return data.seed;
+}
+export type StairsFinish={readonly id:string;readonly ended:'fallen'|'stopped';readonly log:readonly StairsEntry[]};
+export async function finishStairsRun(studentNumber:number,finish:StairsFinish):Promise<number>{
+  const result=object(await authenticated(studentNumber,'stairsFinish',finish));
+  if(result.id!==finish.id||typeof result.score!=='number'||!Number.isInteger(result.score)||result.score<0)throw new Error('INVALID_STAIRS_SCORE');
+  return result.score;
+}
+export async function loadStairsLeaders(studentNumber:number):Promise<readonly Standing[]>{
+  return standings(await authenticated(studentNumber,'stairsLeaders'));
+}
+export async function loadStairsRecords(studentNumber:number):Promise<BlockRecord>{
+  const data=object(await authenticated(studentNumber,'stairsRecords'));
+  if((data.best!==null&&typeof data.best!=='number')||typeof data.runs!=='number')throw new Error('INVALID_STAIRS_RECORDS');
   return {best:data.best,runs:data.runs};
 }
 async function teacherSignIn(code:string):Promise<string>{

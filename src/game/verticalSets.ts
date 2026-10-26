@@ -1,4 +1,4 @@
-import type { Difficulty, VerticalFact } from './vertical';
+import type { Difficulty, VerticalFact } from './vertical.ts';
 export type VerticalCount=5|10;
 export const validVerticalCount=(value:unknown):value is VerticalCount=>value===5||value===10;
 export function verticalCounts(difficulty:Difficulty,count:VerticalCount=5){return verticalSet(difficulty).counts.map(n=>n*count/5);}

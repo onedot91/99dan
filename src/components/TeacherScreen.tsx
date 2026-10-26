@@ -16,7 +16,7 @@ import type { TeacherResetScope } from '../game/teacherReset';
 
 const difficultyBadges:Readonly<Record<Difficulty,string>>={1:'下',2:'中',3:'上'};
 // 서버가 전체 기록으로 계산한 두 자리 수·블록 경험치를 쓴다. 이전 서버는 두 자리 수 최근 기록으로 대신한다.
-const expOf=(profile:SharedProfile)=>totals(profile).correct+(profile.verticalExp||profile.verticalSessions.reduce((sum,s)=>sum+s.count*VERTICAL_EXP_PER_QUESTION,0))+profile.blockExp;
+const expOf=(profile:SharedProfile)=>totals(profile).correct+(profile.verticalExp||profile.verticalSessions.reduce((sum,s)=>sum+s.count*VERTICAL_EXP_PER_QUESTION,0))+profile.blockExp+profile.stairsExp;
 function totals(profile:SharedProfile){return Object.values(profile.records).reduce((sum,record)=>({attempts:sum.attempts+record.attempts,correct:sum.correct+record.correct,wrong:sum.wrong+record.wrong}),{attempts:0,correct:0,wrong:0});}
 const sessionDate=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 function TeacherVerticalSettings({profile,onSave}:{readonly profile:SharedProfile;readonly onSave:(studentNumber:number,difficulty:Difficulty)=>Promise<void>}){
@@ -65,7 +65,7 @@ function TeacherDetail({profile,onReset,onSaveVertical}:{readonly profile:Shared
     block:recentBest(profile.blockSessions.map(s=>s.score))};
   const bests:readonly (readonly [string,number|null|undefined])[]=[
     ...DURATIONS.map(duration=>[`${duration}분`,profile.best.find(best=>best.duration===duration)?.score] as const),
-    ['5문제',other.vertical5],['10문제',other.vertical10],['블록',other.block]];
+    ['계단',profile.stairsBest],['블록',other.block],['5문제',other.vertical5],['10문제',other.vertical10]];
   return <section className="teacher-detail" aria-label={`${number}번 상세 기록`}>
     <div className="teacher-section-head"><h2>{number}번</h2><button className="quiet-button teacher-reset teacher-icon-button" aria-label="기록 초기화" title={`${number}번 기록 초기화`} onClick={onReset}><Icon name="trash" size={22}/></button></div>
     <div className="teacher-level">
@@ -137,7 +137,7 @@ export function TeacherScreen({onExit}:{readonly onExit:()=>void}){
     <dialog ref={dialog} className="number-dialog arcade-panel teacher-reset-dialog" aria-labelledby="teacher-reset-title" onCancel={event=>{if(resetting){event.preventDefault();return;}setError('');setConfirmation('');}}>
       <div className="number-confirm-content"><h2 id="teacher-reset-title">{resetTarget==='all'?'전체 학생 기록 초기화':`${resetTarget}번 기록 초기화`}</h2>
         {resetTarget!=='all'&&<div className="teacher-reset-modes" role="group" aria-label="초기화 범위"><button className="quiet-button" disabled={resetting} aria-pressed={partial} onClick={()=>{setResetMode('partial');setError('');}}>종류 선택</button><button className="quiet-button" disabled={resetting} aria-pressed={!partial} onClick={()=>{setResetMode('full');setError('');}}>모든 기록</button></div>}
-        {partial&&<fieldset className="teacher-reset-scopes" disabled={resetting||!partialSupported}><legend className="vertical-sr-only">초기화할 도전 종류</legend>{TEACHER_RESET_SCOPES.filter(scope=>scope.id!=='block'||profiles.find(p=>p.studentNumber===resetTarget)?.canResetBlock).map(scope=><label key={scope.id}><input type="checkbox" checked={resetScopes.includes(scope.id)} onChange={event=>{const checked=event.target.checked;setResetScopes(previous=>checked?[...previous,scope.id]:previous.filter(id=>id!==scope.id));}}/><span>{scope.label}</span></label>)}</fieldset>}
+        {partial&&<fieldset className="teacher-reset-scopes" disabled={resetting||!partialSupported}><legend className="vertical-sr-only">초기화할 도전 종류</legend>{TEACHER_RESET_SCOPES.filter(scope=>scope.id==='block'?profiles.find(p=>p.studentNumber===resetTarget)?.canResetBlock:scope.id==='stairs'?profiles.find(p=>p.studentNumber===resetTarget)?.canResetStairs:true).map(scope=><label key={scope.id}><input type="checkbox" checked={resetScopes.includes(scope.id)} onChange={event=>{const checked=event.target.checked;setResetScopes(previous=>checked?[...previous,scope.id]:previous.filter(id=>id!==scope.id));}}/><span>{scope.label}</span></label>)}</fieldset>}
         <p>{resetTarget==='all'?'1~23번 모든 학생의 문제·도전·최고 점수와 명예의 전당 기록이 삭제됩니다. 되돌릴 수 없습니다.':partial?'선택한 도전·최고점·순위만 삭제합니다. 누적 정오답·레벨·펫은 유지됩니다.':'문제·도전·최고 점수와 펫이 모두 지워집니다. 되돌릴 수 없습니다.'}</p>
         {partial&&!partialSupported&&<p className="storage-error" role="alert">서버 업데이트 후 종류별 초기화를 사용할 수 있습니다.</p>}
         {resetTarget==='all'&&<label className="teacher-confirm-label">계속하려면 <strong>전체 초기화</strong>를 입력하세요<input className="teacher-confirm-input" value={confirmation} onChange={event=>setConfirmation(event.target.value)} autoComplete="off" /></label>}

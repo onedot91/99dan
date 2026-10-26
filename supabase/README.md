@@ -163,6 +163,19 @@
 
 2026-10-13 운영 반영: MCP `apply_migration`(`teacher_bests`) 후 `gugudan-api` version 23 ACTIVE(`verify_jwt=false`, `index.ts`와 `block/` 4개 파일, `index.ts`는 한 줄 변경)를 배포했다. 함수 결과에서 학생별 최고 점수가 나오는 것을 확인했고, `tests/block-http.mjs` 20개와 `tests/vertical-tight-time-http.mjs` 18개가 통과했다. 교사 기록 HTTP 호출은 교사 코드가 필요해 실행하지 않았다.
 
+## 계단 기록·명예의 전당·경험치 (2026-10-26, 운영 반영 대기)
+
+`migrations/20261026000000_gugudan_stairs_runs.sql`은 블록과 같은 방식으로 `gugudan_stairs_runs`와 계단 RPC(`gugudan_stairs_begin/seed/finish/leaders/exp/records`, `gugudan_teacher_stairs_records`)를 추가하고, `gugudan_profile`(`stairsExp`)·`gugudan_save_friends`(펫 한도)·교사 초기화 3종(범위 `stairs`)을 계단까지 포함하도록 교체한다. 문제당 경험치는 10(`exp_per_question` 기본값). 두 자리 수 5·10문제 테이블과 기록은 그대로 둔다. 적용 순서: 마이그레이션 → `gugudan-api` 재배포(`verify_jwt=false` 유지, `block/`·`stairs/` 폴더 포함).
+
+- `stairsBegin {id}`: 서버가 32비트 시드를 발급한다(같은 ID 재시도는 같은 시드, 다른 학생은 `RUN_CONFLICT`).
+- `stairsFinish {id, ended:'fallen'|'stopped', log}`: `log` ≤ 5000개, 각 항목은 `'climb'`·`'turn'` 또는 `{answer 0~9, ms?}`. Edge가 `replayStairsRun`으로 재생해 점수·높이·푼 문제·오답·방향 실수를 저장한다. 재생이 맞지 않으면 400 `INVALID_REPLAY`, 같은 ID에 다른 기록은 `RUN_ALREADY_FINISHED`.
+- `stairsLeaders`: 학생별 최근 7일 최고 점수 상위 5명. `stairsRecords`: 본인 최고 점수와 판 수.
+- 교사: `gugudan_teacher_stairs_records`가 `stairsExp`·`stairsBest`를 준다(RPC가 없으면 생략되고 `canResetStairs:false`).
+
+재생 엔진 원본은 `src/game/stairsRun.ts`(세로셈은 `vertical.ts`)다. 바꾼 뒤 `node scripts/sync-edge-block.mjs`로 `supabase/functions/gugudan-api/stairs/`에 복사한다(`tests/stairs.test.mjs`가 두 곳이 같은지 검사).
+
+로컬 검증: 빈 PostgreSQL 16 DB에 `tests/block-bootstrap.sql`, `20261013120000_teacher_bests.sql`, 이 마이그레이션을 차례로 적용한 뒤 `PGDATABASE=stairs_test node tests/stairs.pg.mjs`가 통과했다(시드 발급·재시도, 재생 점수 저장·재시도, 충돌·시드 불일치, 공개 역할 차단, 7일 순위, 본인 기록, 프로필 경험치, 펫 한도, 교사 기록, 범위·개인 초기화).
+
 ## 쉬는 시간 끝 수업 준비 안내 (2026-10-18, 운영 SQL/API 반영 완료)
 
 School_Timer 학생 화면과 같은 안내를 구구단 앱에도 띄운다. 쉬는 시간 남은 20%(점심은 2분 전)에 가운데 반투명 링 카드 "하던 것 마무리하세요"(초록 링), 수업 60초 전에 같은 카드가 "크롬북을 닫아주세요."(주황 링)로 바뀐다(클릭·입력은 아래 화면으로 지나감), 수업 50초 전부터 수업이 끝나거나 교사가 해제할 때까지 "크롬북 닫기" 잠금 화면이다. 마무리·잠금 동안 새 도전·연습 시작만 막고("수업 후에 하세요"), 진행 중인 판과 결과 저장은 막지 않는다. 계산은 School_Timer `src/lib/classPrep.ts`를 그대로 옮긴 `src/game/classPrep.ts`다.
