@@ -163,7 +163,9 @@
 
 2026-10-13 운영 반영: MCP `apply_migration`(`teacher_bests`) 후 `gugudan-api` version 23 ACTIVE(`verify_jwt=false`, `index.ts`와 `block/` 4개 파일, `index.ts`는 한 줄 변경)를 배포했다. 함수 결과에서 학생별 최고 점수가 나오는 것을 확인했고, `tests/block-http.mjs` 20개와 `tests/vertical-tight-time-http.mjs` 18개가 통과했다. 교사 기록 HTTP 호출은 교사 코드가 필요해 실행하지 않았다.
 
-## 계단 기록·명예의 전당·경험치 (2026-10-26, 운영 반영 대기)
+## 계단 기록·명예의 전당·경험치 (2026-10-26)
+
+2026-10-26 운영 반영: 사용자가 대시보드 SQL Editor에서 이 마이그레이션을 직접 실행했다(MCP `apply_migration`은 확인 응답 시간 초과로 적용되지 않음, Supabase 마이그레이션 이력에는 없음). 적용 후 `gugudan_stairs_runs`·계단 함수 7개, RLS, 공개 역할(anon)의 테이블·함수 접근 차단, `gugudan_profile`의 `stairsExp`, 범위 초기화의 `stairs`를 확인했다. 이어서 `gugudan-api` version 25 ACTIVE를 배포했다(`verify_jwt=false`, `index.ts`·`block/` 4개·`stairs/` 5개 파일). 학생 화면에서는 아직 교사 기기에서만 계단이 보인다(`stairsUnlocked`).
 
 `migrations/20261026000000_gugudan_stairs_runs.sql`은 블록과 같은 방식으로 `gugudan_stairs_runs`와 계단 RPC(`gugudan_stairs_begin/seed/finish/leaders/exp/records`, `gugudan_teacher_stairs_records`)를 추가하고, `gugudan_profile`(`stairsExp`)·`gugudan_save_friends`(펫 한도)·교사 초기화 3종(범위 `stairs`)을 계단까지 포함하도록 교체한다. 문제당 경험치는 10(`exp_per_question` 기본값). 두 자리 수 5·10문제 테이블과 기록은 그대로 둔다. 적용 순서: 마이그레이션 → `gugudan-api` 재배포(`verify_jwt=false` 유지, `block/`·`stairs/` 폴더 포함).
 
