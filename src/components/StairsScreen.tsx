@@ -10,6 +10,7 @@ import { NumberPad } from './NumberPad';
 import { Icon } from './Icon';
 import { PixelArt } from './PixelArt';
 import { FriendSprite } from './FriendSprite';
+import { friendById } from '../game/friends';
 import { reducedMotion, useCountUp } from './BlockScreen';
 import type { Cue } from '../game/audio';
 
@@ -25,27 +26,47 @@ export function StairsProgress({run}:{readonly run:StairsRun}){
   return <div className="vertical-progress stairs-progress"><span className="vertical-live-score" role="status" aria-label={`점수 ${score}점`}><strong key={`score:${score}`} className={change?'score-earned':''}>{score.toLocaleString()}</strong><small>점</small>{change&&<i key={`change:${change.key}`} className="vertical-score-change" aria-hidden="true">+{change.amount}</i>}</span><Hearts lives={run.lives}/><span className="stairs-height" aria-label={`${run.height}칸`}><Icon name="stairs" size={18}/>{run.height}</span></div>;
 }
 
-function StairsField({run,partner}:{readonly run:StairsRun;readonly partner:string|null}){
+// 높이 구간: 하늘색(낮 → 노을 → 저녁 → 밤 → 우주)과 계단 재질(돌 → 나무 → 은 → 금 → 수정)이 50칸마다 바뀐다.
+const ZONES=5,zoneOf=(height:number)=>Math.min(ZONES-1,Math.floor(height/50));
+const tierOf=(id:string|null)=>friendById(id)?.tier??1;
+function StairsField({run,pet}:{readonly run:StairsRun;readonly pet:string|null}){
   // 칸 i의 가로 위치: 0번 칸에서 steps를 차례로 더한 값.
   const xs=[0];for(let i=0;i<run.steps.length;i++)xs.push(xs[i]!+run.steps[i]!);
   const from=Math.max(0,run.height-BELOW),to=Math.min(xs.length-1,run.height+ABOVE);
   const here=xs[run.height]!;
   const slipping=run.lastSlip!==null&&run.lastSlip===run.log.length-1;
-  return <div className={`stairs-scene${run.ended==='fallen'?' fallen':''}`} aria-hidden="true">
-    <div className="stairs-world" style={{'--cx':here,'--cy':run.height} as CSSProperties}>
+  const opened=(i:number)=>i<run.height||i===run.height&&run.phase!=='solve';
+  const milestone=run.height>0&&run.height%50===0;
+  return <div className={`stairs-scene zone-${zoneOf(run.height)}${run.ended==='fallen'?' fallen':''}`} style={{'--cy':run.height} as CSSProperties} aria-hidden="true">
+    {Array.from({length:ZONES},(_,z)=><i key={z} className={`stairs-sky sky-${z}`}/>)}
+    <i className="stairs-stars"/><i className="stairs-far"/><i className="stairs-near"/>
+    <div className="stairs-world" style={{'--cx':here} as CSSProperties}>
+      {from===0&&<i className="stairs-ground"/>}
       {Array.from({length:to-from+1},(_,k)=>{
         const i=from+k,gate=isGate(i);
-        return <i key={i} className={`stair${gate?' gate':''}${gate&&i<run.height||gate&&i===run.height&&run.phase!=='solve'?' opened':''}${i===run.height?' here':''}`} style={{'--x':xs[i],'--y':i} as CSSProperties}>{gate&&<b>{i<run.height||i===run.height&&run.phase!=='solve'?<Icon name="check" size={16}/>:<Icon name="lock" size={16}/>}</b>}</i>;
+        return <i key={i} className={`stair tone-${zoneOf(i)}${gate?' gate':''}${gate&&opened(i)?' opened':''}`} style={{'--x':xs[i],'--y':i} as CSSProperties}>
+          {gate&&<b className="stairs-lock">{opened(i)?<Icon name="check" size={16}/>:<Icon name="lock" size={16}/>}</b>}
+          {i>0&&i%10===0&&<span className={`stairs-sign${(run.steps[i]??1)>0?' on-left':''}`}>{i}F</span>}
+        </i>;
       })}
-      <span key={slipping?`slip:${run.lastSlip}`:'climber'} className={`stairs-climber${run.facing<0?' left':''}${slipping?' slip':''}`} style={{'--x':here,'--y':run.height} as CSSProperties}>
-        {partner?<FriendSprite id={partner} fill/>:<img src="character.png" alt=""/>}
+      {run.phase==='climb'&&isGate(run.height)&&<span key={`open:${run.height}`} className="stairs-burst" style={{'--x':here,'--y':run.height} as CSSProperties}>{Array.from({length:8},(_,i)=><i key={i}/>)}</span>}
+      <span key={`dust:${run.height}`} className="stairs-dust" style={{'--x':here,'--y':run.height} as CSSProperties}><i/><i/><i/></span>
+      <span className={`stairs-climber tier-${tierOf(pet)}${run.facing>0?' right':''}`} style={{'--x':here,'--y':run.height} as CSSProperties}>
+        <span key={slipping?`slip:${run.lastSlip}`:`hop:${run.height}`} className={`stairs-body${slipping?' slip':run.height>0?' hop':''}`}>
+          {pet?<FriendSprite id={pet} fill/>:<img src="character.png" alt=""/>}
+          {slipping&&<i className="stairs-sweat"/>}
+        </span>
       </span>
     </div>
+    <div className="stairs-hud"><strong key={run.height}>{run.height}</strong><small>층</small></div>
+    {run.phase==='solve'&&<strong key={`gate:${run.history.length}`} className="stairs-banner gate-banner">문제 계단!</strong>}
+    {run.phase==='climb'&&milestone&&<strong key={`floor:${run.height}`} className="stairs-banner floor-banner">{run.height}층 돌파!</strong>}
     {slipping&&<strong key={`lost:${run.lastSlip}`} className="stairs-lost">-1 <Icon name="heart" size={22}/></strong>}
+    {!pet&&run.height===0&&<p className="stairs-pet-hint">펫을 고르면 내 펫이 계단을 올라요</p>}
   </div>;
 }
 
-export function StairsPlay({game,partner,onCue}:{readonly game:StairsGame;readonly partner:string|null;readonly onCue:(cue:Cue)=>void}){
+export function StairsPlay({game,pet,onCue}:{readonly game:StairsGame;readonly pet:string|null;readonly onCue:(cue:Cue)=>void}){
   const run=game.run;
   const [wrong,setWrong]=useState(false);
   const steps=run?.problem?stairsSteps(run.problem):[];
@@ -103,10 +124,10 @@ export function StairsPlay({game,partner,onCue}:{readonly game:StairsGame;readon
   const left=stairsToNextGate(run);
   return <main className={`stairs-play${solving?' solving':' climbing'}`}>
     <section className="stairs-field arcade-panel" aria-label="계단">
-      <StairsField run={run} partner={partner}/>
+      <StairsField run={run} pet={pet}/>
       <div className="stairs-buttons" role="group" aria-label="계단 조작">
-        <button className="stairs-turn" disabled={!climbing} onClick={()=>move('turn')}><Icon name="turn" size={28}/><span>방향전환</span><kbd className="wide-only">←</kbd></button>
-        <button className="stairs-climb" disabled={!climbing} onClick={()=>move('climb')}><Icon name="stairs" size={28}/><span>오르기</span><kbd className="wide-only">→</kbd></button>
+        <button className="stairs-turn" disabled={!climbing} onClick={()=>move('turn')}><Icon name="turn" size={32}/><span>방향전환</span><kbd className="wide-only">← Z</kbd></button>
+        <button className="stairs-climb" disabled={!climbing} onClick={()=>move('climb')}><Icon name="stairs" size={32}/><span>오르기</span><kbd className="wide-only">→ X</kbd></button>
       </div>
     </section>
     <section className={`vertical-paper arcade-panel stairs-paper${mash!==null?' mashed':''}`} key={run.history.length} aria-label="세로셈">

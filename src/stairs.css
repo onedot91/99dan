@@ -1,26 +1,72 @@
 /* 계단: 왼쪽 계단과 조작 버튼, 가운데 세로셈, 오른쪽 키패드. */
 .stairs-play{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(240px,.7fr);grid-template-rows:minmax(0,1fr);gap:var(--s4) var(--s6);padding:var(--s3) var(--s1) var(--s1)}
-.stairs-field{container-type:size;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:var(--s3);min-width:0;min-height:0;padding:var(--s3)}
-.stairs-field.arcade-panel{background:var(--panel-lo);box-shadow:inset 0 var(--px) 0 var(--panel),var(--ring),var(--drop)}
-.stairs-scene{--sw:clamp(40px,12cqmin,72px);--sh:calc(var(--sw) * .8);position:relative;min-height:0;overflow:hidden}
-.stairs-world{position:absolute;left:50%;bottom:22%;width:0;height:0;transform:translate(calc(-1 * var(--cx) * var(--sw)),calc(var(--cy) * var(--sh)));transition:transform 120ms steps(3,end)}
-.stair{position:absolute;left:calc(var(--x) * var(--sw) - var(--sw) / 2);bottom:calc(var(--y) * var(--sh) - var(--sh) * .5);width:var(--sw);height:calc(var(--sh) * .5);background:var(--panel-raised);box-shadow:inset 0 3px 0 var(--panel-hi),inset 0 -3px 0 var(--panel),var(--ring)}
-.stair.here{background:var(--blue)}
-.stair.gate{display:grid;place-items:center;background:var(--yellow);color:var(--ink);box-shadow:inset 0 3px 0 rgb(255 255 255/.45),inset 0 -3px 0 rgb(0 0 0/.3),var(--ring)}
-.stair.gate.opened{background:var(--mint)}
-.stair.gate>b{display:grid;place-items:center;line-height:0}
-.stairs-climber{position:absolute;left:calc(var(--x) * var(--sw) - var(--sw) * .5);bottom:calc(var(--y) * var(--sh));width:var(--sw);height:var(--sw);transition:left 120ms steps(3,end),bottom 120ms steps(3,end)}
-.stairs-climber>img,.stairs-climber .friend-sprite{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-.stairs-climber.left>*{transform:scaleX(-1)}
-.stairs-climber.slip{animation:stairs-slip 420ms steps(6,end)}
-.stairs-scene.fallen .stairs-climber{animation:stairs-fall 1200ms steps(10,end) forwards}
-.stairs-lost{position:absolute;left:50%;top:var(--s4);translate:-50% 0;display:flex;align-items:center;gap:var(--s1);padding:var(--s1) var(--s3);background:var(--coral);color:var(--ink);box-shadow:var(--ring);font-family:var(--mono);font-size:var(--text-lg);pointer-events:none;animation:block-mash 1100ms steps(10,end) both}
-.stairs-buttons{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
-.stairs-buttons button{display:flex;align-items:center;justify-content:center;gap:var(--s2);min-height:72px;padding:var(--s2);border:0;background:var(--panel);color:var(--ink-on-panel,inherit);box-shadow:inset 0 var(--px) 0 var(--panel-hi),inset 0 calc(-1 * var(--px)) 0 var(--panel-lo),var(--ring);font:inherit;font-size:var(--text-lg);cursor:pointer;touch-action:manipulation}
+.stairs-field{container-type:size;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:var(--s3);min-width:0;min-height:0;padding:var(--s2)}
+.stairs-field.arcade-panel{background:var(--outline);box-shadow:var(--ring),var(--drop)}
+
+/* 무대: 높이 구간마다 하늘이 바뀌고(zone-0~4), 먼 빌딩·가까운 구름이 다른 속도로 내려간다. */
+.stairs-scene{--sw:clamp(44px,13cqmin,76px);--sh:calc(var(--sw) * .78);--stair-h:calc(var(--sh) * .9);position:relative;min-height:0;overflow:hidden;isolation:isolate}
+.stairs-sky,.stairs-stars,.stairs-far,.stairs-near{position:absolute;inset:0;pointer-events:none}
+.stairs-sky{opacity:0;transition:opacity 900ms steps(6,end)}
+.sky-0{background:linear-gradient(#3fb2ff,#8fdcff 60%,#d2f4ff)}
+.sky-1{background:linear-gradient(#4b3a8f,#c45a7a 55%,#ff9f6b 80%,#ffd18a)}
+.sky-2{background:linear-gradient(#1d1b4f,#4b2f7f 55%,#9a4c86)}
+.sky-3{background:linear-gradient(#07061a,#141235 60%,#25224f)}
+.sky-4{background:linear-gradient(#020108,#160a2a 55%,#3a1460)}
+.zone-0 .sky-0,.zone-1 .sky-1,.zone-2 .sky-2,.zone-3 .sky-3,.zone-4 .sky-4{opacity:1}
+.stairs-stars{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' shape-rendering='crispEdges'%3E%3Crect x='12' y='20' width='4' height='4' fill='%23fff4d6'/%3E%3Crect x='96' y='12' width='4' height='4' fill='%237df9ff'/%3E%3Crect x='60' y='70' width='4' height='4' fill='%23fff4d6'/%3E%3Crect x='136' y='88' width='8' height='8' fill='%23ffd23f'/%3E%3Crect x='28' y='120' width='4' height='4' fill='%23b5b3e0'/%3E%3Crect x='104' y='140' width='4' height='4' fill='%23fff4d6'/%3E%3C/svg%3E");background-position:0 calc(var(--cy) * 2px);opacity:0;transition:opacity 900ms steps(6,end),background-position 160ms steps(4,end)}
+.zone-1 .stairs-stars{opacity:.25}.zone-2 .stairs-stars{opacity:.6}.zone-3 .stairs-stars,.zone-4 .stairs-stars{opacity:1}
+.stairs-far{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='140' shape-rendering='crispEdges'%3E%3Cg fill='%231d1b40' fill-opacity='.55'%3E%3Crect x='0' y='60' width='36' height='80'/%3E%3Crect x='40' y='28' width='28' height='112'/%3E%3Crect x='72' y='76' width='40' height='64'/%3E%3Crect x='116' y='44' width='24' height='96'/%3E%3Crect x='144' y='88' width='44' height='52'/%3E%3Crect x='192' y='52' width='48' height='88'/%3E%3C/g%3E%3Cg fill='%23ffd23f' fill-opacity='.5'%3E%3Crect x='48' y='40' width='4' height='4'/%3E%3Crect x='56' y='60' width='4' height='4'/%3E%3Crect x='124' y='56' width='4' height='4'/%3E%3Crect x='204' y='68' width='4' height='4'/%3E%3Crect x='220' y='92' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E") repeat-x 0 calc(100% + var(--cy) * 6px)/240px 140px;transition:background-position 160ms steps(4,end)}
+.stairs-near{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='260' shape-rendering='crispEdges'%3E%3Cg fill='%23ffffff' fill-opacity='.8'%3E%3Crect x='20' y='40' width='56' height='12'/%3E%3Crect x='32' y='28' width='28' height='12'/%3E%3Crect x='130' y='160' width='64' height='12'/%3E%3Crect x='146' y='148' width='32' height='12'/%3E%3C/g%3E%3C/svg%3E") repeat 0 calc(var(--cy) * 14px)/220px 260px;transition:opacity 900ms steps(6,end),background-position 160ms steps(4,end)}
+.zone-2 .stairs-near{opacity:.35}.zone-3 .stairs-near,.zone-4 .stairs-near{opacity:0}
+
+/* 계단: 윗면과 앞면이 있는 블록. 재질은 50칸마다 돌 → 나무 → 은 → 금 → 수정. */
+.stairs-world{position:absolute;left:50%;bottom:30%;width:0;height:0;transform:translate(calc(-1 * var(--cx) * var(--sw)),calc(var(--cy) * var(--sh)));transition:transform 160ms steps(4,end)}
+.stairs-ground{position:absolute;left:-2400px;width:4800px;bottom:calc(-1 * var(--stair-h) - 600px);height:600px;background:linear-gradient(#7ee8a0 0 10px,#2a9d5c 10px 22px,#7a5230 22px 30px,#5a3a22 30px)}
+.stair{--top:#d9e1f0;--front:#6b7aa0;position:absolute;left:calc(var(--x) * var(--sw) - var(--sw) / 2);bottom:calc(var(--y) * var(--sh) - var(--stair-h));width:var(--sw);height:var(--stair-h);background:linear-gradient(var(--top) 0 26%,rgb(0 0 0/.25) 26% calc(26% + 3px),var(--front) calc(26% + 3px)),var(--front);box-shadow:0 0 0 3px var(--outline),0 6px 0 3px rgb(0 0 0/.25)}
+.stair::after{content:"";position:absolute;inset:calc(26% + 3px) 0 0;background:repeating-linear-gradient(90deg,transparent 0 calc(50% - 2px),rgb(0 0 0/.22) calc(50% - 2px) 50%),linear-gradient(transparent 0 48%,rgb(0 0 0/.18) 48% calc(48% + 3px),transparent 0)}
+.tone-1{--top:#f6c27a;--front:#9a5a2c}.tone-2{--top:#f2f7ff;--front:#8592ad}.tone-3{--top:#fff3a3;--front:#c77d0a}.tone-4{--top:#d7fbff;--front:#5b7fe0}
+.stair.gate{--top:var(--yellow);--front:var(--gold-shade);animation:stairs-glow 900ms steps(3,end) infinite}
+.stair.gate.opened{--top:var(--mint-hi);--front:var(--mint-shade);animation:none}
+.stairs-lock{position:absolute;left:50%;bottom:8%;translate:-50% 0;z-index:2;display:grid;place-items:center;width:26px;height:26px;background:var(--yellow);color:var(--ink);box-shadow:var(--ring);animation:stairs-bob 900ms steps(3,end) infinite}
+.gate.opened .stairs-lock{background:var(--mint);animation:none}
+.stairs-sign{position:absolute;bottom:calc(100% - 4px);left:calc(100% + var(--sw) * .25);padding:2px 6px;background:#9a5a2c;color:var(--paper);box-shadow:0 0 0 3px var(--outline);font-family:var(--mono);font-size:14px;white-space:nowrap}
+.stairs-sign.on-left{left:auto;right:calc(100% + var(--sw) * .25)}
+
+/* 펫: 오를 때 통 튀어 오르고, 실수하면 휘청, 떨어지면 빙글 돌며 떨어진다. 펫 그림은 왼쪽을 보므로 오른쪽으로 갈 때 뒤집는다. */
+.stairs-climber{position:absolute;z-index:3;left:calc(var(--x) * var(--sw) - var(--sw) * .7);bottom:calc(var(--y) * var(--sh) - 2px);width:calc(var(--sw) * 1.4);height:calc(var(--sw) * 1.4);transition:left 160ms steps(4,end),bottom 160ms steps(4,end)}
+.stairs-climber.right{transform:scaleX(-1)}
+.stairs-body{position:relative;display:block;width:100%;height:100%;transform-origin:50% 100%}
+.stairs-climber.tier-1 .stairs-body{scale:.7}.stairs-climber.tier-2 .stairs-body{scale:.8}.stairs-climber.tier-3 .stairs-body{scale:.88}.stairs-climber.tier-4 .stairs-body{scale:.95}
+.stairs-body>img,.stairs-body>.friend-sprite{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgb(0 0 0/.35));animation:friend-bob 480ms steps(2,end) infinite}
+.stairs-body.hop{animation:stairs-hop 240ms steps(6,end)}
+.stairs-body.slip{animation:stairs-slip 480ms steps(8,end)}
+.stairs-sweat{position:absolute;right:4%;top:4%;width:10px;height:14px;background:var(--blue);box-shadow:0 0 0 2px var(--outline);animation:stairs-sweat 600ms steps(5,end) forwards}
+.stairs-scene.fallen .stairs-climber{animation:stairs-fall 1300ms steps(12,end) forwards}
+.stairs-dust{position:absolute;z-index:2;left:calc(var(--x) * var(--sw));bottom:calc(var(--y) * var(--sh));width:0;height:0}
+.stairs-dust>i{position:absolute;bottom:0;width:8px;height:8px;background:#fff;opacity:0;animation:stairs-dust 360ms steps(4,end)}
+.stairs-dust>i:nth-child(1){--dx:-22px}.stairs-dust>i:nth-child(2){--dx:22px}.stairs-dust>i:nth-child(3){--dx:0px;--dy:-14px}
+.stairs-burst{position:absolute;z-index:4;left:calc(var(--x) * var(--sw));bottom:calc(var(--y) * var(--sh) + var(--sw) * .8);width:0;height:0}
+.stairs-burst>i{position:absolute;width:8px;height:8px;background:var(--yellow);box-shadow:0 0 0 2px var(--outline);opacity:0;rotate:calc(var(--i) * 45deg);animation:stairs-burst 640ms steps(6,end)}
+.stairs-burst>i:nth-child(1){--i:0}.stairs-burst>i:nth-child(2){--i:1}.stairs-burst>i:nth-child(3){--i:2}.stairs-burst>i:nth-child(4){--i:3}.stairs-burst>i:nth-child(5){--i:4}.stairs-burst>i:nth-child(6){--i:5}.stairs-burst>i:nth-child(7){--i:6}.stairs-burst>i:nth-child(8){--i:7}
+
+/* 화면 위 높이, 배너 */
+.stairs-hud{position:absolute;z-index:5;left:50%;top:var(--s3);translate:-50% 0;display:flex;align-items:baseline;gap:4px;color:var(--yellow);font-family:var(--mono);text-shadow:var(--text-outline);pointer-events:none}
+.stairs-hud strong{font-size:clamp(36px,11cqmin,56px);line-height:1;animation:stairs-pop 200ms steps(4,end)}
+.stairs-hud small{font-size:var(--text-lg);color:var(--paper)}
+.stairs-banner{position:absolute;z-index:6;left:50%;top:28%;translate:-50% 0;padding:var(--s2) var(--s4);color:var(--ink);font-family:var(--mono);font-size:var(--text-xl);white-space:nowrap;box-shadow:var(--ring),var(--drop);pointer-events:none;animation:stairs-banner 1400ms steps(10,end) forwards}
+.gate-banner{background:var(--yellow)}
+.floor-banner{background:var(--mint)}
+.stairs-pet-hint{position:absolute;z-index:5;left:50%;bottom:var(--s3);translate:-50% 0;margin:0;padding:var(--s1) var(--s3);background:rgb(11 10 31/.8);color:var(--paper);font-size:var(--text-base);white-space:nowrap}
+.stairs-lost{position:absolute;z-index:6;left:50%;top:44%;translate:-50% 0;display:flex;align-items:center;gap:var(--s1);padding:var(--s1) var(--s3);background:var(--coral);color:var(--ink);box-shadow:var(--ring);font-family:var(--mono);font-size:var(--text-lg);pointer-events:none;animation:block-mash 1100ms steps(10,end) both}
+
+/* 조작: 아케이드 버튼 두 개. 왼쪽 방향전환, 오른쪽 오르기. */
+.stairs-buttons{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);padding:0 var(--s1) var(--s2)}
+.stairs-buttons button{display:grid;justify-items:center;align-content:center;gap:2px;min-height:84px;padding:var(--s2);border:0;color:var(--ink);font:inherit;font-size:var(--text-lg);cursor:pointer;touch-action:manipulation;user-select:none;box-shadow:inset 0 4px 0 rgb(255 255 255/.45),inset 0 -6px 0 rgb(0 0 0/.25),0 0 0 4px var(--outline),0 8px 0 4px var(--outline);transition:transform 60ms steps(2,end),box-shadow 60ms steps(2,end)}
+.stairs-buttons .stairs-turn{background:var(--coral)}
 .stairs-buttons .stairs-climb{background:var(--blue)}
-.stairs-buttons button:active:not(:disabled){transform:translateY(2px)}
-.stairs-buttons button:disabled{opacity:.4;cursor:default}
-.stairs-buttons kbd{font-family:var(--mono);font-size:var(--text-base);opacity:.7}
+.stairs-buttons button:active:not(:disabled){transform:translateY(6px);box-shadow:inset 0 4px 0 rgb(255 255 255/.45),inset 0 -2px 0 rgb(0 0 0/.25),0 0 0 4px var(--outline),0 2px 0 4px var(--outline)}
+.stairs-buttons button:disabled{filter:grayscale(.7) brightness(.6);cursor:default}
+.stairs-buttons kbd{font-family:var(--mono);font-size:14px;opacity:.65}
 .stairs-paper{position:relative}
 .stairs-paper.mashed{animation:block-mash-shake 360ms steps(6,end)}
 .stairs-next{display:grid;justify-items:center;gap:var(--s2);text-align:center;color:var(--ink)}
@@ -33,10 +79,22 @@
 .stairs-hearts>span.lost{color:var(--muted);opacity:.5;animation:stairs-heart 420ms steps(5,end)}
 .stairs-hearts>span.lost>svg{fill:none}
 .stairs-progress .stairs-height{display:flex;align-items:center;gap:var(--s1);color:var(--mint);font-size:var(--text-lg)}
-@keyframes stairs-slip{0%,100%{translate:0}20%{translate:-6px 0}40%{translate:6px 0}60%{translate:-4px 0}80%{translate:4px 0}}
-@keyframes stairs-fall{0%{translate:0;rotate:0deg}20%{translate:0 -10px}100%{translate:0 140cqh;rotate:200deg;opacity:0}}
+@keyframes stairs-hop{0%{transform:none}35%{transform:translateY(-38%) scale(.9,1.1)}70%{transform:translateY(-6%)}85%{transform:scale(1.15,.85)}100%{transform:none}}
+@keyframes stairs-slip{0%,100%{transform:none}15%{transform:translateX(-8%) rotate(-10deg)}35%{transform:translateX(8%) rotate(10deg)}55%{transform:translateX(-5%) rotate(-6deg)}75%{transform:translateX(4%) rotate(4deg)}}
+@keyframes stairs-sweat{0%{opacity:0;translate:0 0}30%{opacity:1}100%{opacity:0;translate:6px 16px}}
+@keyframes stairs-fall{0%{translate:0;rotate:0deg}20%{translate:0 -24px}100%{translate:0 140cqh;rotate:300deg;opacity:0}}
+@keyframes stairs-dust{0%{opacity:.9;transform:none}100%{opacity:0;transform:translate(var(--dx),var(--dy,-6px)) scale(.5)}}
+@keyframes stairs-burst{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-44px)}}
+@keyframes stairs-glow{0%,100%{box-shadow:0 0 0 3px var(--outline),0 6px 0 3px rgb(0 0 0/.25)}50%{box-shadow:0 0 0 3px var(--outline),0 0 0 7px rgb(255 210 63/.55)}}
+@keyframes stairs-bob{0%,100%{transform:none}50%{transform:scale(1.15)}}
+@keyframes stairs-pop{0%{transform:scale(1.35)}100%{transform:none}}
+@keyframes stairs-banner{0%{opacity:0;transform:scale(1.6)}15%{opacity:1;transform:scale(.95)}25%,75%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-16px)}}
 @keyframes stairs-heart{0%{transform:scale(1.4)}100%{transform:none}}
-@media(prefers-reduced-motion:reduce){.stairs-world,.stairs-climber{transition:none}.stairs-climber.slip,.stairs-hearts>span.lost,.stairs-lost,.stairs-paper.mashed{animation:none}}
+@media(prefers-reduced-motion:reduce){
+  .stairs-world,.stairs-climber,.stairs-sky,.stairs-stars,.stairs-far,.stairs-near{transition:none}
+  .stairs-body.hop,.stairs-body.slip,.stairs-body>*,.stairs-dust,.stairs-burst,.stairs-sweat,.stair.gate,.stairs-lock,.stairs-hud strong,.stairs-hearts>span.lost,.stairs-lost,.stairs-paper.mashed{animation:none}
+  .stairs-dust,.stairs-burst{display:none}
+}
 
 /* 휴대폰: 오를 때는 계단, 풀 때는 세로셈과 키패드만. */
 @media(max-width:700px){
@@ -44,7 +102,7 @@
   .stairs-play.solving .stairs-field{display:none}
   .stairs-play.climbing .stairs-paper,.stairs-play.climbing .stairs-controls{display:none}
   .stairs-play.climbing .stairs-field{grid-row:1/-1}
-  .stairs-buttons button{min-height:88px}
+  .stairs-buttons button{min-height:96px}
   .stairs-play .number-pad{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,clamp(44px,7dvh,60px));gap:var(--s3);padding:var(--s1) var(--s1) var(--s3)}
   .stairs-play .number-pad button{min-height:44px;font-size:var(--text-xl)}
   .stairs-play .number-pad button:nth-child(10){grid-column:4;grid-row:1}
@@ -58,5 +116,5 @@
   .stairs-play.solving .stairs-controls{display:grid;grid-column:2;grid-row:1}
   .stairs-play.climbing .stairs-paper,.stairs-play.climbing .stairs-controls{display:none}
   .stairs-play.climbing .stairs-field{grid-column:1/-1;grid-row:1}
-  .stairs-buttons button{min-height:56px}
+  .stairs-buttons button{min-height:60px}
 }

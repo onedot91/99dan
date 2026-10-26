@@ -207,7 +207,7 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
       {g.screen==='vertical-result'&&<VerticalResult game={vertical} sync={verticalSync} assignmentState={assignment.state} onHome={()=>g.setScreen('home')} onAgain={()=>{const count=vertical.session?.questions.length;void startVertical(validVerticalCount(count)?count:5);}} onHall={()=>{setHallPart('stairs');g.setScreen('hall');}}/>}
       {g.screen==='block-play'&&<BlockPlay game={block} onCue={(cue,step)=>audio.cue(cue,step)}/>}
       {g.screen==='block-play'&&<BlockStopDialog open={stopAsk&&!blockOver} onKeep={()=>setStopAsk(false)} onStop={()=>{setStopAsk(false);block.stop();}}/>}
-      {g.screen==='stairs-play'&&<StairsPlay game={stairs} partner={friends.partner} onCue={cue=>audio.cue(cue)}/>}
+      {g.screen==='stairs-play'&&<StairsPlay game={stairs} pet={friends.partner??friends.owned[0]??null} onCue={cue=>audio.cue(cue)}/>}
       {g.screen==='stairs-play'&&<BlockStopDialog open={stopAsk&&!stairsOver} onKeep={()=>setStopAsk(false)} onStop={()=>{setStopAsk(false);stairs.stop();}}/>}
       {g.screen==='stairs-result'&&<StairsResult game={stairs} sync={stairsSync} starting={stairsStarting} onHome={()=>{stairs.exit();g.setScreen('home');}} onAgain={()=>void startStairs()} onHall={()=>{setHallPart('stairs');g.setScreen('hall');}}/>}
       {g.screen==='block-result'&&<BlockResult game={block} sync={blockSync} starting={blockStarting} onHome={()=>{block.exit();g.setScreen('home');}} onAgain={()=>void startBlock()} onHall={()=>{setHallPart('block');g.setScreen('hall');}}/>}
