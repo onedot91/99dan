@@ -90,13 +90,30 @@ test('landing collects each coin once, wrong moves do not, and replay includes t
   }
 });
 
-test('a plain wrong answer keeps lives; mashing (fast retry or third miss on a cell) costs one',()=>{
+test('a plain wrong answer keeps lives; mashing (fast retry or third miss on a problem) costs one',()=>{
   let run=climbTo(createStairsRun(14),STAIRS_GATE);
   const step=stairsSteps(run.problem)[0],miss=(step.expected+1)%10;
   run=answer(run,miss,3000);assert.equal(run.lives,STAIRS_LIVES);assert.equal(run.mistakes,1);
   run=answer(run,miss,3500);assert.equal(run.lives,STAIRS_LIVES-1,'within a second of the last miss');
-  run=answer(run,miss,9000);assert.equal(run.lives,STAIRS_LIVES-2,'third miss on the same cell');
+  run=answer(run,miss,9000);assert.equal(run.lives,STAIRS_LIVES-2,'third miss on the same problem');
   run=answer(run,miss,20000);assert.equal(run.phase,'over');assert.equal(run.ended,'fallen');
+});
+
+test('wrong answers across different cells count toward the same problem, then reset',()=>{
+  let run=climbTo(createStairsRun(14),STAIRS_GATE);
+  for(let i=0;i<3;i++){
+    const step=stairsSteps(run.problem)[run.problem.stepIndex];
+    run=answer(run,(step.expected+1)%10,3000+i*10000);
+    assert.equal(run.lives,i===2?STAIRS_LIVES-1:STAIRS_LIVES);
+    run=answer(run,step.expected,8000+i*10000);
+  }
+  while(run.phase==='solve'){const step=stairsSteps(run.problem)[run.problem.stepIndex];run=answer(run,step.expected,50000);}
+  run=climbTo(run,STAIRS_GATE*2);
+  const step=stairsSteps(run.problem)[0];
+  run=answer(run,(step.expected+1)%10,3000);
+  assert.equal(run.lives,STAIRS_LIVES-1,'the next problem starts with no wrong answers');
+  run=reduceStairsRun(run,{type:'stop'});
+  assert.deepEqual(replayStairsRun(run.seed,run.log,run.ended),run);
 });
 
 test('problems get harder the more are solved',()=>{

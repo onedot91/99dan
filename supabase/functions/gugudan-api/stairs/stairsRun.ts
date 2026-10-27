@@ -5,7 +5,7 @@ import { VERTICAL_CORRECT_POINTS } from './points.ts';
 
 // 계단 종목(무한의 계단 × 두 자리 수 세로셈). 「오르기」는 보는 방향으로 한 칸, 「방향전환」은 돌아서 한 칸 오른다.
 // 다음 칸과 방향이 다르면 목숨 하나를 잃고 그 자리에 선다. STAIRS_GATE칸마다 문제 계단이 있어 세로셈 한 문제를 다 풀어야 다시 오른다.
-// 세로셈은 틀려도 다시 풀면 되고, 블록과 같은 찍기(같은 칸에서 1초 안에 또 틀리거나 같은 칸 세 번째 오답부터)만 목숨을 잃는다.
+// 세로셈은 틀려도 다시 풀면 되고, 블록과 같은 찍기(같은 칸에서 1초 안에 또 틀리거나 같은 문제의 세 번째 오답부터)만 목숨을 잃는다.
 // 목숨이 다 떨어지면 끝난다(무한 모드).
 export type StairsDir=-1|1;
 export type StairsPhase='climb'|'solve'|'over';
@@ -98,7 +98,7 @@ export function reduceStairsRun(run:StairsRun,action:StairsAction):StairsRun{
   const wrong=problem.stepIndex===before.stepIndex;
   if(!wrong)return problem.stepIndex>=stairsSteps(problem).length?{...run,problem,log,solved:run.solved+1,phase:'climb'}:{...run,problem,log};
   // 같은 칸의 직전 기록은 늘 오답이다(정답이면 다음 칸으로 넘어가므로).
-  const previous=before.events.at(-1),triedBefore=before.events.filter(e=>e.step===submitted.step).length;
+  const previous=before.events.at(-1),triedBefore=before.mistakes[before.index]??0;
   const fast=!!previous&&previous.step===submitted.step&&submitted.ms!==undefined&&previous.ms!==undefined&&submitted.ms-previous.ms<STAIRS_MASH_MS;
   const counted={...run,problem,log,mistakes:run.mistakes+1};
   return fast||triedBefore>=STAIRS_FREE_TRIES?loseLife({...counted,mashes:run.mashes+1,lastMash:key}):counted;
