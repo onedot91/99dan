@@ -66,7 +66,7 @@ test('the server replays the issued seed, stores its own score and accepts ident
   assert.equal((await call('stairsBegin',{id},await register(8))).status,409);
   const run=playStairsRun(begun.data.seed,{slipEvery:11,mashEvery:9});
   // 답 기록의 키 순서·여분 필드·가짜 점수는 같은 해시로 정규화한다.
-  const reordered={...finishPayload(id,run),score:999999,log:run.log.map(e=>typeof e==='object'?{ms:e.ms,answer:e.answer,extra:1}:e)};
+  const reordered={...finishPayload(id,run),score:999999,coins:999999,log:run.log.map(e=>typeof e==='object'?{ms:e.ms,answer:e.answer,extra:1}:e)};
   calls.length=0;
   const finished=await call('stairsFinish',reordered,token);
   assert.equal(finished.status,200);

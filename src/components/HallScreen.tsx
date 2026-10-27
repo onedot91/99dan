@@ -8,9 +8,9 @@ import { Icon } from './Icon';
 import { CROWN, Sprite } from './Sprite';
 import { isSpare } from '../game/studentNumber';
 import type { VerticalCount } from '../game/verticalSets';
-import { stairsUnlocked } from '../game/teacherDevice';
 export type HallPart='rush'|'vertical'|'stairs'|'block';
 export function HallScreen({ready,studentNumber,initialDuration,initialPart='rush',initialCount=5}:{readonly ready:boolean;readonly studentNumber:number|null;readonly initialDuration:Duration;readonly initialPart?:HallPart;readonly initialCount?:VerticalCount}){
+  const spare=studentNumber!==null&&isSpare(studentNumber);
   const [part,setPart]=useState<HallPart>(initialPart);
   const [duration,setDuration]=useState<Duration>(initialDuration);
   const [count,setCount]=useState<VerticalCount>(initialCount);
@@ -19,7 +19,6 @@ export function HallScreen({ready,studentNumber,initialDuration,initialPart='rus
   const [retry,setRetry]=useState(0);
   // The teacher (no number) reads through a student session: the leaderboards are the same for every number.
   const reader=studentNumber??1;
-  const spare=studentNumber!==null&&isSpare(studentNumber);
   useEffect(()=>{
     if(!ready||!cloudConfigured||spare)return;
     let active=true;
@@ -30,7 +29,7 @@ export function HallScreen({ready,studentNumber,initialDuration,initialPart='rus
     return()=>{active=false;window.clearInterval(poll);};
   },[part,duration,count,ready,retry,reader,spare]);
   return <main className="hall-screen"><div className="screen-heading"><PixelArt kind="trophy"/><h1>명예의 전당</h1></div>
-    <div className="hall-part-tabs" role="group" aria-label="기록 종류"><button aria-pressed={part==='rush'} onClick={()=>setPart('rush')}>구구단</button><button aria-pressed={part==='vertical'} onClick={()=>setPart('vertical')}>두 자리 수</button>{stairsUnlocked()&&<button aria-pressed={part==='stairs'} onClick={()=>setPart('stairs')}>계단</button>}<button aria-pressed={part==='block'} onClick={()=>setPart('block')}>블록</button></div>
+    <div className="hall-part-tabs" role="group" aria-label="기록 종류"><button aria-pressed={part==='rush'} onClick={()=>setPart('rush')}>구구단</button><button aria-pressed={part==='vertical'} onClick={()=>setPart('vertical')}>두 자리 수</button><button aria-pressed={part==='stairs'} onClick={()=>setPart('stairs')}>계단</button><button aria-pressed={part==='block'} onClick={()=>setPart('block')}>블록</button></div>
     {part==='rush'&&<div className="duration-tabs" role="group" aria-label="기록 단계">{DURATIONS.map(n=><button key={n} aria-pressed={duration===n} onClick={()=>setDuration(n)}>{n}분<span className="wide-only"> 도전</span></button>)}</div>}
     {part==='vertical'&&<><div className="duration-tabs hall-count-tabs" role="group" aria-label="문제 수">{([5,10] as const).map(n=><button key={n} aria-pressed={count===n} onClick={()=>setCount(n)}>{n}문제</button>)}</div><p className="hall-rule">최고 점수 · 최근 7일</p></>}
     {(part==='block'||part==='stairs')&&<p className="hall-rule">최고 점수 · 최근 7일</p>}

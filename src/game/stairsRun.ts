@@ -17,16 +17,21 @@ export type StairsRun={
   readonly steps:readonly StairsDir[];readonly height:number;readonly facing:StairsDir;readonly lives:number;
   readonly phase:StairsPhase;readonly ended:'fallen'|'stopped'|null;
   readonly history:readonly VerticalFact[];readonly problem:VerticalSession|null;
-  readonly solved:number;readonly mistakes:number;readonly mashes:number;readonly slips:number;readonly log:readonly StairsEntry[];
+  readonly solved:number;readonly coins:number;readonly mistakes:number;readonly mashes:number;readonly slips:number;readonly log:readonly StairsEntry[];
   // 연출용 기록(점수에는 영향 없음): 마지막 방향 실수·찍기가 난 입력 번호.
   readonly lastSlip:number|null;readonly lastMash:number|null;
 };
 export type StairsAction={readonly type:'climb'}|{readonly type:'turn'}|{readonly type:'stop'}|{readonly type:'input';readonly key:string;readonly ms?:number};
 
-export const STAIRS_LIVES=3,STAIRS_GATE=5,STAIRS_AHEAD=24,STAIR_POINTS=10;
+export const STAIRS_LIVES=3,STAIRS_GATE=7,STAIRS_AHEAD=24,STAIR_POINTS=10;
+export const STAIRS_COIN_POINTS=50,STAIRS_COIN_CHANCE=.25;
 export const STAIRS_MASH_MS=1000,STAIRS_FREE_TRIES=2;
-export const stairsScore=(run:StairsRun)=>run.height*STAIR_POINTS+run.solved*VERTICAL_CORRECT_POINTS;
+export const stairsScore=(run:StairsRun)=>run.height*STAIR_POINTS+run.solved*VERTICAL_CORRECT_POINTS+(run.coins??0)*STAIRS_COIN_POINTS;
 export const isGate=(height:number)=>height>0&&height%STAIRS_GATE===0;
+// 경로·문제 난수와 분리해 화면 크기나 미리보기 범위가 달라도 코인 위치는 같다.
+export function stairsHasCoin(seed:number,height:number):boolean{
+  return height>0&&!isGate(height)&&seededGenerator((seed^Math.imul(height,0x9e3779b1)^0xc01dcafe)>>>0).random()<STAIRS_COIN_CHANCE;
+}
 export const stairsToNextGate=(run:StairsRun)=>STAIRS_GATE-run.height%STAIRS_GATE;
 // 오를수록 어렵게: 푼 문제 수에 따라 올림 없음(下) → 곱셈 올림(中) → 덧셈 올림까지(上).
 export const stairsDifficulty=(solved:number):Difficulty=>solved<3?1:solved<8?2:3;
@@ -43,6 +48,10 @@ function extendSteps(steps:readonly StairsDir[],rng:number,length:number){
     next.push(turn?(-last as StairsDir):last);
   }
   return {steps:next,rng:generator.state};
+}
+// 화면 밖 경로도 같은 시드로 미리 그린다. 실제 판의 경로와 난수 상태는 바꾸지 않는다.
+export function stairsPreviewSteps(run:StairsRun,ahead:number):readonly StairsDir[]{
+  return extendSteps(run.steps,run.stairRng,run.height+Math.max(STAIRS_AHEAD,Math.ceil(ahead))).steps;
 }
 // 0이 든 문제(50×60처럼 곱셈 칸이 0뿐인 문제)는 계단에서 내지 않는다.
 const stairsPools=new Map<Difficulty,readonly VerticalFact[]>();
@@ -62,7 +71,7 @@ function nextProblem(run:StairsRun):StairsRun{
 export function createStairsRun(seed:number=Math.floor(Math.random()*2**32)):StairsRun{
   const first=extendSteps([],seed>>>0,STAIRS_AHEAD);
   return {seed,stairRng:first.rng,problemRng:(seed^0x9e3779b9)>>>0,steps:first.steps,height:0,facing:1,lives:STAIRS_LIVES,phase:'climb',ended:null,
-    history:[],problem:null,solved:0,mistakes:0,mashes:0,slips:0,log:[],lastSlip:null,lastMash:null};
+    history:[],problem:null,solved:0,coins:0,mistakes:0,mashes:0,slips:0,log:[],lastSlip:null,lastMash:null};
 }
 const loseLife=(run:StairsRun):StairsRun=>run.lives<=1?{...run,lives:0,phase:'over',ended:'fallen'}:{...run,lives:run.lives-1};
 
@@ -76,7 +85,8 @@ export function reduceStairsRun(run:StairsRun,action:StairsAction):StairsRun{
     // 방향 실수: 그 자리에 서서 보던 방향도 그대로라 맞는 조작이 바뀌지 않는다.
     if(run.steps[run.height]!==facing)return loseLife({...run,log,slips:run.slips+1,lastSlip:key});
     const height=run.height+1,more=extendSteps(run.steps,run.stairRng,height+STAIRS_AHEAD);
-    const climbed={...run,log,facing,height,steps:more.steps,stairRng:more.rng};
+    const coins=(run.coins??0)+Number(stairsHasCoin(run.seed,height));
+    const climbed={...run,log,facing,height,coins,steps:more.steps,stairRng:more.rng};
     return isGate(height)?nextProblem(climbed):climbed;
   }
   if(run.phase!=='solve'||!run.problem)return run;

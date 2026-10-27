@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { STAIRS_GATE, STAIRS_LIVES, createStairsRun, reduceStairsRun, replayStairsRun, stairsDifficulty, stairsScore, stairsSteps } from '../src/game/stairsRun.ts';
+import { STAIRS_AHEAD, STAIRS_COIN_POINTS, STAIRS_GATE, STAIRS_LIVES, createStairsRun, reduceStairsRun, replayStairsRun, stairsDifficulty, stairsHasCoin, stairsPreviewSteps, stairsScore, stairsSteps, stairsToNextGate } from '../src/game/stairsRun.ts';
 import { difficultyOf } from '../src/game/vertical.ts';
 import { playStairsRun } from './stairs-player.mjs';
 
@@ -16,6 +16,21 @@ test('the right move climbs one stair and keeps enough stairs ahead',()=>{
   assert.ok(run.steps.length>=run.height+20);
 });
 
+test('a tall scene can preview beyond the generated path without changing the run or future stairs',()=>{
+  for(const seed of [1,42,99]){
+    const run=createStairsRun(seed),rng=run.stairRng;
+    Object.freeze(run.steps);Object.freeze(run);
+    const preview=stairsPreviewSteps(run,200);
+    assert.equal(preview.length,200);
+    assert.equal(run.steps.length,STAIRS_AHEAD);
+    assert.equal(run.stairRng,rng);
+    assert.deepEqual(preview.slice(0,run.steps.length),run.steps);
+    const played=playStairsRun(seed,{stopAfter:180,wrongEvery:Infinity});
+    assert.deepEqual(played.steps.slice(0,200),preview);
+    assert.equal(stairsPreviewSteps(played,2),played.steps,'reuse the existing path when it already covers the scene');
+  }
+});
+
 test('a wrong move costs a life, stays put, and keeps the facing',()=>{
   let run=createStairsRun(12);
   const before=run;run=reduceStairsRun(run,{type:wrongMove(run)});
@@ -25,13 +40,54 @@ test('a wrong move costs a life, stays put, and keeps the facing',()=>{
   assert.equal(run.phase,'over');assert.equal(run.ended,'fallen');assert.equal(run.lives,0);
 });
 
-test('every fifth stair stops for a two-digit problem; climbing is locked until it is solved',()=>{
-  let run=climbTo(createStairsRun(13),STAIRS_GATE);
-  assert.equal(run.phase,'solve');assert.equal(run.height,STAIRS_GATE);
-  assert.equal(reduceStairsRun(run,{type:'climb'}),run);
-  for(const step of stairsSteps(run.problem))run=answer(run,step.expected,3000);
-  assert.equal(run.phase,'climb');assert.equal(run.solved,1);
-  assert.equal(stairsScore(run),STAIRS_GATE*10+200);
+test('problems appear at floors 7, 14 and 21; climbing is locked until each is solved',()=>{
+  let run=createStairsRun(13);const gates=[];
+  assert.equal(stairsToNextGate(run),7);
+  for(let height=1;height<=21;height++){
+    run=reduceStairsRun(run,{type:rightMove(run)});
+    assert.equal(stairsToNextGate(run),7-height%7);
+    if(height%7!==0){assert.equal(run.phase,'climb',`floor ${height}`);continue;}
+    gates.push(height);
+    assert.equal(run.phase,'solve');assert.equal(run.height,height);
+    assert.equal(reduceStairsRun(run,{type:'climb'}),run);
+    for(const step of stairsSteps(run.problem))run=answer(run,step.expected,3000);
+    assert.equal(run.phase,'climb');assert.equal(run.solved,gates.length);
+    assert.equal(stairsScore(run),height*10+gates.length*200+run.coins*STAIRS_COIN_POINTS);
+  }
+  assert.deepEqual(gates,[7,14,21]);
+});
+
+test('coins vary by seed, stay fixed when previewing, and never occupy the starting or problem stairs',()=>{
+  const heights=Array.from({length:200},(_,i)=>i);
+  const positions=seed=>heights.filter(height=>stairsHasCoin(seed,height));
+  const run=createStairsRun(42),before=positions(run.seed),rng=run.stairRng;
+  assert.ok(before.length>0&&before.length<heights.length);
+  assert.ok(before.every(height=>height>0&&height%STAIRS_GATE!==0));
+  stairsPreviewSteps(run,300);
+  assert.deepEqual(positions(run.seed),before);
+  assert.equal(run.stairRng,rng);
+  assert.notDeepEqual(positions(43),before);
+});
+
+test('landing collects each coin once, wrong moves do not, and replay includes the same bonus',()=>{
+  for(const seed of [1,42,99]){
+    const coinFloor=Array.from({length:100},(_,i)=>i+1).find(height=>stairsHasCoin(seed,height));
+    const stopped=playStairsRun(seed,{stopAfter:coinFloor,wrongEvery:Infinity});
+    const before=playStairsRun(seed,{stopAfter:coinFloor-1,wrongEvery:Infinity});
+    assert.equal(stopped.coins,before.coins+1);
+    assert.equal(stairsScore(stopped)-stairsScore(before),10+STAIRS_COIN_POINTS);
+    const active={...stopped,phase:'climb',ended:null};
+    const wrong=reduceStairsRun(active,{type:wrongMove(active)});
+    assert.equal(wrong.coins,active.coins);
+    assert.equal(stairsScore(wrong),stairsScore(active));
+    const run=playStairsRun(seed,{stopAfter:60,wrongEvery:Infinity});
+    const count=Array.from({length:run.height},(_,i)=>i+1).filter(height=>stairsHasCoin(seed,height)).length;
+    assert.equal(run.coins,count);
+    assert.equal(stairsScore(run),run.height*10+run.solved*200+count*STAIRS_COIN_POINTS);
+    const replay=replayStairsRun(seed,run.log,run.ended);
+    assert.equal(replay.coins,count);
+    assert.equal(stairsScore(replay),stairsScore(run));
+  }
 });
 
 test('a plain wrong answer keeps lives; mashing (fast retry or third miss on a cell) costs one',()=>{

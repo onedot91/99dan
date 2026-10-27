@@ -11,7 +11,6 @@ import { cloudConfigured, loadBlockRecords, loadStairsRecords, loadVerticalRecor
 import type { BlockRecord, VerticalRecord } from '../cloud/client';
 import { loadBest as loadBlockBest } from '../game/useBlockGame';
 import { loadBest as loadStairsBest } from '../game/useStairsGame';
-import { stairsUnlocked } from '../game/teacherDevice';
 import type { VerticalCount } from '../game/verticalSets';
 import { isSpare } from '../game/studentNumber';
 const VERTICAL_COUNTS:readonly VerticalCount[]=[5,10];
@@ -21,15 +20,15 @@ export function RecordsScreen({game:g,exp,best:sharedBest,studentNumber}:{readon
   // Two-digit and Block runs are on the server; until they load (or offline) their tabs show dashes,
   // except Block's best, which this device also keeps.
   const [count,setCount]=useState<VerticalCount|'block'|'stairs'|null>(null);
-  const [stairsRecord,setStairsRecord]=useState<BlockRecord|null>(null);
   const [verticalRecords,setVerticalRecords]=useState<readonly VerticalRecord[]|null>(null);
   const [blockRecord,setBlockRecord]=useState<BlockRecord|null>(null);
+  const [stairsRecord,setStairsRecord]=useState<BlockRecord|null>(null);
   useEffect(()=>{
     if(!cloudConfigured||isSpare(studentNumber))return;
     let live=true;
     loadVerticalRecords(studentNumber).then(records=>{if(live)setVerticalRecords(records);}).catch(()=>{});
     loadBlockRecords(studentNumber).then(record=>{if(live)setBlockRecord(record);}).catch(()=>{});
-    if(stairsUnlocked())loadStairsRecords(studentNumber).then(record=>{if(live)setStairsRecord(record);}).catch(()=>{});
+    loadStairsRecords(studentNumber).then(record=>{if(live)setStairsRecord(record);}).catch(()=>{});
     return ()=>{live=false;};
   },[studentNumber]);
   const vertical=typeof count==='number'?verticalRecords?.find(r=>r.count===count):undefined;
@@ -51,7 +50,7 @@ export function RecordsScreen({game:g,exp,best:sharedBest,studentNumber}:{readon
     <div className="duration-tabs records-challenge-tabs" role="group" aria-label="도전 종목">
       {DURATIONS.map(n=><button key={n} aria-pressed={count===null&&duration===n} onClick={()=>{setCount(null);setDuration(n);}}>{n}분</button>)}
       {VERTICAL_COUNTS.map(n=><button key={n} aria-pressed={count===n} aria-label={`두 자리 수 ${n}문제`} onClick={()=>setCount(n)}>{n}문제</button>)}
-      {stairsUnlocked()&&<button aria-pressed={count==='stairs'} onClick={()=>setCount('stairs')}>계단</button>}
+      <button aria-pressed={count==='stairs'} onClick={()=>setCount('stairs')}>계단</button>
       <button aria-pressed={count==='block'} onClick={()=>setCount('block')}>블록</button>
     </div>
     {count===null?<div className="stats-grid">

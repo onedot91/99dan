@@ -42,7 +42,7 @@ import './block.css';
 import './stairs.css';
 import { useStairsGame } from './game/useStairsGame';
 import { useStairsSync } from './cloud/useStairsSync';
-import { StairsPlay, StairsProgress, StairsResult } from './components/StairsScreen';
+import { StairsPlay, StairsResult } from './components/StairsScreen';
 import './mobile.css';
 import { ClassPrep, ClassPrepHint } from './components/ClassPrep';
 import type { BlockedHint } from './components/ClassPrep';
@@ -192,7 +192,6 @@ function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;reado
         <ComboMeter run={g.run}/>
       </div>}
       {blockPlaying&&block.run&&<BlockProgress run={block.run}/>}
-      {stairsPlaying&&stairs.run&&<StairsProgress run={stairs.run}/>}
       {verticalPlaying&&!blockPlaying&&!stairsPlaying&&<VerticalProgress game={vertical}/>}
       <div className="header-actions">
         <button className="quiet-button sound-button" aria-label={!audio.available?'소리 사용 불가':audio.enabled?'소리 끄기':'소리 켜기'} aria-pressed={audio.enabled} disabled={!audio.available||audio.pending} onClick={()=>void audio.toggle()}><Icon name={audio.enabled?'sound':'muted'}/><span className="wide-only">{audio.enabled?'ON':'OFF'}</span></button>
