@@ -164,7 +164,12 @@ async function teacherRecords(){
   if(stairs!==null&&!Array.isArray(stairs))throw new Error('INVALID_DATABASE_RESPONSE');
   // 계단 경험치·최고 점수. 마이그레이션 전이면 빠지고, 초기화 범위에도 계단이 나오지 않는다.
   const stairsRecords=new Map((stairs??[]).map((value:unknown)=>{const row=record(value);if(!validNumber(row.studentNumber))throw new Error('INVALID_DATABASE_RESPONSE');return [row.studentNumber,{stairsExp:row.stairsExp,stairsBest:row.stairsBest}];}));
-  return profiles.map(profile=>({...profile,...blockRecords.get(Number(profile.studentNumber)),...stairsRecords.get(Number(profile.studentNumber)),canResetScopes:true,canResetBlock:blocks!==null,canResetStairs:stairs!==null,verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
+  const stairsSessions=new Map<number,unknown[]>();
+  if(stairs!==null){
+    const recent=await Promise.all(profiles.map(profile=>rows('gugudan_stairs_runs',new URLSearchParams({select:'id,student_number,finished_at,score,height,solved',student_number:`eq.${profile.studentNumber}`,finished_at:'not.is.null',order:'finished_at.desc',limit:'5'}))));
+    for(const group of recent)for(const value of group){const row=record(value);if(!validNumber(row.student_number)||!validId(row.id)||typeof row.finished_at!=='string')continue;const list=stairsSessions.get(row.student_number)??[];list.push({id:row.id,finishedAt:row.finished_at,score:row.score,height:row.height,solved:row.solved});stairsSessions.set(row.student_number,list);}
+  }
+  return profiles.map(profile=>({...profile,...blockRecords.get(Number(profile.studentNumber)),...stairsRecords.get(Number(profile.studentNumber)),canResetScopes:true,canResetBlock:blocks!==null,canResetStairs:stairs!==null,stairsSessions:stairsSessions.get(Number(profile.studentNumber))??[],verticalSessions:verticalSessions.get(Number(profile.studentNumber))??[],verticalMetrics:summaries.get(Number(profile.studentNumber))??null,verticalDifficulty:difficulties.get(Number(profile.studentNumber))??1,sessions:Array.isArray(profile.sessions)?profile.sessions.map(value=>{const session=record(value);return {...session,finishedAt:typeof session.id==='string'?dates.get(session.id)??null:null};}):[]}));
 }
 Deno.serve(async request=>{
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});

@@ -13,7 +13,11 @@ const runs=new Map(),calls=[];
 let stairsRpcMissing=false;
 const rejected=message=>Response.json({code:'P0001',message},{status:400});
 globalThis.fetch=async(url,options)=>{
-  if(!options?.body)return Response.json([]);
+  if(!options?.body){
+    const request=new URL(url);
+    if(request.pathname.endsWith('/gugudan_stairs_runs')&&request.searchParams.get('student_number')==='eq.6')return Response.json([{id:'00000000-0000-4000-8000-000000000001',student_number:6,finished_at:'2026-10-26T12:00:00Z',score:1500,height:42,solved:4}]);
+    return Response.json([]);
+  }
   const name=new URL(url).pathname.split('/').at(-1),args=JSON.parse(options.body);
   calls.push({name,args});
   if(name==='gugudan_stairs_begin'){
@@ -106,9 +110,11 @@ test('hall of fame, own records, teacher records and the stairs reset scope',asy
   const teacher=(await call('teacherLogin',{code:'1234'})).data.token;
   const sixth=profile((await call('teacherRecords',{},teacher)).data[5],6);
   assert.deepEqual([sixth.stairsExp,sixth.stairsBest,sixth.canResetStairs],[40,1500,true]);
+  assert.deepEqual(sixth.stairsSessions,[{id:'00000000-0000-4000-8000-000000000001',finishedAt:'2026-10-26T12:00:00Z',score:1500,height:42,solved:4}]);
   stairsRpcMissing=true;
   const legacy=profile((await call('teacherRecords',{},teacher)).data[5],6);
   assert.deepEqual([legacy.stairsExp,legacy.stairsBest,legacy.canResetStairs],[0,null,false]);
+  assert.deepEqual(legacy.stairsSessions,[]);
   stairsRpcMissing=false;
   assert.equal((await call('teacherResetScoped',{studentNumber:6,scopes:['stairs','rush-1']},teacher)).status,200);
   assert.equal((await call('teacherResetScoped',{studentNumber:6,scopes:['rush-1','rush-2','rush-3','vertical-5','vertical-10','block','stairs']},teacher)).status,200);

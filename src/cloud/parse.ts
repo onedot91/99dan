@@ -1,5 +1,5 @@
 import type { Duration, Mode, Records, SessionResult } from '../types/game';
-import type { BlockSession, FriendState, SharedProfile, VerticalSession } from './types';
+import type { BlockSession, FriendState, SharedProfile, StairsSession, VerticalSession } from './types';
 import { friendById, sanitizeOwned } from '../game/friends';
 import { validVerticalDifficulty } from '../game/verticalSets';
 import { parseVerticalMetrics } from '../game/verticalRecommendation';
@@ -30,6 +30,7 @@ export function profile(value:unknown,studentNumber:number):SharedProfile{
   const verticalSessions:readonly VerticalSession[]=data.verticalSessions===undefined?[]:array(data.verticalSessions).map(value=>{const s=object(value);const finishedAt=text(s.finishedAt);if(!Number.isFinite(Date.parse(finishedAt)))throw new Error('INVALID_DATE');return {id:text(s.id),finishedAt,count:number(s.count),score:score(s.score),mistakes:number(s.mistakes)};});
   // 블록 최근 기록도 교사 화면에만 온다.
   const blockSessions:readonly BlockSession[]=data.blockSessions===undefined?[]:array(data.blockSessions).map(value=>{const s=object(value);const finishedAt=text(s.finishedAt);if(!Number.isFinite(Date.parse(finishedAt)))throw new Error('INVALID_DATE');if(s.ended!=='stuck'&&s.ended!=='stopped')throw new Error('INVALID_ENDED');return {id:text(s.id),finishedAt,score:number(s.score),solved:number(s.solved),lines:number(s.lines),mistakes:number(s.mistakes),ended:s.ended};});
+  const stairsSessions:readonly StairsSession[]=data.stairsSessions===undefined?[]:array(data.stairsSessions).map(value=>{const s=object(value);const finishedAt=text(s.finishedAt);if(!Number.isFinite(Date.parse(finishedAt)))throw new Error('INVALID_DATE');return {id:text(s.id),finishedAt,score:number(s.score),solved:number(s.solved),height:number(s.height)};});
   if(data.canResetBlock!==undefined&&typeof data.canResetBlock!=='boolean')throw new Error('INVALID_RESET_CAPABILITY');
   if(data.canResetStairs!==undefined&&typeof data.canResetStairs!=='boolean')throw new Error('INVALID_RESET_CAPABILITY');
   const best=(value:unknown)=>value===null||value===undefined?null:number(value);
@@ -37,5 +38,5 @@ export function profile(value:unknown,studentNumber:number):SharedProfile{
   const otherBests=verticalBest===undefined?null:{vertical5:best(verticalBest['5']),vertical10:best(verticalBest['10']),block:best(data.blockBest)};
   if(data.verticalDifficulty!==undefined&&!validVerticalDifficulty(data.verticalDifficulty))throw new Error('INVALID_VERTICAL_DIFFICULTY');
   if(data.canResetScopes!==undefined&&typeof data.canResetScopes!=='boolean')throw new Error('INVALID_RESET_CAPABILITY');
-  return {studentNumber,verticalExp:data.verticalExp===undefined?0:number(data.verticalExp),blockExp:data.blockExp===undefined?0:number(data.blockExp),blockSessions,stairsExp:data.stairsExp===undefined?0:number(data.stairsExp),stairsBest:best(data.stairsBest),canResetScopes:data.canResetScopes===true,canResetBlock:data.canResetBlock===true,canResetStairs:data.canResetStairs===true,otherBests,verticalMetrics:parseVerticalMetrics(data.verticalMetrics),avatar:avatarPath(data.avatar),records,sessions,verticalSessions,friends:friends(data),verticalDifficulty:validVerticalDifficulty(data.verticalDifficulty)?data.verticalDifficulty:null,best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:score(b.score),correct:number(b.correct)};})};
+  return {studentNumber,verticalExp:data.verticalExp===undefined?0:number(data.verticalExp),blockExp:data.blockExp===undefined?0:number(data.blockExp),blockSessions,stairsSessions,stairsExp:data.stairsExp===undefined?0:number(data.stairsExp),stairsBest:best(data.stairsBest),canResetScopes:data.canResetScopes===true,canResetBlock:data.canResetBlock===true,canResetStairs:data.canResetStairs===true,otherBests,verticalMetrics:parseVerticalMetrics(data.verticalMetrics),avatar:avatarPath(data.avatar),records,sessions,verticalSessions,friends:friends(data),verticalDifficulty:validVerticalDifficulty(data.verticalDifficulty)?data.verticalDifficulty:null,best:array(data.best).map(value=>{const b=object(value);return {duration:duration(b.duration),score:score(b.score),correct:number(b.correct)};})};
 }
