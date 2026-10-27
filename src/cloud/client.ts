@@ -141,7 +141,9 @@ export async function finishStairsRun(studentNumber:number,finish:StairsFinish):
   return result.score;
 }
 export async function loadStairsLeaders(studentNumber:number):Promise<readonly Standing[]>{
-  return standings(await authenticated(studentNumber,'stairsLeaders'));
+  const data=await authenticated(studentNumber,'stairsLeaders');
+  const rows=standings(data);
+  return rows.map((row,i)=>{const height=object((data as unknown[])[i]).height;if(typeof height!=='number'||!Number.isInteger(height)||height<0)throw new Error('INVALID_STAIR_HEIGHT');return {...row,height};});
 }
 export async function loadStairsRecords(studentNumber:number):Promise<BlockRecord>{
   const data=object(await authenticated(studentNumber,'stairsRecords'));

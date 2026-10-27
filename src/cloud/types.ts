@@ -9,5 +9,5 @@ export type FriendState={readonly owned:readonly string[];readonly partner:strin
 export type SharedProfile={readonly studentNumber:number;readonly avatar:string|null;readonly records:Records;readonly sessions:readonly SessionResult[];readonly verticalSessions:readonly VerticalSession[];readonly best:readonly Best[];readonly friends:FriendState|null;readonly verticalDifficulty:1|2|3|null;readonly verticalMetrics:VerticalMetrics|null;readonly verticalExp:number;readonly blockExp:number;readonly blockSessions:readonly BlockSession[];readonly stairsExp:number;readonly stairsBest:number|null;readonly canResetScopes:boolean;readonly canResetBlock:boolean;readonly canResetStairs:boolean;readonly otherBests:OtherBests|null};
 // All-time bests besides times-table runs; teacher records only, null from an older server.
 export type OtherBests={readonly vertical5:number|null;readonly vertical10:number|null;readonly block:number|null};
-export type Standing={readonly studentNumber:number;readonly avatar:string|null;readonly score:number;readonly correct:number};
+export type Standing={readonly studentNumber:number;readonly avatar:string|null;readonly score:number;readonly correct:number;readonly height?:number};
 export type SyncState='unconfigured'|'loading'|'ready'|'saving'|'error';
