@@ -21,7 +21,6 @@
 .hall-part-tabs button{min-height:44px;padding:var(--s2);background:var(--panel);color:var(--muted);box-shadow:var(--ring);font-size:var(--text-base);white-space:nowrap}
 .hall-part-tabs button[aria-pressed=true]{background:var(--yellow);color:var(--ink)}
 .hall-rule{text-align:center;color:var(--muted);font-size:var(--text-base)}
-.hall-screen .hall-count-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:700px){.hall-screen{gap:var(--s4)}.podium li{gap:var(--s2);padding:var(--s3)}.podium .stairs-ranking-score{font-size:var(--text-base);color:var(--muted);margin-left:var(--s2)}
 .podium img{width:44px;height:44px}.podium .rank{min-width:var(--s8)}.podium .me-tag{margin-left:var(--s2)}.podium b{font-size:var(--text-lg)}}
 @media(max-width:700px) and (max-height:650px){.hall-screen{gap:var(--s3);padding:var(--s2) 0}.hall-screen .pixel-art{height:70px}}
