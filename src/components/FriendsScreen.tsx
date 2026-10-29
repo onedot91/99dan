@@ -1,11 +1,26 @@
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import { AURAS, ELEMENTS, FAMILIES, FORMS, FRIENDS, MYTHS, TIER_LABEL, familyOpen, friendById, stepName } from '../game/friends';
 import type { Friend } from '../game/friends';
 import type { Friends } from '../game/useFriends';
 import { FriendSprite } from './FriendSprite';
+import { Icon } from './Icon';
 // 을/를 follows whether the last syllable has a final consonant.
 const objectJosa=(name:string)=>{const code=name.charCodeAt(name.length-1)-0xac00;return code>=0&&code<11172&&code%28!==0?'을':'를';};
 const Stars=({tier}:{readonly tier:number})=><span className="tier-stars" aria-label={`${tier}단계 ${TIER_LABEL[tier as 1|2|3|4|5]}`}>{'★'.repeat(tier)}<i>{'★'.repeat(5-tier)}</i></span>;
+// Pixel marks for the four elements: o outline, 1 light, 2 main, 3 dark from the element's own palette.
+const ELEMENT_ICON:Readonly<Record<string,readonly string[]>>={
+  fire:['....o....','...o3o...','..o323o..','.o32123o.','o3211123o','o3211123o','o3211123o','.o32223o.','..ooooo..'],
+  water:['....o....','...o2o...','..o222o..','.o21222o.','o2122222o','o2122223o','o2222223o','.o22233o.','..ooooo..'],
+  leaf:['ooo...ooo','o12o.o21o','o122o221o','.o22o22o.','..oo3oo..','...o3o...','...o3o...','...o3o...','..ooooo..'],
+  bolt:['....oooo.','...o12o..','..o12o...','.o1222oo.','.ooo22o..','...o2o...','..o2o....','..oo.....'],
+};
+export function ElementIcon({id}:{readonly id:string}){
+  const element=ELEMENTS.find(e=>e.id===id),map=ELEMENT_ICON[id];if(!element||!map)return null;
+  return <svg className="element-icon" viewBox="0 0 9 9" shapeRendering="crispEdges" aria-hidden="true">{map.flatMap((row,y)=>[...row].map((c,x)=>c==='.'?null:<rect key={`${x}:${y}`} x={x} y={y} width={1} height={1} className={c==='o'?'px-outline':undefined} fill={c==='o'?undefined:element.palette[Number(c)-1]}/>))}</svg>;
+}
+// Each element tab and badge takes its colors from the element palette.
+export const elementStyle=(id:string)=>{const p=ELEMENTS.find(e=>e.id===id)?.palette;return p?{'--el-hi':p[0],'--el':p[1],'--el-lo':p[2]} as CSSProperties:undefined;};
 function PickView({friends,onPicked}:{readonly friends:Friends;readonly onPicked:(id:string)=>void}){
   const have=new Set(friends.owned);
   return <section className="friend-pick" aria-labelledby="friend-pick-title">
@@ -13,10 +28,12 @@ function PickView({friends,onPicked}:{readonly friends:Friends;readonly onPicked
     <div className="friend-offers">{friends.offers.map(f=>{const parent=friendById(f.parent);return <button key={f.id} className="friend-offer" onClick={()=>onPicked(f.id)}>
       <span className={`offer-tag ${f.tier===1?'new':'evolve'}`}>{f.tier===1?'새 펫':'진화'}</span>
       <FriendSprite id={f.id}/>
-      <strong>{f.name}</strong>
+      <strong>{f.element&&<span className="offer-element" style={elementStyle(f.element.id)}><ElementIcon id={f.element.id}/></span>}{f.name}</strong>
       <Stars tier={f.tier}/>
       <small>{parent&&have.has(parent.id)?`${parent.name}에서 진화`:f.blurb}</small>
     </button>;})}</div>
+    {/* One reroll per pick, shown as an icon only; it disappears once used. */}
+    {friends.canReroll&&<button className="quiet-button reroll-button" aria-label="다른 펫 보기 (1번)" onClick={friends.reroll}><Icon name="refresh" size={24}/></button>}
   </section>;
 }
 function Reveal({id,more,onNext}:{readonly id:string;readonly more:boolean;readonly onNext:()=>void}){
@@ -60,7 +77,7 @@ function TreeView({friends,onPick}:{readonly friends:Friends;readonly onPick:()=
     </section>
     <section className="friend-tree" aria-label="펫 나무">
       <div className="family-tabs" role="group" aria-label="펫 종류">{FAMILIES.map(f=>{const count=friends.owned.filter(id=>id.split('.')[0]===f.id).length;return <button key={f.id} aria-pressed={family===f.id} aria-label={`${f.name} ${count}마리`} onClick={()=>{setFamily(f.id);setSelected(f.id);}}><FriendSprite id={f.id} silhouette={!have.has(f.id)} crop/><small>{count}</small></button>;})}</div>
-      <div className="element-tabs" role="group" aria-label="속성">{ELEMENTS.map(e=>{const count=friends.owned.filter(id=>id.startsWith(`${family}.${e.id}`)).length;return <button key={e.id} aria-pressed={element===e.id} onClick={()=>{setElement(e.id);setSelected(`${family}.${e.id}`);}}>{e.name}<small>{count}</small></button>;})}</div>
+      <div className="element-tabs" role="group" aria-label="속성">{ELEMENTS.map(e=>{const count=friends.owned.filter(id=>id.startsWith(`${family}.${e.id}`)).length;return <button key={e.id} style={elementStyle(e.id)} aria-pressed={element===e.id} aria-label={`${e.name} ${count}마리`} onClick={()=>{setElement(e.id);setSelected(`${family}.${e.id}`);}}><ElementIcon id={e.id}/><span className="element-name">{e.name}</span><small>{count}</small></button>;})}</div>
       {/* Five stages, left to right. Each stage only adds one thing to the friend before it. */}
       <div className="stage-grid">
         {([1,2,3,4,5] as const).map(t=><p key={t} className="stage-head"><strong>{t}단계</strong><span> {TIER_LABEL[t]}</span></p>)}

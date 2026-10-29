@@ -129,10 +129,9 @@
   .vertical-play .number-pad{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(44px,1fr));height:100%;padding:var(--s1) var(--s1) var(--s2)}
   .vertical-play .number-pad button:nth-child(n+10){grid-column:auto;grid-row:auto}
 }
-/* Narrowest phones: three-letter backgrounds plus "Lv.NN" still fit on one line. */
+/* Narrowest phones: shorter thumbnails keep two rows of backgrounds in view under the tabs. */
 @media(max-width:360px){
-  .background-menu .background-option{gap:var(--s1);padding:var(--s1)}
-  .background-menu .background-option i{width:16px;height:16px}
+  .background-menu .background-option .bg-preview{height:40px}
 }
 /* 블록: 휴대폰은 한 화면에 다 담기지 않으므로 풀 때는 세로셈+키패드, 놓을 때는 판+블록 칸만 보여 준다. */
 @media(max-width:700px){

@@ -22,6 +22,9 @@ function readLocal(n:number):FriendState{
   }catch{return EMPTY;}
 }
 function writeLocal(n:number,state:FriendState){try{localStorage.setItem(storageKey(n),JSON.stringify(state));}catch{/* storage may be unavailable; the server copy still counts */}}
+// The pick count whose offers were rerolled, so each pick gets one reroll and a refresh can't bring it back.
+const rerollKey=(n:number)=>`gugudan-rush.friends.reroll.${n}`;
+function readReroll(n:number):number|null{try{const raw=localStorage.getItem(rerollKey(n));return raw!==null&&Number.isInteger(Number(raw))?Number(raw):null;}catch{return null;}}
 // The server is the source of truth once it supports friends; until then picks live in this browser.
 export function useFriends(studentNumber:number,totalCorrect:number,cloud:{readonly friendsSync:boolean;readonly profile:SharedProfile|null}){
   const [state,setState]=useState<FriendState>(()=>readLocal(studentNumber));
@@ -56,12 +59,19 @@ export function useFriends(studentNumber:number,totalCorrect:number,cloud:{reado
     setState(server);writeLocal(studentNumber,server);
   },[server]);
   const pending=isSpare(studentNumber)?0:Math.max(0,level-state.owned.length);
-  const offers=useMemo(()=>pending?offersFor(state.owned,studentNumber,level):[],[pending,state.owned,studentNumber,level]);
+  const [rerolledAt,setRerolledAt]=useState(()=>readReroll(studentNumber));
+  const rerolled=rerolledAt===state.owned.length;
+  const offers=useMemo(()=>pending?offersFor(state.owned,studentNumber,level,rerolled):[],[pending,state.owned,studentNumber,level,rerolled]);
+  const reroll=()=>{
+    if(!pending||rerolled)return;
+    setRerolledAt(state.owned.length);
+    try{localStorage.setItem(rerollKey(studentNumber),String(state.owned.length));}catch{/* the reroll still lasts this visit */}
+  };
   const pick=(id:string)=>{
     if(!offers.some(f=>f.id===id))return;
     persist({owned:[...state.owned,id],partner:id});
   };
   const setPartner=(id:string)=>{if(state.owned.includes(id))persist({...state,partner:id});};
-  return {level,owned:state.owned,partner:friendById(state.partner)?state.partner:null,pending,offers,pick,setPartner,syncError,shared:cloud.friendsSync};
+  return {level,owned:state.owned,partner:friendById(state.partner)?state.partner:null,pending,offers,canReroll:pending>0&&!rerolled,reroll,pick,setPartner,syncError,shared:cloud.friendsSync};
 }
 export type Friends=ReturnType<typeof useFriends>;

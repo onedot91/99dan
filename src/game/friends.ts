@@ -103,11 +103,15 @@ function shuffle<T>(items:readonly T[],next:()=>number):T[]{
 // Three choices, seeded by student and pick count so a refresh can't reroll them:
 // up to two evolutions of different families plus one new family when possible.
 // Families above the student's level never enter the pool, so offers below Lv.100 stay as they were.
+// The one reroll per pick uses another seed and leaves out the first three when enough others remain.
 export const familyOpen=(f:Friend,level:number)=>level>=(f.family.level??1);
-export function offersFor(owned:readonly string[],studentNumber:number,level:number):readonly Friend[]{
+export function offersFor(owned:readonly string[],studentNumber:number,level:number,rerolled=false):readonly Friend[]{
   const have=new Set(owned);
-  const next=rng(studentNumber*7919+owned.length*104729+17);
-  const frontier=FRIENDS.filter(f=>!have.has(f.id)&&(f.parent===null||have.has(f.parent))&&familyOpen(f,level));
+  const next=rng(studentNumber*7919+owned.length*104729+(rerolled?31:17));
+  const open=FRIENDS.filter(f=>!have.has(f.id)&&(f.parent===null||have.has(f.parent))&&familyOpen(f,level));
+  const first=rerolled?new Set(offersFor(owned,studentNumber,level).map(f=>f.id)):new Set<string>();
+  const others=open.filter(f=>!first.has(f.id));
+  const frontier=others.length>=3?others:open;
   const fresh=shuffle(frontier.filter(f=>f.tier===1),next);
   if(!owned.length)return fresh.slice(0,3);
   const evolutions=shuffle(frontier.filter(f=>f.tier>1),next);
