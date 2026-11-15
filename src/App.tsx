@@ -67,9 +67,9 @@ export function App(){
 function GameApp({studentNumber,onReselect}:{readonly studentNumber:number;readonly onReselect:()=>void}){
   const g=useRushGame(!cloudConfigured||isSpare(studentNumber));
   const cloud=useSharedGame(studentNumber,g);
-  // 두 자리 수·블록·계단은 서버가 계산한 경험치(끝낸 문제당 10)를 구구단 정답 수에 더한다.
+  // 두 자리 수·블록·계단은 서버가 계산한 경험치(끝낸 문제당 10)를 구구단 도전 정답 수에 더한다.
   const serverExp=(cloud.profile?.verticalExp??0)+(cloud.profile?.blockExp??0)+(cloud.profile?.stairsExp??0);
-  const exp=g.totalCorrect+serverExp;
+  const exp=g.earnedExp+serverExp;
   const rewards=useRunRewards(g,cloud.profile?.best,serverExp);
   const friends=useFriends(studentNumber,exp,cloud);
   const audio=useGameAudio(g.run,g.screen,rewards?.newRecord?'record':rewards?.levelUp?'levelup':'finish');

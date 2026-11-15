@@ -3,7 +3,7 @@ import { loadTeacherRecords, resetAllStudentRecords, resetStudentRecords, resetS
 import type { SharedProfile } from '../cloud/types';
 import { DURATIONS, modeLabel } from '../types/game';
 import { Icon } from './Icon';
-import { levelFor, VERTICAL_EXP_PER_QUESTION } from '../game/learning';
+import { levelFor, timesTableExp, VERTICAL_EXP_PER_QUESTION } from '../game/learning';
 import { FRIENDS, friendById } from '../game/friends';
 import { FriendSprite } from './FriendSprite';
 import { playedToday } from '../game/teacherActivity';
@@ -12,7 +12,7 @@ import { HallScreen } from './HallScreen';
 import type { TeacherResetScope } from '../game/teacherReset';
 
 // 서버가 전체 기록으로 계산한 두 자리 수·블록 경험치를 쓴다. 이전 서버는 두 자리 수 최근 기록으로 대신한다.
-const expOf=(profile:SharedProfile)=>totals(profile).correct+(profile.verticalExp||profile.verticalSessions.reduce((sum,s)=>sum+s.count*VERTICAL_EXP_PER_QUESTION,0))+profile.blockExp+profile.stairsExp;
+const expOf=(profile:SharedProfile)=>timesTableExp(profile.records,profile.practiceCorrect)+(profile.verticalExp||profile.verticalSessions.reduce((sum,s)=>sum+s.count*VERTICAL_EXP_PER_QUESTION,0))+profile.blockExp+profile.stairsExp;
 function totals(profile:SharedProfile){return Object.values(profile.records).reduce((sum,record)=>({attempts:sum.attempts+record.attempts,correct:sum.correct+record.correct,wrong:sum.wrong+record.wrong}),{attempts:0,correct:0,wrong:0});}
 const sessionDate=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 function TeacherDetail({profile,onReset}:{readonly profile:SharedProfile;readonly onReset:()=>void}){

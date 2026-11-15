@@ -24,6 +24,7 @@ import '../src/mobile.css';
 // All API responses are synthetic; this entry never contacts the school server.
 const profiles=Array.from({length:23},(_,i)=>({
   studentNumber:i+1,avatar:null,verticalDifficulty:i%3+1,friends:[],partner:null,canResetScopes:!new URLSearchParams(location.search).has('legacyReset'),
+  practiceCorrect:0,
   records:{'2×2':{attempts:700,correct:650,wrong:50,totalMs:100000,streak:3,fastStreak:1,recent:[],reviewAt:null,interval:1,lastSeen:1}},
   verticalMetrics:{runs:3,first:{attempts:30,correct:29},multiply:{attempts:10,correct:9},sum:{attempts:10,correct:9}},
   best:[1,2,3].map(duration=>({duration,score:123456,correct:99})),

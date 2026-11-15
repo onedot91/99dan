@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { TABLES } from '../types/game';
 import type { Duration, Mode, Records, Run, Screen, SessionResult } from '../types/game';
-import { chooseFact, isWeak, updateRecord, weakFacts } from './learning';
+import { chooseFact, isWeak, timesTableExp, updateRecord, weakFacts } from './learning';
 import { expectedAnswer, nextQuestion } from './questions';
 import { WRONG_PENALTY } from './points';
 export { WRONG_PENALTY } from './points';
@@ -13,6 +13,7 @@ export function useRushGame(initialVariantsEnabled=false){
   const [screen,setScreen]=useState<Screen>('home');
   const [tables,setTables]=useState<readonly number[]>([]);
   const [records,setRecords]=useState<Records>({});
+  const [practiceCorrect,setPracticeCorrect]=useState(0);
   const [sessions,setSessions]=useState<readonly SessionResult[]>([]);
   const [run,setRun]=useState<Run|null>(null);
   const [variantsEnabled,setVariantsEnabled]=useState(initialVariantsEnabled);
@@ -58,6 +59,7 @@ export function useRushGame(initialVariantsEnabled=false){
     const correct=Number(entry)===expectedAnswer(active.fact,active.question);
     const nextHistory={...history.current,[active.fact.id]:updateRecord(history.current[active.fact.id],{correct,ms},ordinal.current)};
     history.current=nextHistory;setRecords(nextHistory);ordinal.current+=1;
+    if(correct&&active.mode!=='rush')setPracticeCorrect(n=>n+1);
     const combo=correct?active.combo+1:0;
     const points=correct?correctPointsFor(ms,combo):-Math.min(WRONG_PENALTY,active.score);
     const feedback=correct?`+${points}점`:points===0?'0점 · 다시 풀기':`${points}점 · 다시 풀기`;
@@ -115,14 +117,14 @@ export function useRushGame(initialVariantsEnabled=false){
     };
     window.addEventListener('keydown',onKey);return ()=>window.removeEventListener('keydown',onKey);
   },[screen]);
-  const hydrate=useCallback((data:{readonly records:Records;readonly sessions:readonly SessionResult[]})=>{
+  const hydrate=useCallback((data:{readonly records:Records;readonly sessions:readonly SessionResult[];readonly practiceCorrect:number})=>{
     if(activeScreen.current==='play')return;
-    history.current=data.records;ordinal.current=Object.values(data.records).reduce((n,r)=>n+r.attempts,0);setRecords(data.records);setSessions(data.sessions);
+    history.current=data.records;ordinal.current=Object.values(data.records).reduce((n,r)=>n+r.attempts,0);setRecords(data.records);setPracticeCorrect(data.practiceCorrect);setSessions(data.sessions);
   },[]);
   const toggleTable=(n:number)=>setTables(previous=>previous.includes(n)?previous.filter(t=>t!==n):[...previous,n].sort((a,b)=>a-b));
-  const totalCorrect=Object.values(records).reduce((sum,r)=>sum+r.correct,0);
+  const earnedExp=timesTableExp(records,practiceCorrect);
   const totalWrong=Object.values(records).reduce((sum,r)=>sum+r.wrong,0);
   const weak=weakFacts(records);
-  return {hydrate,setVariantsEnabled,screen,setScreen,duration,setDuration,tables,toggleTable,records,sessions,run,start,input,end,totalCorrect,totalWrong,weak,weakUnlocked:totalWrong>=WEAK_UNLOCK_THRESHOLD};
+  return {hydrate,setVariantsEnabled,screen,setScreen,duration,setDuration,tables,toggleTable,records,sessions,run,start,input,end,earnedExp,totalWrong,weak,weakUnlocked:totalWrong>=WEAK_UNLOCK_THRESHOLD};
 }
 export type RushGame=ReturnType<typeof useRushGame>;

@@ -75,6 +75,10 @@ export type Level={readonly number:number;readonly label:string;readonly floor:n
 export function titleFor(level:number):string{
   return TITLES.reduce<string>((found,[from,label])=>level>=from?label:found,TITLES[0][1]);
 }
+// 구구단 경험치: 누적 정답에서 단별·약점 연습 정답을 뺀다. 학습 기록(records)은 모든 모드에서 쌓인다.
+export function timesTableExp(records:Records,practiceCorrect:number):number{
+  return Math.max(0,Object.values(records).reduce((sum,r)=>sum+r.correct,0)-practiceCorrect);
+}
 export function levelFor(correct:number):Level{
   const c=Math.max(0,correct),early=levelFloor(EARLY_STEPS.length+1);
   const number=c>=early?EARLY_STEPS.length+1+Math.floor((c-early)/LEVEL_STEP):1+EARLY_STEPS.filter((_,i)=>c>=levelFloor(i+2)).length;

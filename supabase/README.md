@@ -189,3 +189,13 @@ School_Timer 학생 화면과 같은 안내를 구구단 앱에도 띄운다. �
 검증: `node --test tests/class-prep.test.mjs`, 격리된 빈 PostgreSQL에서 `psql -v ON_ERROR_STOP=1 -f tests/class-prep.sql`(가짜 시간표로 조립·권한 확인 후 되돌림). 화면은 개발 서버에서 `?classPrepDemo=75`처럼 붙이면(개발 빌드 전용) 75초 뒤 수업이 시작하는 가짜 시간표로 모든 단계를 볼 수 있다.
 
 2026-10-18 사용자 승인 후 migration `20261018000000_gugudan_class_prep`(운영 이력 이름 `gugudan_class_prep`)를 적용하고 `gugudan-api` version 24 ACTIVE(`verify_jwt=false`)를 배포했다. 배포 전 version 23이 main과 같음을 확인하고 `classPrep` 두 줄만 더했다. service_role 실행 가능·anon/authenticated 실행 불가, 세션 없는 `classPrep` 401, 서명 세션의 `classPrep`이 월~금 시간표(55칸)·이번 주 과목·시계 보정 0·해제 null을 돌려줌을 확인했다. 실제 시간표로 계산한 월요일 단계는 예: 9:38 예고 → 9:39 마무리 → 9:39:10 잠금 → 10:20 해제. 학생 기록은 읽거나 바꾸지 않았다. 프론트엔드 배포는 별도다.
+
+## 단별·약점 연습 경험치 제외 (2026-11-05)
+
+`migrations/20261105000000_gugudan_practice_no_exp.sql`은 `gugudan_players.practice_correct`(기본 0)를 추가한다. `gugudan_finish`가 `practice`·`weak` 판의 정답 수를 여기에 더하고, 구구단 경험치는 `records`의 정답 합에서 이 값을 뺀 값이다. `records`는 도감·약점 판정에 쓰이므로 모든 모드에서 계속 쌓인다. 이전 판의 모드별 정답 수는 남아 있지 않아 소급하지 않고, 지금까지 얻은 경험치는 유지한다.
+
+`gugudan_profile`·`gugudan_teacher_records`가 `practiceCorrect`를 돌려주고, `gugudan_save_friends`의 레벨 제한도 같은 값을 뺀다. 전체 초기화(`gugudan_teacher_reset`, `gugudan_teacher_reset_all`)는 `records`와 함께 0으로 되돌린다. 종류별 초기화는 `records`를 지우지 않으므로 그대로 둔다. Edge Function 재배포는 필요 없다. 이전 서버 응답에는 값이 없어 클라이언트가 0으로 읽으므로, 이 마이그레이션을 프런트엔드 배포보다 먼저 적용한다.
+
+로컬 검증: `tests/block-bootstrap.sql`, `20261013120000_teacher_bests.sql`, `20261018000000_gugudan_class_prep.sql`, `20261026000000_gugudan_stairs_runs.sql`, 이 마이그레이션을 차례로 적용한 DB에서 `PGDATABASE=practice_exp_test node --experimental-strip-types tests/practice-exp.pg.mjs`.
+
+2026-11-15 운영 반영: 적용 전 운영 함수 6개(`gugudan_finish`·`gugudan_profile`·`gugudan_teacher_records`·`gugudan_save_friends`·`gugudan_teacher_reset`·`gugudan_teacher_reset_all`)가 저장소 정의와 같음을 확인한 뒤, Supabase MCP `apply_migration`(운영 이력 이름 `gugudan_practice_no_exp`, version `20261115083725`)으로 적용했다. Edge Function 재배포 없음. 적용 전후 플레이어 23명, 누적 정답 35,136개 그대로, `practice_correct`는 모두 0. 트랜잭션 안에서 23번의 연습 판(정답 2)과 도전 판(정답 1)을 저장해 연습 정답만 `practice_correct`에 쌓이는 것을 확인한 뒤 롤백했다.
